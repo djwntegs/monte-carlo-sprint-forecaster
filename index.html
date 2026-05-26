@@ -7,364 +7,94 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-      background: #F1F5F9;
-      color: #1E293B;
-      min-height: 100vh;
-    }
-
-    header {
-      background: #0F172A;
-      color: white;
-      padding: 20px 40px;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      border-bottom: 1px solid #1E293B;
-    }
-
-    header h1 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-    }
-
-    header p {
-      font-size: 0.8rem;
-      color: #64748B;
-    }
-
-    .header-badge {
-      margin-left: auto;
-      background: #6366F1;
-      color: white;
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 4px;
-      letter-spacing: 0.05em;
-    }
-
-    main {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 28px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
-      border: 1px solid #E2E8F0;
-    }
-
-    .card-title {
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: #94A3B8;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 18px;
-    }
-
-    /* Toggles */
-    .toggle-group {
-      display: inline-flex;
-      background: #F1F5F9;
-      border-radius: 8px;
-      padding: 3px;
-    }
-
-    .toggle-group button {
-      padding: 5px 14px;
-      border: none;
-      background: transparent;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: #64748B;
-      cursor: pointer;
-      transition: all 0.12s;
-      white-space: nowrap;
-    }
-
-    .toggle-group button.active {
-      background: white;
-      color: #1E293B;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-    }
-
-    /* Input section layout */
-    .input-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
-    }
-
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background: #F1F5F9; color: #1E293B; min-height: 100vh; }
+    header { background: #0F172A; color: white; padding: 16px 32px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #1E293B; }
+    header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.01em; }
+    header p { font-size: 0.75rem; color: #64748B; }
+    .header-badges { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .header-badge { background: #6366F1; color: white; font-size: 0.68rem; font-weight: 600; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.05em; white-space: nowrap; }
+    main { max-width: 1200px; margin: 0 auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; }
+    .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #E2E8F0; }
+    .card-title { font-size: 0.68rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
+    .toggle-group { display: inline-flex; background: #F1F5F9; border-radius: 8px; padding: 3px; }
+    .toggle-group button { padding: 5px 13px; border: none; background: transparent; border-radius: 6px; font-size: 0.78rem; font-weight: 500; color: #64748B; cursor: pointer; transition: all 0.12s; white-space: nowrap; }
+    .toggle-group button.active { background: white; color: #1E293B; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+    .input-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
     .input-header .card-title { margin-bottom: 0; }
-
-    textarea {
-      width: 100%;
-      min-height: 90px;
-      padding: 11px 13px;
-      border: 1.5px solid #E2E8F0;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-      color: #334155;
-      resize: vertical;
-      transition: border-color 0.15s;
-      line-height: 1.7;
-    }
-
-    textarea:focus {
-      outline: none;
-      border-color: #6366F1;
-      box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
-    }
-
+    textarea { width: 100%; min-height: 80px; padding: 10px 12px; border: 1.5px solid #E2E8F0; border-radius: 8px; font-size: 0.83rem; font-family: 'SF Mono','Fira Code','Consolas',monospace; color: #334155; resize: vertical; transition: border-color 0.15s; line-height: 1.7; }
+    textarea:focus { outline: none; border-color: #6366F1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
     textarea::placeholder { color: #CBD5E1; font-family: inherit; }
-
-    .sample-btn {
-      margin-left: auto;
-      background: none;
-      border: 1px solid #E2E8F0;
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-size: 0.75rem;
-      color: #64748B;
-      cursor: pointer;
-      transition: all 0.12s;
-      white-space: nowrap;
-    }
-
-    .sample-btn:hover { background: #F8FAFC; border-color: #6366F1; color: #6366F1; }
-
-    /* Stats bar */
-    .stats-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px 20px;
-      padding: 9px 13px;
-      background: #F8FAFC;
-      border-radius: 8px;
-      margin-top: 10px;
-      font-size: 0.78rem;
-    }
-
+    .btn-ghost { background: none; border: 1px solid #E2E8F0; border-radius: 6px; padding: 4px 10px; font-size: 0.73rem; color: #64748B; cursor: pointer; transition: all 0.12s; white-space: nowrap; }
+    .btn-ghost:hover { background: #F8FAFC; border-color: #6366F1; color: #6366F1; }
+    .stats-bar { display: flex; flex-wrap: wrap; gap: 5px 18px; padding: 8px 12px; background: #F8FAFC; border-radius: 8px; margin-top: 10px; font-size: 0.76rem; }
     .stat-item { display: flex; gap: 4px; align-items: baseline; }
     .stat-item .stat-lbl { color: #94A3B8; }
     .stat-item .stat-val { font-weight: 600; color: #334155; }
-
-    .warning-text { color: #D97706; font-size: 0.78rem; margin-top: 6px; }
-    .error-text { color: #EF4444; font-size: 0.78rem; margin-top: 6px; }
-
-    /* Throughput mini chart */
-    .mini-chart-wrap {
-      margin-top: 14px;
-      position: relative;
-      height: 110px;
-    }
-
-    /* Settings grid */
-    .settings-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      align-items: flex-end;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      min-width: 130px;
-    }
-
-    .field label {
-      font-size: 0.78rem;
-      font-weight: 500;
-      color: #64748B;
-    }
-
-    input[type="number"], input[type="date"] {
-      padding: 7px 11px;
-      border: 1.5px solid #E2E8F0;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      color: #1E293B;
-      transition: border-color 0.15s;
-      width: 100%;
-      background: white;
-    }
-
+    .warning-banner { padding: 8px 12px; border-radius: 8px; font-size: 0.78rem; margin-top: 10px; font-weight: 500; }
+    .warning-banner.yellow { background: #FFFBEB; color: #92400E; border-left: 3px solid #F59E0B; }
+    .warning-banner.red { background: #FEF2F2; color: #991B1B; border-left: 3px solid #EF4444; }
+    .warning-banner.blue { background: #EFF6FF; color: #1E40AF; border-left: 3px solid #3B82F6; }
+    .error-text { color: #EF4444; font-size: 0.76rem; margin-top: 6px; }
+    .mini-chart-wrap { margin-top: 12px; position: relative; height: 100px; }
+    .chips-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .sprint-chip { padding: 3px 9px; border-radius: 20px; background: #EEF2FF; color: #4338CA; font-size: 0.72rem; font-weight: 600; cursor: pointer; border: 1.5px solid #C7D2FE; transition: all 0.12s; user-select: none; }
+    .sprint-chip.excluded { background: #F1F5F9; color: #94A3B8; border-color: #E2E8F0; text-decoration: line-through; }
+    .settings-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
+    .field { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
+    .field label { font-size: 0.75rem; font-weight: 500; color: #64748B; }
+    input[type="number"], input[type="date"], input[type="text"] { padding: 7px 10px; border: 1.5px solid #E2E8F0; border-radius: 8px; font-size: 0.83rem; color: #1E293B; transition: border-color 0.15s; width: 100%; background: white; }
     input:focus { outline: none; border-color: #6366F1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
-
-    .run-btn {
-      padding: 9px 26px;
-      background: #6366F1;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
-      height: 36px;
-    }
-
+    .run-btn { padding: 8px 22px; background: #6366F1; color: white; border: none; border-radius: 8px; font-size: 0.83rem; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; height: 34px; }
     .run-btn:hover:not(:disabled) { background: #4F46E5; transform: translateY(-1px); }
-    .run-btn:active:not(:disabled) { transform: translateY(0); }
     .run-btn:disabled { background: #CBD5E1; cursor: not-allowed; transform: none; }
-
-    /* Confidence cards */
-    .confidence-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin-bottom: 24px;
-    }
-
-    .conf-card {
-      border-radius: 10px;
-      padding: 18px 16px;
-      text-align: center;
-      border-top: 3px solid transparent;
-    }
-
+    .confidence-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .conf-card { border-radius: 10px; padding: 16px 14px; text-align: center; border-top: 3px solid transparent; }
     .conf-50 { background: #FFFBEB; border-top-color: #F59E0B; }
     .conf-75 { background: #ECFDF5; border-top-color: #10B981; }
     .conf-85 { background: #EFF6FF; border-top-color: #3B82F6; }
     .conf-95 { background: #F5F3FF; border-top-color: #8B5CF6; }
-
-    .conf-pct {
-      font-size: 0.68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      margin-bottom: 6px;
-    }
-
-    .conf-50 .conf-pct { color: #B45309; }
-    .conf-75 .conf-pct { color: #065F46; }
-    .conf-85 .conf-pct { color: #1E40AF; }
-    .conf-95 .conf-pct { color: #5B21B6; }
-
-    .conf-sprints {
-      font-size: 1.6rem;
-      font-weight: 800;
-      line-height: 1;
-      margin-bottom: 2px;
-    }
-
-    .conf-50 .conf-sprints { color: #D97706; }
-    .conf-75 .conf-sprints { color: #059669; }
-    .conf-85 .conf-sprints { color: #2563EB; }
-    .conf-95 .conf-sprints { color: #7C3AED; }
-
-    .conf-unit {
-      font-size: 0.72rem;
-      color: #94A3B8;
-      margin-bottom: 6px;
-    }
-
-    .conf-date {
-      font-size: 0.78rem;
-      font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 5px;
-      display: inline-block;
-    }
-
-    .conf-50 .conf-date { background: #FEF3C7; color: #92400E; }
-    .conf-75 .conf-date { background: #D1FAE5; color: #064E3B; }
-    .conf-85 .conf-date { background: #DBEAFE; color: #1E3A8A; }
-    .conf-95 .conf-date { background: #EDE9FE; color: #4C1D95; }
-
-    /* Charts */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    .chart-box {
-      background: #F8FAFC;
-      border-radius: 10px;
-      padding: 18px;
-      border: 1px solid #E2E8F0;
-    }
-
-    .chart-box h3 {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: #475569;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .chart-container {
-      position: relative;
-      height: 240px;
-    }
-
-    .chart-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 14px;
-      margin-bottom: 10px;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 0.7rem;
-      color: #64748B;
-    }
-
-    .legend-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 2px;
-      flex-shrink: 0;
-    }
-
-    /* Simulation meta */
-    .sim-meta {
-      font-size: 0.72rem;
-      color: #94A3B8;
-      text-align: right;
-      margin-top: 10px;
-    }
-
+    .conf-pct { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
+    .conf-50 .conf-pct { color: #B45309; } .conf-75 .conf-pct { color: #065F46; } .conf-85 .conf-pct { color: #1E40AF; } .conf-95 .conf-pct { color: #5B21B6; }
+    .conf-sprints { font-size: 1.5rem; font-weight: 800; line-height: 1; margin-bottom: 2px; }
+    .conf-50 .conf-sprints { color: #D97706; } .conf-75 .conf-sprints { color: #059669; } .conf-85 .conf-sprints { color: #2563EB; } .conf-95 .conf-sprints { color: #7C3AED; }
+    .conf-unit { font-size: 0.7rem; color: #94A3B8; margin-bottom: 5px; }
+    .conf-date { font-size: 0.75rem; font-weight: 600; padding: 2px 7px; border-radius: 5px; display: inline-block; }
+    .conf-50 .conf-date { background: #FEF3C7; color: #92400E; } .conf-75 .conf-date { background: #D1FAE5; color: #064E3B; } .conf-85 .conf-date { background: #DBEAFE; color: #1E3A8A; } .conf-95 .conf-date { background: #EDE9FE; color: #4C1D95; }
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .chart-box { background: #F8FAFC; border-radius: 10px; padding: 16px; border: 1px solid #E2E8F0; }
+    .chart-box h3 { font-size: 0.75rem; font-weight: 600; color: #475569; margin-bottom: 10px; }
+    .chart-container { position: relative; height: 220px; }
+    .chart-container.tall { height: 260px; }
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-bottom: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 4px; font-size: 0.68rem; color: #64748B; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+    .sim-meta { font-size: 0.7rem; color: #94A3B8; text-align: right; margin-top: 8px; }
+    .target-badge { display: inline-block; padding: 10px 20px; border-radius: 10px; background: #6366F1; color: white; font-size: 1.3rem; font-weight: 800; margin: 12px 0; }
+    .target-badge.good { background: #10B981; }
+    .target-badge.warn { background: #F59E0B; }
+    .target-badge.bad { background: #EF4444; }
+    .scenario-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #F8FAFC; border-radius: 8px; border: 1px solid #E2E8F0; margin-bottom: 8px; flex-wrap: wrap; }
+    .scenario-row .field { min-width: 100px; }
+    .scenario-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .scenario-conf-row { display: grid; grid-template-columns: auto repeat(4, 1fr); gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid #F1F5F9; font-size: 0.78rem; }
+    .scenario-conf-row:last-child { border-bottom: none; }
+    .scenario-label-cell { font-weight: 600; color: #334155; }
+    .scenario-val-cell { text-align: center; font-weight: 600; }
+    table.history-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+    table.history-table th { background: #F8FAFC; color: #64748B; font-weight: 600; padding: 6px 10px; text-align: left; border-bottom: 1px solid #E2E8F0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    table.history-table td { padding: 6px 10px; border-bottom: 1px solid #F8FAFC; color: #334155; }
+    table.history-table tr:hover td { background: #F8FAFC; }
+    .section-tabs { display: flex; gap: 0; border-bottom: 2px solid #E2E8F0; margin-bottom: 16px; }
+    .section-tab { padding: 8px 16px; font-size: 0.8rem; font-weight: 600; color: #64748B; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.12s; background: none; border-top: none; border-left: none; border-right: none; }
+    .section-tab.active { color: #6366F1; border-bottom-color: #6366F1; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
     .hidden { display: none !important; }
-
-    /* Responsive */
-    @media (max-width: 860px) {
-      .confidence-grid { grid-template-columns: repeat(2, 1fr); }
-      .charts-grid { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 600px) {
-      header { padding: 16px 16px; }
-      main { padding: 16px 12px; }
-      .card { padding: 18px 16px; }
-      .settings-row { gap: 14px; }
-      .field { min-width: 100px; }
-      header p { display: none; }
-    }
+    select { padding: 7px 10px; border: 1.5px solid #E2E8F0; border-radius: 8px; font-size: 0.83rem; color: #1E293B; background: white; cursor: pointer; }
+    select:focus { outline: none; border-color: #6366F1; }
+    .export-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    @media (max-width: 860px) { .confidence-grid { grid-template-columns: repeat(2, 1fr); } .charts-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) { header { padding: 12px 14px; } main { padding: 12px 10px; } .card { padding: 14px 12px; } header p { display: none; } }
   </style>
 </head>
 <body>
@@ -374,525 +104,759 @@
     <h1>Monte Carlo Sprint Forecaster</h1>
     <p>Probabilistic forecasting from historical throughput data</p>
   </div>
-  <span class="header-badge">10,000 SIMULATIONS</span>
+  <div class="header-badges">
+    <span class="header-badge" id="sim-badge">10,000 SIMULATIONS</span>
+  </div>
 </header>
 
 <main>
 
-  <!-- ── INPUT ──────────────────────────────────────────────── -->
-  <div class="card">
-    <div class="input-header">
-      <span class="card-title" style="margin-bottom:0">Historical Sprint Data</span>
-      <div class="toggle-group" id="data-type-toggle">
-        <button class="toggle active" data-type="items">Work Items</button>
-        <button class="toggle" data-type="points">Story Points</button>
+<!-- ── MODE TOGGLE (Backlog→Sprints | Sprints→Items) ─────────── -->
+<div class="card" style="padding:14px 20px">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <div style="font-size:0.78rem;font-weight:600;color:#475569">Forecast Mode:</div>
+    <div class="toggle-group" id="mode-toggle">
+      <button class="active" data-mode="backlog">Backlog → Sprints</button>
+      <button data-mode="items">Sprints → Items</button>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-ghost" id="export-csv-btn">Export CSV</button>
+      <button class="btn-ghost" id="copy-link-btn">Copy Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── INPUT ──────────────────────────────────────────────────── -->
+<div class="card">
+  <div class="input-header">
+    <span class="card-title" style="margin-bottom:0">Historical Sprint Data</span>
+    <div class="toggle-group" id="data-type-toggle">
+      <button class="active" data-type="items">Work Items</button>
+      <button data-type="points">Story Points</button>
+    </div>
+    <button class="btn-ghost" id="import-csv-btn">Import CSV</button>
+    <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none">
+    <button class="btn-ghost" id="sample-btn" style="margin-left:auto">Load Sample Data</button>
+  </div>
+
+  <textarea id="sprint-data"
+    placeholder="Paste throughput per sprint — comma or newline separated.&#10;Example:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33"></textarea>
+
+  <div id="data-error" class="error-text hidden"></div>
+  <div id="trend-banner" class="warning-banner hidden"></div>
+  <div id="capacity-note" class="warning-banner blue hidden"></div>
+
+  <div id="data-stats" class="stats-bar hidden">
+    <div class="stat-item"><span class="stat-lbl">Sprints</span><span class="stat-val" id="stat-count">-</span></div>
+    <div class="stat-item"><span class="stat-lbl">Active</span><span class="stat-val" id="stat-active">-</span></div>
+    <div class="stat-item"><span class="stat-lbl">Avg</span><span class="stat-val" id="stat-avg">-</span></div>
+    <div class="stat-item"><span class="stat-lbl">Median</span><span class="stat-val" id="stat-median">-</span></div>
+    <div class="stat-item"><span class="stat-lbl">Min</span><span class="stat-val" id="stat-min">-</span></div>
+    <div class="stat-item"><span class="stat-lbl">Max</span><span class="stat-val" id="stat-max">-</span></div>
+    <div class="stat-item"><span class="stat-lbl">Std Dev</span><span class="stat-val" id="stat-std">-</span></div>
+  </div>
+
+  <div id="chips-row" class="chips-row hidden"></div>
+
+  <div id="mini-chart-wrap" class="mini-chart-wrap hidden">
+    <canvas id="throughput-chart"></canvas>
+  </div>
+</div>
+
+<!-- ── SETTINGS (two panels: Backlog→Sprints vs Sprints→Items) ── -->
+<div class="card">
+  <div class="section-tabs">
+    <button class="section-tab active" data-settab="main-settings">Settings</button>
+    <button class="section-tab" data-settab="capacity-settings">Team Capacity</button>
+    <button class="section-tab" data-settab="scenario-settings">Scenarios</button>
+    <button class="section-tab" data-settab="save-settings">Save / Load</button>
+  </div>
+
+  <!-- Main Settings -->
+  <div class="tab-panel active" id="main-settings">
+    <!-- BACKLOG MODE -->
+    <div id="backlog-mode-settings">
+      <div class="settings-row">
+        <div class="field">
+          <label id="backlog-label">Backlog Size (items)</label>
+          <input type="number" id="backlog-size" min="1" placeholder="e.g. 150">
+        </div>
+        <div class="field">
+          <label>Backlog Growth / Sprint (%)</label>
+          <input type="number" id="backlog-growth" min="0" max="100" step="1" value="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>Forecast Output</label>
+          <div class="toggle-group" id="forecast-type-toggle">
+            <button class="active" data-forecast="sprints">Sprints</button>
+            <button data-forecast="date">Date</button>
+            <button data-forecast="both">Both</button>
+          </div>
+        </div>
+        <div class="field hidden" id="sprint-length-field">
+          <label>Sprint Length (days)</label>
+          <input type="number" id="sprint-length" min="1" value="14">
+        </div>
+        <div class="field hidden" id="start-date-field">
+          <label>Start Date</label>
+          <input type="date" id="start-date">
+        </div>
+        <div class="field hidden" id="target-date-field">
+          <label>Target Date</label>
+          <input type="date" id="target-date">
+        </div>
+        <div class="field">
+          <label>Simulations</label>
+          <input type="number" id="sim-count" min="1000" max="100000" value="10000" step="1000">
+        </div>
+        <div class="field" style="justify-content:flex-end;flex:1;align-items:flex-end">
+          <button class="run-btn" id="run-btn" disabled>Run Simulation</button>
+        </div>
       </div>
-      <button class="sample-btn" id="sample-btn">Load Sample Data</button>
     </div>
 
-    <textarea id="sprint-data"
-      placeholder="Paste throughput per sprint — comma or newline separated.&#10;Example:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33"></textarea>
-
-    <div id="data-error" class="error-text hidden"></div>
-    <div id="data-warning" class="warning-text hidden"></div>
-
-    <div id="data-stats" class="stats-bar hidden">
-      <div class="stat-item"><span class="stat-lbl">Sprints</span><span class="stat-val" id="stat-count">-</span></div>
-      <div class="stat-item"><span class="stat-lbl">Avg</span><span class="stat-val" id="stat-avg">-</span></div>
-      <div class="stat-item"><span class="stat-lbl">Median</span><span class="stat-val" id="stat-median">-</span></div>
-      <div class="stat-item"><span class="stat-lbl">Min</span><span class="stat-val" id="stat-min">-</span></div>
-      <div class="stat-item"><span class="stat-lbl">Max</span><span class="stat-val" id="stat-max">-</span></div>
-      <div class="stat-item"><span class="stat-lbl">Std Dev</span><span class="stat-val" id="stat-std">-</span></div>
-    </div>
-
-    <div id="mini-chart-wrap" class="mini-chart-wrap hidden">
-      <canvas id="throughput-chart"></canvas>
+    <!-- ITEMS MODE -->
+    <div id="items-mode-settings" class="hidden">
+      <div class="settings-row">
+        <div class="field">
+          <label>Number of Sprints</label>
+          <input type="number" id="items-sprints" min="1" placeholder="e.g. 5">
+        </div>
+        <div class="field">
+          <label>Simulations</label>
+          <input type="number" id="items-sim-count" min="1000" max="100000" value="10000" step="1000">
+        </div>
+        <div class="field" style="justify-content:flex-end;flex:1;align-items:flex-end">
+          <button class="run-btn" id="run-items-btn" disabled>Run Simulation</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ── SETTINGS ──────────────────────────────────────────── -->
-  <div class="card">
-    <div class="card-title">Forecast Settings</div>
+  <!-- Team Capacity -->
+  <div class="tab-panel" id="capacity-settings">
     <div class="settings-row">
       <div class="field">
-        <label id="backlog-label">Backlog Size (items)</label>
-        <input type="number" id="backlog-size" min="1" placeholder="e.g. 150">
+        <label>Team Size This Sprint</label>
+        <input type="number" id="team-current" min="1" placeholder="e.g. 6">
       </div>
-
       <div class="field">
-        <label>Forecast Output</label>
-        <div class="toggle-group" id="forecast-type-toggle">
-          <button class="toggle active" data-forecast="sprints">Sprints</button>
-          <button class="toggle" data-forecast="date">Date</button>
-          <button class="toggle" data-forecast="both">Both</button>
-        </div>
+        <label>Historical Avg Team Size</label>
+        <input type="number" id="team-historical" min="1" placeholder="e.g. 5">
       </div>
+    </div>
+    <p style="font-size:0.73rem;color:#94A3B8;margin-top:10px">When both are filled, each sampled throughput is scaled by (current / historical) before simulation.</p>
+  </div>
 
-      <div class="field hidden" id="sprint-length-field">
-        <label>Sprint Length (days)</label>
-        <input type="number" id="sprint-length" min="1" value="14">
+  <!-- Scenarios -->
+  <div class="tab-panel" id="scenario-settings">
+    <div id="scenarios-list"></div>
+    <button class="btn-ghost" id="add-scenario-btn" style="margin-top:8px">+ Add Scenario</button>
+    <p style="font-size:0.73rem;color:#94A3B8;margin-top:8px">Each scenario uses its own backlog size and label. All scenarios overlay on the distribution chart.</p>
+  </div>
+
+  <!-- Save / Load -->
+  <div class="tab-panel" id="save-settings">
+    <div class="settings-row" style="align-items:flex-end">
+      <div class="field" style="flex:1;min-width:160px">
+        <label>Save As</label>
+        <input type="text" id="save-name" placeholder="Scenario name...">
       </div>
-
-      <div class="field hidden" id="start-date-field">
-        <label>Start Date</label>
-        <input type="date" id="start-date">
+      <button class="run-btn" id="save-scenario-btn" style="background:#10B981">Save</button>
+    </div>
+    <div class="settings-row" style="margin-top:14px;align-items:flex-end">
+      <div class="field" style="flex:1">
+        <label>Load Saved Scenario</label>
+        <select id="load-scenario-select"><option value="">— select —</option></select>
       </div>
+      <button class="run-btn" id="load-scenario-btn">Load</button>
+      <button class="run-btn" id="delete-scenario-btn" style="background:#EF4444">Delete</button>
+    </div>
+  </div>
+</div>
 
-      <div class="field">
-        <label>Simulations</label>
-        <input type="number" id="sim-count" min="1000" max="100000" value="10000" step="1000">
+<!-- ── RESULTS (Backlog→Sprints) ──────────────────────────────── -->
+<div class="card hidden" id="results-section">
+  <div class="card-title">Forecast Results</div>
+
+  <div id="target-date-result" class="hidden" style="margin-bottom:16px">
+    <div style="font-size:0.78rem;color:#64748B;margin-bottom:4px">Probability of finishing on or before target date:</div>
+    <span class="target-badge" id="target-prob-badge">—</span>
+  </div>
+
+  <div id="scenarios-results" class="hidden" style="margin-bottom:16px">
+    <div style="font-size:0.75rem;font-weight:600;color:#64748B;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">Scenario Comparison</div>
+    <div class="scenario-conf-row" style="font-size:0.7rem;color:#94A3B8">
+      <div></div>
+      <div style="text-align:center">50%</div>
+      <div style="text-align:center">75%</div>
+      <div style="text-align:center">85%</div>
+      <div style="text-align:center">95%</div>
+    </div>
+    <div id="scenarios-conf-rows"></div>
+  </div>
+
+  <div class="confidence-grid" id="main-conf-grid">
+    <div class="conf-card conf-50">
+      <div class="conf-pct">50% Confidence</div>
+      <div class="conf-sprints" id="v50-sprints">—</div>
+      <div class="conf-unit" id="v50-unit">sprints</div>
+      <span class="conf-date hidden" id="v50-date"></span>
+    </div>
+    <div class="conf-card conf-75">
+      <div class="conf-pct">75% Confidence</div>
+      <div class="conf-sprints" id="v75-sprints">—</div>
+      <div class="conf-unit" id="v75-unit">sprints</div>
+      <span class="conf-date hidden" id="v75-date"></span>
+    </div>
+    <div class="conf-card conf-85">
+      <div class="conf-pct">85% Confidence</div>
+      <div class="conf-sprints" id="v85-sprints">—</div>
+      <div class="conf-unit" id="v85-unit">sprints</div>
+      <span class="conf-date hidden" id="v85-date"></span>
+    </div>
+    <div class="conf-card conf-95">
+      <div class="conf-pct">95% Confidence</div>
+      <div class="conf-sprints" id="v95-sprints">—</div>
+      <div class="conf-unit" id="v95-unit">sprints</div>
+      <span class="conf-date hidden" id="v95-date"></span>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-box">
+      <h3>Forecast Distribution</h3>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#F59E0B"></div>≤ 50th</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#10B981"></div>50–75th</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div>75–85th</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8B5CF6"></div>85–95th</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#CBD5E1"></div>&gt; 95th</div>
       </div>
-
-      <div class="field" style="justify-content:flex-end; flex:1; align-items:flex-end">
-        <button class="run-btn" id="run-btn" disabled>Run Simulation</button>
+      <div class="chart-container">
+        <canvas id="dist-chart"></canvas>
+      </div>
+    </div>
+    <div class="chart-box">
+      <h3>Cumulative Probability (S-Curve)</h3>
+      <div class="chart-container">
+        <canvas id="cum-chart"></canvas>
       </div>
     </div>
   </div>
 
-  <!-- ── RESULTS ────────────────────────────────────────────── -->
-  <div class="card hidden" id="results-section">
-    <div class="card-title">Forecast Results</div>
-
-    <div class="confidence-grid">
-      <div class="conf-card conf-50">
-        <div class="conf-pct">50% Confidence</div>
-        <div class="conf-sprints" id="v50-sprints">—</div>
-        <div class="conf-unit" id="v50-unit">sprints</div>
-        <span class="conf-date hidden" id="v50-date"></span>
-      </div>
-      <div class="conf-card conf-75">
-        <div class="conf-pct">75% Confidence</div>
-        <div class="conf-sprints" id="v75-sprints">—</div>
-        <div class="conf-unit" id="v75-unit">sprints</div>
-        <span class="conf-date hidden" id="v75-date"></span>
-      </div>
-      <div class="conf-card conf-85">
-        <div class="conf-pct">85% Confidence</div>
-        <div class="conf-sprints" id="v85-sprints">—</div>
-        <div class="conf-unit" id="v85-unit">sprints</div>
-        <span class="conf-date hidden" id="v85-date"></span>
-      </div>
-      <div class="conf-card conf-95">
-        <div class="conf-pct">95% Confidence</div>
-        <div class="conf-sprints" id="v95-sprints">—</div>
-        <div class="conf-unit" id="v95-unit">sprints</div>
-        <span class="conf-date hidden" id="v95-date"></span>
-      </div>
+  <div class="chart-box" style="margin-top:14px">
+    <h3>Sprint-by-Sprint Burndown</h3>
+    <div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#F59E0B"></div>p50</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div>p85</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8B5CF6"></div>p95</div>
     </div>
-
-    <div class="charts-grid">
-      <!-- Distribution / "bell curve" -->
-      <div class="chart-box">
-        <h3>Forecast Distribution</h3>
-        <div class="chart-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:#F59E0B"></div>≤ 50th %ile</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#10B981"></div>50–75th</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div>75–85th</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#8B5CF6"></div>85–95th</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#CBD5E1"></div>&gt; 95th</div>
-        </div>
-        <div class="chart-container">
-          <canvas id="dist-chart"></canvas>
-        </div>
-      </div>
-
-      <!-- Cumulative S-curve -->
-      <div class="chart-box">
-        <h3>Cumulative Probability</h3>
-        <div class="chart-container">
-          <canvas id="cum-chart"></canvas>
-        </div>
-      </div>
+    <div class="chart-container tall">
+      <canvas id="burndown-chart"></canvas>
     </div>
-
-    <div class="sim-meta" id="sim-meta"></div>
   </div>
+
+  <div class="sim-meta" id="sim-meta"></div>
+</div>
+
+<!-- ── RESULTS (Sprints→Items) ───────────────────────────────── -->
+<div class="card hidden" id="items-results-section">
+  <div class="card-title">Items Achievable</div>
+  <div class="confidence-grid">
+    <div class="conf-card conf-50">
+      <div class="conf-pct">50th Percentile</div>
+      <div class="conf-sprints" id="i50">—</div>
+      <div class="conf-unit">items</div>
+    </div>
+    <div class="conf-card conf-75">
+      <div class="conf-pct">75th Percentile</div>
+      <div class="conf-sprints" id="i75">—</div>
+      <div class="conf-unit">items</div>
+    </div>
+    <div class="conf-card conf-85">
+      <div class="conf-pct">85th Percentile</div>
+      <div class="conf-sprints" id="i85">—</div>
+      <div class="conf-unit">items</div>
+    </div>
+    <div class="conf-card conf-95">
+      <div class="conf-pct">95th Percentile</div>
+      <div class="conf-sprints" id="i95">—</div>
+      <div class="conf-unit">items</div>
+    </div>
+  </div>
+  <p style="font-size:0.75rem;color:#94A3B8;margin-top:8px">Percentile of total items completable across all simulations for the given number of sprints.</p>
+</div>
+
+<!-- ── FORECAST HISTORY ──────────────────────────────────────── -->
+<div class="card" id="history-section">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+    <span class="card-title" style="margin-bottom:0">Forecast History</span>
+    <button class="btn-ghost" id="clear-history-btn" style="margin-left:auto;color:#EF4444;border-color:#FCA5A5">Clear History</button>
+  </div>
+  <div id="history-empty" style="font-size:0.78rem;color:#94A3B8;text-align:center;padding:16px 0">No forecasts run yet. Run a simulation to start tracking history.</div>
+  <div id="history-table-wrap" class="hidden">
+    <table class="history-table">
+      <thead><tr><th>Time</th><th>Backlog</th><th>p50</th><th>p75</th><th>p85</th><th>p95</th></tr></thead>
+      <tbody id="history-tbody"></tbody>
+    </table>
+  </div>
+</div>
 
 </main>
 
+<!-- CSV column picker modal -->
+<div id="csv-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:12px;padding:24px;max-width:360px;width:90%;box-shadow:0 20px 40px rgba(0,0,0,0.2)">
+    <div style="font-size:0.9rem;font-weight:700;margin-bottom:12px;color:#1E293B">Select Numeric Column</div>
+    <select id="csv-col-select" style="width:100%;margin-bottom:14px"></select>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-ghost" id="csv-modal-cancel">Cancel</button>
+      <button class="run-btn" id="csv-modal-confirm">Import</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════
 //  STATE
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════
 let dataType     = 'items';
 let forecastType = 'sprints';
-let parsedData   = [];
+let appMode      = 'backlog'; // 'backlog' | 'items'
+let parsedData   = [];        // all parsed values
+let excludedIdx  = new Set(); // indices of excluded sprints
+let scenarios    = [];        // [{label, backlog, color}]
+let csvParsed    = null;      // temp for CSV import
 
 let chartThroughput = null;
 let chartDist       = null;
 let chartCum        = null;
+let chartBurndown   = null;
 
 const CONF_LEVELS = [50, 75, 85, 95];
-const CONF_COLORS = { 50: '#F59E0B', 75: '#10B981', 85: '#3B82F6', 95: '#8B5CF6' };
+const CONF_COLORS = { 50:'#F59E0B', 75:'#10B981', 85:'#3B82F6', 95:'#8B5CF6' };
+const SCENARIO_COLORS = ['#6366F1','#10B981','#F59E0B','#EF4444','#8B5CF6'];
 
-const SAMPLE_DATA_ITEMS  = [23, 31, 18, 27, 34, 22, 29, 25, 19, 33, 28, 24, 30, 26, 21, 35, 17, 28];
-const SAMPLE_DATA_POINTS = [42, 55, 38, 61, 48, 53, 45, 59, 41, 67, 50, 44, 57, 49, 63, 46];
+const SAMPLE_DATA_ITEMS  = [23,31,18,27,34,22,29,25,19,33,28,24,30,26,21,35,17,28];
+const SAMPLE_DATA_POINTS = [42,55,38,61,48,53,45,59,41,67,50,44,57,49,63,46];
 
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════
 //  PARSING & STATS
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════
 function parseData(text) {
-  const values = text
-    .split(/[\n,;\t]+/)
-    .map(s => s.trim())
-    .filter(Boolean)
-    .map(Number);
-
+  const values = text.split(/[\n,;\t]+/).map(s=>s.trim()).filter(Boolean).map(Number);
   if (values.some(isNaN)) return { error: 'Some values could not be parsed. Use numbers separated by commas or new lines.' };
-  if (values.some(v => v < 0)) return { error: 'Throughput values cannot be negative.' };
+  if (values.some(v=>v<0)) return { error: 'Throughput values cannot be negative.' };
   return { values };
 }
 
 function calcStats(arr) {
   const n = arr.length;
-  const avg = arr.reduce((a, b) => a + b, 0) / n;
-  const sorted = [...arr].sort((a, b) => a - b);
-  const median = n % 2 === 0
-    ? (sorted[n/2 - 1] + sorted[n/2]) / 2
-    : sorted[Math.floor(n/2)];
-  const min = sorted[0];
-  const max = sorted[n - 1];
-  const std = Math.sqrt(arr.reduce((a, b) => a + (b - avg) ** 2, 0) / n);
-  return { n, avg, median, min, max, std };
+  if (!n) return null;
+  const avg = arr.reduce((a,b)=>a+b,0)/n;
+  const sorted = [...arr].sort((a,b)=>a-b);
+  const median = n%2===0 ? (sorted[n/2-1]+sorted[n/2])/2 : sorted[Math.floor(n/2)];
+  const std = Math.sqrt(arr.reduce((a,b)=>a+(b-avg)**2,0)/n);
+  return { n, avg, median, min:sorted[0], max:sorted[n-1], std };
 }
 
-// ─────────────────────────────────────────────
-//  MONTE CARLO
-// ─────────────────────────────────────────────
-function simulate(throughput, backlog, simCount) {
-  const results = [];
+function linearRegression(arr) {
+  const n = arr.length;
+  if (n < 2) return { slope: 0, intercept: 0 };
+  let sumX=0,sumY=0,sumXY=0,sumXX=0;
+  for (let i=0;i<n;i++) { sumX+=i; sumY+=arr[i]; sumXY+=i*arr[i]; sumXX+=i*i; }
+  const slope = (n*sumXY - sumX*sumY)/(n*sumXX - sumX*sumX);
+  const intercept = (sumY - slope*sumX)/n;
+  return { slope, intercept };
+}
+
+function getActiveData() {
+  return parsedData.filter((_,i) => !excludedIdx.has(i));
+}
+
+function capacityScaledData(active) {
+  const cur = parseFloat(document.getElementById('team-current').value);
+  const hist = parseFloat(document.getElementById('team-historical').value);
+  if (!isNaN(cur) && !isNaN(hist) && hist > 0 && cur !== hist) {
+    const ratio = cur/hist;
+    return active.map(v => v*ratio);
+  }
+  return active;
+}
+
+// ═════════════════════════════════════════════════════════════════
+//  MONTE CARLO — Backlog→Sprints
+// ═════════════════════════════════════════════════════════════════
+function simulate(throughput, backlog, simCount, growthPct) {
+  const growth = (growthPct||0)/100;
   const n = throughput.length;
-  for (let i = 0; i < simCount; i++) {
-    let total = 0, sprints = 0;
-    while (total < backlog) {
-      total += throughput[Math.floor(Math.random() * n)];
-      if (++sprints > 5000) break; // safety guard
+  const results = [];
+  for (let i=0; i<simCount; i++) {
+    let remaining = backlog, sprints = 0;
+    const original = backlog;
+    while (remaining > 0) {
+      remaining -= throughput[Math.floor(Math.random()*n)];
+      sprints++;
+      if (growth > 0) remaining += original * growth;
+      if (sprints > 5000) break;
     }
     results.push(sprints);
   }
-  return results.sort((a, b) => a - b);
+  return results.sort((a,b)=>a-b);
+}
+
+// ═════════════════════════════════════════════════════════════════
+//  MONTE CARLO — Sprints→Items (all paths tracked for burndown)
+// ═════════════════════════════════════════════════════════════════
+function simulateItemsInSprints(throughput, numSprints, simCount) {
+  const n = throughput.length;
+  const totals = [];
+  for (let i=0; i<simCount; i++) {
+    let total = 0;
+    for (let s=0; s<numSprints; s++) total += throughput[Math.floor(Math.random()*n)];
+    totals.push(total);
+  }
+  return totals.sort((a,b)=>a-b);
+}
+
+// Burndown: track remaining items at each sprint for each path
+function simulateWithPaths(throughput, backlog, simCount, growthPct) {
+  const growth = (growthPct||0)/100;
+  const n = throughput.length;
+  const p95sprints = Math.ceil(simCount * 0.95); // we'll collect up to p95 max
+  // We need to know max sprints first — run a quick estimate
+  const quickSorted = simulate(throughput, backlog, Math.min(simCount, 1000), growthPct);
+  const maxSprints = quickSorted[Math.floor(quickSorted.length*0.97)] + 2;
+
+  // paths[s] = array of remaining at end of sprint s across all simulations
+  const paths = Array.from({length: maxSprints+1}, ()=>[]);
+
+  const results = [];
+  for (let i=0; i<simCount; i++) {
+    let remaining = backlog, sprints = 0;
+    const original = backlog;
+    while (remaining > 0 && sprints < maxSprints) {
+      remaining -= throughput[Math.floor(Math.random()*n)];
+      if (growth > 0 && remaining > 0) remaining += original * growth;
+      sprints++;
+      paths[sprints].push(Math.max(0, remaining));
+    }
+    // Fill remaining sprints with 0 if done early
+    for (let s = sprints+1; s <= maxSprints; s++) paths[s].push(0);
+    results.push(sprints > maxSprints ? maxSprints : sprints);
+  }
+  results.sort((a,b)=>a-b);
+  return { sorted: results, paths, maxSprints };
 }
 
 function percentile(sorted, p) {
-  const idx = Math.ceil((p / 100) * sorted.length) - 1;
-  return sorted[Math.max(0, idx)];
+  if (!sorted.length) return 0;
+  const idx = Math.ceil((p/100)*sorted.length)-1;
+  return sorted[Math.max(0,idx)];
 }
 
-// ─────────────────────────────────────────────
-//  HISTOGRAM / CUMULATIVE DATA
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════
+//  HISTOGRAM & CUMULATIVE
+// ═════════════════════════════════════════════════════════════════
 function buildHistogram(sorted) {
-  const rawMin = sorted[0], rawMax = sorted[sorted.length - 1];
-  // Always show at least a window of ±3 around the result so chart isn't a single spike
-  const min = Math.max(1, rawMin - 2);
-  const max = rawMax + 2;
-  const range = max - min + 1;
-  const binSize = range > 60 ? Math.ceil(range / 40) : 1;
-
+  const rawMin = sorted[0], rawMax = sorted[sorted.length-1];
+  const min = Math.max(1, rawMin-2), max = rawMax+2;
+  const range = max-min+1;
+  const binSize = range > 60 ? Math.ceil(range/40) : 1;
   const counts = {};
-  for (const v of sorted) {
-    const b = Math.floor((v - min) / binSize) * binSize + min;
-    counts[b] = (counts[b] || 0) + 1;
-  }
-
-  const labels = [], data = [], binStarts = [];
-  for (let i = min; i <= max; i += binSize) {
+  for (const v of sorted) { const b = Math.floor((v-min)/binSize)*binSize+min; counts[b]=(counts[b]||0)+1; }
+  const labels=[], data=[], binStarts=[];
+  for (let i=min; i<=max; i+=binSize) {
     binStarts.push(i);
-    labels.push(binSize === 1 ? String(i) : `${i}–${Math.min(i + binSize - 1, max)}`);
-    data.push(((counts[i] || 0) / sorted.length) * 100);
+    labels.push(binSize===1 ? String(i) : `${i}–${Math.min(i+binSize-1,max)}`);
+    data.push(((counts[i]||0)/sorted.length)*100);
   }
   return { labels, data, binStarts, binSize };
 }
 
 function buildCumulative(sorted) {
-  const rawMin = sorted[0], rawMax = sorted[sorted.length - 1];
-  const min = Math.max(1, rawMin - 2);
-  const max = rawMax + 2;
+  const rawMin = sorted[0], rawMax = sorted[sorted.length-1];
+  const min = Math.max(1, rawMin-2), max = rawMax+2;
   const counts = {};
-  for (const v of sorted) counts[v] = (counts[v] || 0) + 1;
-
-  const points = [];
-  let cum = 0;
-  for (let i = min; i <= max; i++) {
-    cum += (counts[i] || 0);
-    points.push({ x: i, y: (cum / sorted.length) * 100 });
-  }
+  for (const v of sorted) counts[v]=(counts[v]||0)+1;
+  const points = []; let cum=0;
+  for (let i=min; i<=max; i++) { cum+=(counts[i]||0); points.push({x:i,y:(cum/sorted.length)*100}); }
   return points;
 }
 
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════
 //  DATE HELPERS
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════
 function sprintsToDate(sprints, lengthDays, startStr) {
   const d = new Date(startStr);
-  d.setDate(d.getDate() + sprints * lengthDays);
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  d.setDate(d.getDate() + sprints*lengthDays);
+  return d.toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
 }
 
-// ─────────────────────────────────────────────
-//  RENDER THROUGHPUT MINI-CHART
-// ─────────────────────────────────────────────
-function renderThroughputChart(data) {
+function dateToSprints(dateStr, sprintLenDays, startStr) {
+  const start = new Date(startStr), target = new Date(dateStr);
+  const diff = Math.floor((target - start) / (1000*60*60*24));
+  return Math.floor(diff / sprintLenDays);
+}
+
+// ═════════════════════════════════════════════════════════════════
+//  RENDER THROUGHPUT CHART
+// ═════════════════════════════════════════════════════════════════
+function renderThroughputChart(active, allData) {
   const ctx = document.getElementById('throughput-chart').getContext('2d');
   if (chartThroughput) chartThroughput.destroy();
-
-  const avg = data.reduce((a, b) => a + b, 0) / data.length;
-  const unit = dataType === 'items' ? 'items' : 'pts';
-
+  if (!active.length) return;
+  const avg = active.reduce((a,b)=>a+b,0)/active.length;
+  const unit = dataType==='items' ? 'items' : 'pts';
+  const labels = allData.map((_,i) => `S${i+1}`);
+  const bgColors = allData.map((_,i) => excludedIdx.has(i) ? 'rgba(203,213,225,0.3)' : (allData[i]>=avg ? 'rgba(99,102,241,0.75)' : 'rgba(99,102,241,0.35)'));
   chartThroughput = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: data.map((_, i) => `S${i + 1}`),
+      labels,
       datasets: [
-        {
-          label: 'Throughput',
-          data,
-          backgroundColor: data.map(v => v >= avg ? 'rgba(99,102,241,0.7)' : 'rgba(99,102,241,0.3)'),
-          borderRadius: 3,
-          borderSkipped: false,
-        },
-        {
-          type: 'line',
-          label: 'Avg',
-          data: data.map(() => avg),
-          borderColor: '#F43F5E',
-          borderWidth: 1.5,
-          borderDash: [4, 4],
-          pointRadius: 0,
-          tension: 0,
-        }
+        { label:'Throughput', data: allData, backgroundColor: bgColors, borderRadius:3, borderSkipped:false },
+        { type:'line', label:'Avg', data: allData.map(()=>avg), borderColor:'#F43F5E', borderWidth:1.5, borderDash:[4,4], pointRadius:0, tension:0 }
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: { duration: 300 },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: items => items[0].dataset.label === 'Avg'
-              ? `Average: ${avg.toFixed(1)} ${unit}`
-              : `Sprint ${items[0].dataIndex + 1}`,
-            label: ctx => ctx.dataset.label === 'Avg'
-              ? null
-              : `${ctx.raw} ${unit}`,
-          },
-          filter: item => item.dataset.label !== 'Avg' || false,
-        }
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#94A3B8' } },
-        y: {
-          beginAtZero: true,
-          grid: { color: '#F1F5F9' },
-          ticks: { font: { size: 10 }, color: '#94A3B8' }
-        }
-      }
+      responsive:true, maintainAspectRatio:false, animation:{duration:300},
+      plugins: { legend:{display:false}, tooltip:{ filter:item=>item.dataset.label==='Throughput', callbacks:{ title:items=>`Sprint ${items[0].dataIndex+1}`, label:ctx=>`${ctx.raw} ${unit}` } } },
+      scales: { x:{grid:{display:false},ticks:{font:{size:9},color:'#94A3B8'}}, y:{beginAtZero:true,grid:{color:'#F1F5F9'},ticks:{font:{size:9},color:'#94A3B8'}} }
     }
   });
 }
 
-// ─────────────────────────────────────────────
-//  RENDER DISTRIBUTION CHART
-// ─────────────────────────────────────────────
-function renderDistChart(sorted, percs) {
+// ═════════════════════════════════════════════════════════════════
+//  RENDER DISTRIBUTION CHART (with optional scenario overlays)
+// ═════════════════════════════════════════════════════════════════
+function renderDistChart(sorted, percs, scenarioSortedArr) {
   const ctx = document.getElementById('dist-chart').getContext('2d');
   if (chartDist) chartDist.destroy();
-
-  const { labels, data, binStarts } = buildHistogram(sorted);
-
+  const {labels, data, binStarts} = buildHistogram(sorted);
   const colors = binStarts.map(b => {
-    if (b <= percs[50]) return 'rgba(245,158,11,0.85)';
-    if (b <= percs[75]) return 'rgba(16,185,129,0.85)';
-    if (b <= percs[85]) return 'rgba(59,130,246,0.85)';
-    if (b <= percs[95]) return 'rgba(139,92,246,0.85)';
+    if (b<=percs[50]) return 'rgba(245,158,11,0.85)';
+    if (b<=percs[75]) return 'rgba(16,185,129,0.85)';
+    if (b<=percs[85]) return 'rgba(59,130,246,0.85)';
+    if (b<=percs[95]) return 'rgba(139,92,246,0.85)';
     return 'rgba(203,213,225,0.7)';
   });
+  const datasets = [{ label:'Main', data, backgroundColor:colors, borderRadius:3, borderSkipped:false }];
+
+  // Overlay scenarios
+  if (scenarioSortedArr && scenarioSortedArr.length) {
+    scenarioSortedArr.forEach(({sorted:ss, label, color}, idx) => {
+      const {data:sd, labels:sl, binStarts:sbs} = buildHistogram(ss);
+      // Align to main labels
+      const aligned = labels.map(lbl => {
+        const i = sl.indexOf(lbl);
+        return i>=0 ? sd[i] : 0;
+      });
+      datasets.push({
+        type:'line', label, data:aligned, borderColor:color, borderWidth:2,
+        pointRadius:0, fill:false, tension:0.3,
+        backgroundColor:'transparent'
+      });
+    });
+  }
 
   chartDist = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        data,
-        backgroundColor: colors,
-        borderRadius: 4,
-        borderSkipped: false,
-      }]
-    },
+    type:'bar',
+    data: { labels, datasets },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: { duration: 500 },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: items => `${items[0].label} sprints`,
-            label: ctx => `${ctx.raw.toFixed(1)}% of simulations`
-          }
-        }
-      },
+      responsive:true, maintainAspectRatio:false, animation:{duration:500},
+      plugins: { legend:{display:!!(scenarioSortedArr&&scenarioSortedArr.length),labels:{font:{size:10}}}, tooltip:{ filter:item=>item.dataset.label==='Main', callbacks:{ title:items=>`${items[0].label} sprints`, label:ctx=>`${ctx.raw.toFixed(1)}% of simulations` } } },
       scales: {
-        x: {
-          title: { display: true, text: 'Sprints to Complete Backlog', font: { size: 10 }, color: '#94A3B8' },
-          grid: { display: false },
-          ticks: { font: { size: 10 }, color: '#94A3B8' }
-        },
-        y: {
-          title: { display: true, text: '% of Simulations', font: { size: 10 }, color: '#94A3B8' },
-          grid: { color: '#F1F5F9' },
-          ticks: { font: { size: 10 }, color: '#94A3B8', callback: v => v + '%' }
-        }
+        x:{ title:{display:true,text:'Sprints',font:{size:9},color:'#94A3B8'}, grid:{display:false}, ticks:{font:{size:9},color:'#94A3B8'} },
+        y:{ title:{display:true,text:'% Simulations',font:{size:9},color:'#94A3B8'}, grid:{color:'#F1F5F9'}, ticks:{font:{size:9},color:'#94A3B8',callback:v=>v+'%'} }
       }
     }
   });
 }
 
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════
 //  RENDER CUMULATIVE CHART
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════
 function renderCumChart(sorted, percs) {
   const ctx = document.getElementById('cum-chart').getContext('2d');
   if (chartCum) chartCum.destroy();
-
   const points = buildCumulative(sorted);
-  const min = sorted[0];
-  const max = sorted[sorted.length - 1];
+  const minX = sorted[0], maxX = sorted[sorted.length-1];
+  const gradient = ctx.createLinearGradient(0,0,0,220);
+  gradient.addColorStop(0,'rgba(99,102,241,0.22)');
+  gradient.addColorStop(1,'rgba(99,102,241,0)');
 
-  // Build gradient
-  const gradient = ctx.createLinearGradient(0, 0, 0, 240);
-  gradient.addColorStop(0, 'rgba(99,102,241,0.25)');
-  gradient.addColorStop(1, 'rgba(99,102,241,0)');
-
-  // Reference lines as extra datasets (avoids annotation plugin)
   const refDatasets = [];
-  [[50, '#F59E0B'], [75, '#10B981'], [85, '#3B82F6'], [95, '#8B5CF6']].forEach(([p, color]) => {
-    const sprint = percs[p];
-    // horizontal line at p%
-    refDatasets.push({
-      data: [{ x: min, y: p }, { x: max, y: p }],
-      borderColor: color,
-      borderWidth: 1,
-      borderDash: [5, 4],
-      pointRadius: 0,
-      fill: false,
-      tension: 0,
-      label: `${p}%`,
-    });
-    // vertical line at sprint count
-    refDatasets.push({
-      data: [{ x: sprint, y: 0 }, { x: sprint, y: p }],
-      borderColor: color,
-      borderWidth: 1,
-      borderDash: [5, 4],
-      pointRadius: 0,
-      fill: false,
-      tension: 0,
-      label: `_v${p}`,
-    });
+  [[50,'#F59E0B'],[75,'#10B981'],[85,'#3B82F6'],[95,'#8B5CF6']].forEach(([p,color])=>{
+    const sp = percs[p];
+    refDatasets.push({ data:[{x:minX,y:p},{x:maxX,y:p}], borderColor:color, borderWidth:1, borderDash:[5,4], pointRadius:0, fill:false, tension:0, label:`${p}%` });
+    refDatasets.push({ data:[{x:sp,y:0},{x:sp,y:p}], borderColor:color, borderWidth:1, borderDash:[5,4], pointRadius:0, fill:false, tension:0, label:`_v${p}` });
   });
 
   chartCum = new Chart(ctx, {
-    type: 'line',
-    data: {
-      datasets: [
-        {
-          data: points,
-          borderColor: '#6366F1',
-          borderWidth: 2.5,
-          backgroundColor: gradient,
-          fill: true,
-          pointRadius: 0,
-          tension: 0.4,
-          label: 'Probability',
-        },
-        ...refDatasets
-      ]
-    },
+    type:'line',
+    data: { datasets:[{ data:points, borderColor:'#6366F1', borderWidth:2.5, backgroundColor:gradient, fill:true, pointRadius:0, tension:0.4, label:'Probability' }, ...refDatasets] },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: { duration: 500 },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          filter: item => item.dataset.label === 'Probability',
-          callbacks: {
-            title: items => `Sprint ${items[0].parsed.x}`,
-            label: ctx => `${ctx.parsed.y.toFixed(1)}% probability of completion`
-          }
-        }
-      },
+      responsive:true, maintainAspectRatio:false, animation:{duration:500},
+      plugins: { legend:{display:false}, tooltip:{ filter:item=>item.dataset.label==='Probability', callbacks:{ title:items=>`Sprint ${items[0].parsed.x}`, label:ctx=>`${ctx.parsed.y.toFixed(1)}% probability` } } },
       scales: {
-        x: {
-          type: 'linear',
-          title: { display: true, text: 'Sprints to Complete Backlog', font: { size: 10 }, color: '#94A3B8' },
-          grid: { color: '#F1F5F9' },
-          ticks: { font: { size: 10 }, color: '#94A3B8', stepSize: 1 }
-        },
-        y: {
-          min: 0, max: 100,
-          title: { display: true, text: 'Probability of Completion (%)', font: { size: 10 }, color: '#94A3B8' },
-          grid: { color: '#F1F5F9' },
-          ticks: { font: { size: 10 }, color: '#94A3B8', callback: v => v + '%' }
-        }
+        x:{ type:'linear', title:{display:true,text:'Sprints',font:{size:9},color:'#94A3B8'}, grid:{color:'#F1F5F9'}, ticks:{font:{size:9},color:'#94A3B8',stepSize:1} },
+        y:{ min:0,max:100, title:{display:true,text:'Probability (%)',font:{size:9},color:'#94A3B8'}, grid:{color:'#F1F5F9'}, ticks:{font:{size:9},color:'#94A3B8',callback:v=>v+'%'} }
       }
     }
   });
 }
 
-// ─────────────────────────────────────────────
-//  DISPLAY RESULTS
-// ─────────────────────────────────────────────
-function displayResults(sorted, simCount) {
-  const percs = {};
-  CONF_LEVELS.forEach(p => { percs[p] = percentile(sorted, p); });
-
-  const showDate = forecastType === 'date' || forecastType === 'both';
-  const showSprints = forecastType === 'sprints' || forecastType === 'both';
-  const sprintLen = parseInt(document.getElementById('sprint-length').value) || 14;
-  const startDate = document.getElementById('start-date').value;
-
-  CONF_LEVELS.forEach(p => {
-    const s = percs[p];
-    document.getElementById(`v${p}-sprints`).textContent = s;
-    document.getElementById(`v${p}-unit`).textContent = `sprint${s !== 1 ? 's' : ''}`;
-    document.getElementById(`v${p}-sprints`).style.display = showSprints ? '' : 'none';
-    document.getElementById(`v${p}-unit`).style.display = showSprints ? '' : 'none';
-
-    const dateEl = document.getElementById(`v${p}-date`);
-    if (showDate && startDate) {
-      dateEl.textContent = sprintsToDate(s, sprintLen, startDate);
-      dateEl.classList.remove('hidden');
+// ═════════════════════════════════════════════════════════════════
+//  RENDER BURNDOWN CHART
+// ═════════════════════════════════════════════════════════════════
+function renderBurndownChart(paths, maxSprints, backlog, p95val) {
+  const ctx = document.getElementById('burndown-chart').getContext('2d');
+  if (chartBurndown) chartBurndown.destroy();
+  const nSprints = Math.min(p95val+2, maxSprints);
+  const labels = Array.from({length:nSprints+1},(_,i)=>i);
+  const p50data=[backlog], p85data=[backlog], p95data=[backlog];
+  for (let s=1; s<=nSprints; s++) {
+    const sp = paths[s] ? [...paths[s]].sort((a,b)=>a-b) : [];
+    if (sp.length) {
+      p50data.push(percentile(sp,50));
+      p85data.push(percentile(sp,85));
+      p95data.push(percentile(sp,95));
     } else {
-      dateEl.classList.add('hidden');
+      p50data.push(0); p85data.push(0); p95data.push(0);
+    }
+  }
+  chartBurndown = new Chart(ctx, {
+    type:'line',
+    data: {
+      labels,
+      datasets:[
+        { label:'p50', data:p50data, borderColor:'#F59E0B', borderWidth:2, pointRadius:0, fill:false, tension:0.3 },
+        { label:'p85', data:p85data, borderColor:'#3B82F6', borderWidth:2, pointRadius:0, fill:false, tension:0.3 },
+        { label:'p95', data:p95data, borderColor:'#8B5CF6', borderWidth:2, pointRadius:0, fill:false, tension:0.3 },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false, animation:{duration:500},
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ title:items=>`Sprint ${items[0].parsed.x}`, label:ctx=>`${ctx.dataset.label}: ${Math.round(ctx.parsed.y)} remaining` } } },
+      scales:{
+        x:{ title:{display:true,text:'Sprint',font:{size:9},color:'#94A3B8'}, grid:{color:'#F1F5F9'}, ticks:{font:{size:9},color:'#94A3B8'} },
+        y:{ title:{display:true,text:'Items Remaining',font:{size:9},color:'#94A3B8'}, beginAtZero:true, grid:{color:'#F1F5F9'}, ticks:{font:{size:9},color:'#94A3B8'} }
+      }
     }
   });
-
-  renderDistChart(sorted, percs);
-  renderCumChart(sorted, percs);
-
-  const elapsed = ((Date.now() - window._runStart) / 1000).toFixed(2);
-  document.getElementById('sim-meta').textContent =
-    `${simCount.toLocaleString()} simulations · completed in ${elapsed}s`;
-
-  document.getElementById('results-section').classList.remove('hidden');
-  document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════
+//  DISPLAY RESULTS
+// ═════════════════════════════════════════════════════════════════
+function displayResults(sortedResult, simCount, backlog, growthPct) {
+  const percs = {};
+  CONF_LEVELS.forEach(p=>{ percs[p]=percentile(sortedResult,p); });
+
+  const showDate = forecastType==='date' || forecastType==='both';
+  const showSprints = forecastType==='sprints' || forecastType==='both';
+  const sprintLen = parseInt(document.getElementById('sprint-length').value)||14;
+  const startDate = document.getElementById('start-date').value;
+
+  CONF_LEVELS.forEach(p=>{
+    const s=percs[p];
+    const spEl = document.getElementById(`v${p}-sprints`);
+    const unitEl = document.getElementById(`v${p}-unit`);
+    const dateEl = document.getElementById(`v${p}-date`);
+    spEl.textContent=s;
+    unitEl.textContent=`sprint${s!==1?'s':''}`;
+    spEl.style.display=showSprints?'':'none';
+    unitEl.style.display=showSprints?'':'none';
+    if (showDate && startDate) { dateEl.textContent=sprintsToDate(s,sprintLen,startDate); dateEl.classList.remove('hidden'); }
+    else dateEl.classList.add('hidden');
+  });
+
+  // Target date badge
+  const targetDateVal = document.getElementById('target-date').value;
+  const tdResult = document.getElementById('target-date-result');
+  if (targetDateVal && startDate) {
+    const targetSprints = dateToSprints(targetDateVal, sprintLen, startDate);
+    if (targetSprints > 0) {
+      const probCount = sortedResult.filter(v=>v<=targetSprints).length;
+      const prob = Math.round((probCount/sortedResult.length)*100);
+      const badge = document.getElementById('target-prob-badge');
+      badge.textContent=`${prob}% chance of hitting target`;
+      badge.className = 'target-badge ' + (prob>=85?'good':prob>=60?'warn':'bad');
+      tdResult.classList.remove('hidden');
+    } else tdResult.classList.add('hidden');
+  } else tdResult.classList.add('hidden');
+
+  // Scenarios
+  const activeScenarios = scenarios.filter(s=>s.backlog && s.label);
+  const scSection = document.getElementById('scenarios-results');
+  const scRows = document.getElementById('scenarios-conf-rows');
+  const active = getActiveData();
+  const scaled = capacityScaledData(active);
+  const scenarioSortedArr = [];
+  if (activeScenarios.length) {
+    scRows.innerHTML='';
+    activeScenarios.forEach((sc,idx)=>{
+      const srt = simulate(scaled, sc.backlog, simCount, growthPct);
+      const sp={};CONF_LEVELS.forEach(p=>{sp[p]=percentile(srt,p);});
+      const row = document.createElement('div');
+      row.className='scenario-conf-row';
+      row.innerHTML=`<div class="scenario-label-cell" style="display:flex;align-items:center;gap:6px"><div class="scenario-dot" style="background:${sc.color}"></div>${escHtml(sc.label)}</div>`
+        +CONF_LEVELS.map(p=>`<div class="scenario-val-cell" style="color:${CONF_COLORS[p]}">${sp[p]}</div>`).join('');
+      scRows.appendChild(row);
+      scenarioSortedArr.push({sorted:srt, label:sc.label, color:sc.color});
+    });
+    scSection.classList.remove('hidden');
+  } else scSection.classList.add('hidden');
+
+  // Charts
+  renderDistChart(sortedResult, percs, scenarioSortedArr);
+  renderCumChart(sortedResult, percs);
+
+  // Burndown — run full path simulation
+  const {sorted:s2, paths, maxSprints} = simulateWithPaths(scaled, backlog, Math.min(simCount,2000), growthPct);
+  renderBurndownChart(paths, maxSprints, backlog, percs[95]);
+
+  const elapsed = ((Date.now()-window._runStart)/1000).toFixed(2);
+  document.getElementById('sim-meta').textContent = `${simCount.toLocaleString()} simulations · ${elapsed}s`;
+  document.getElementById('results-section').classList.remove('hidden');
+  document.getElementById('results-section').scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  // Save to history
+  saveHistory({ backlog, p50:percs[50], p75:percs[75], p85:percs[85], p95:percs[95] });
+  renderHistory();
+
+  // Store last result for export
+  window._lastResult = { sorted:sortedResult, percs, backlog, simCount, sprintLen, startDate, showDate };
+}
+
+function displayItemsResults(sorted) {
+  document.getElementById('i50').textContent = percentile(sorted,50);
+  document.getElementById('i75').textContent = percentile(sorted,75);
+  document.getElementById('i85').textContent = percentile(sorted,85);
+  document.getElementById('i95').textContent = percentile(sorted,95);
+  document.getElementById('items-results-section').classList.remove('hidden');
+  document.getElementById('items-results-section').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ═════════════════════════════════════════════════════════════════
 //  UI HELPERS
-// ─────────────────────────────────────────────
-function updateStats(data) {
-  if (!data.length) {
+// ═════════════════════════════════════════════════════════════════
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function updateStats() {
+  const allData = parsedData;
+  const active = getActiveData();
+  if (!active.length) {
     document.getElementById('data-stats').classList.add('hidden');
     document.getElementById('mini-chart-wrap').classList.add('hidden');
+    document.getElementById('chips-row').classList.add('hidden');
     return;
   }
-  const s = calcStats(data);
-  document.getElementById('stat-count').textContent = s.n;
+  const s = calcStats(active);
+  document.getElementById('stat-count').textContent = allData.length;
+  document.getElementById('stat-active').textContent = `${active.length} active`;
   document.getElementById('stat-avg').textContent = s.avg.toFixed(1);
   document.getElementById('stat-median').textContent = s.median;
   document.getElementById('stat-min').textContent = s.min;
@@ -900,115 +864,421 @@ function updateStats(data) {
   document.getElementById('stat-std').textContent = s.std.toFixed(1);
   document.getElementById('data-stats').classList.remove('hidden');
   document.getElementById('mini-chart-wrap').classList.remove('hidden');
-  renderThroughputChart(data);
+  renderThroughputChart(active, allData);
+  renderChips();
+  checkTrend(active);
+  checkCapacityNote();
+}
+
+function renderChips() {
+  const row = document.getElementById('chips-row');
+  row.innerHTML = '';
+  parsedData.forEach((v,i)=>{
+    const chip = document.createElement('span');
+    chip.className = 'sprint-chip' + (excludedIdx.has(i)?' excluded':'');
+    chip.textContent = `S${i+1}: ${v}`;
+    chip.addEventListener('click',()=>{ if (excludedIdx.has(i)) excludedIdx.delete(i); else excludedIdx.add(i); updateStats(); updateRunButton(); });
+    row.appendChild(chip);
+  });
+  row.classList.remove('hidden');
+}
+
+function checkTrend(active) {
+  const banner = document.getElementById('trend-banner');
+  if (active.length < 3) { banner.classList.add('hidden'); return; }
+  const mean = active.reduce((a,b)=>a+b,0)/active.length;
+  const { slope } = linearRegression(active);
+  const threshold = 0.10 * mean;
+  if (slope > threshold) {
+    banner.className='warning-banner yellow';
+    banner.textContent='Velocity trending up — sampling flat history may underestimate throughput.';
+    banner.classList.remove('hidden');
+  } else if (slope < -threshold) {
+    banner.className='warning-banner red';
+    banner.textContent='Velocity trending down — forecast may be optimistic.';
+    banner.classList.remove('hidden');
+  } else banner.classList.add('hidden');
+}
+
+function checkCapacityNote() {
+  const cur = parseFloat(document.getElementById('team-current').value);
+  const hist = parseFloat(document.getElementById('team-historical').value);
+  const note = document.getElementById('capacity-note');
+  if (!isNaN(cur) && !isNaN(hist) && hist>0 && cur!==hist) {
+    const ratio = (cur/hist).toFixed(2);
+    note.textContent = `Throughput scaled by ×${ratio} based on team capacity (${cur} vs ${hist} historical avg).`;
+    note.classList.remove('hidden');
+  } else note.classList.add('hidden');
 }
 
 function updateRunButton() {
-  const backlog = parseFloat(document.getElementById('backlog-size').value);
-  const ok = parsedData.length >= 1 && !isNaN(backlog) && backlog > 0;
-  document.getElementById('run-btn').disabled = !ok;
+  if (appMode==='backlog') {
+    const backlog = parseFloat(document.getElementById('backlog-size').value);
+    const ok = getActiveData().length>=1 && !isNaN(backlog) && backlog>0;
+    document.getElementById('run-btn').disabled=!ok;
+  } else {
+    const sp = parseFloat(document.getElementById('items-sprints').value);
+    const ok = getActiveData().length>=1 && !isNaN(sp) && sp>0;
+    document.getElementById('run-items-btn').disabled=!ok;
+  }
 }
 
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════
+//  SCENARIOS
+// ═════════════════════════════════════════════════════════════════
+const SCENARIO_DEFAULTS = [{label:'Optimistic',backlog:''},{label:'Realistic',backlog:''},{label:'Pessimistic',backlog:''}];
+
+function renderScenariosList() {
+  const list = document.getElementById('scenarios-list');
+  list.innerHTML='';
+  scenarios.forEach((sc,idx)=>{
+    const row = document.createElement('div');
+    row.className='scenario-row';
+    row.innerHTML=`<div class="scenario-dot" style="background:${sc.color}"></div>`
+      +`<div class="field"><label>Label</label><input type="text" value="${escHtml(sc.label)}" data-sc-idx="${idx}" data-sc-field="label" style="min-width:100px"></div>`
+      +`<div class="field"><label>Backlog</label><input type="number" value="${sc.backlog||''}" data-sc-idx="${idx}" data-sc-field="backlog" placeholder="e.g. 150" style="min-width:80px"></div>`
+      +`<button class="btn-ghost" data-sc-remove="${idx}" style="color:#EF4444;border-color:#FCA5A5;margin-left:auto">Remove</button>`;
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('add-scenario-btn').addEventListener('click',()=>{
+  if (scenarios.length>=5) return;
+  const def = SCENARIO_DEFAULTS[scenarios.length] || {label:`Scenario ${scenarios.length+1}`,backlog:''};
+  scenarios.push({label:def.label, backlog:def.backlog||'', color:SCENARIO_COLORS[scenarios.length%SCENARIO_COLORS.length]});
+  renderScenariosList();
+});
+
+document.getElementById('scenarios-list').addEventListener('input',e=>{
+  const idx = e.target.dataset.scIdx;
+  const field = e.target.dataset.scField;
+  if (idx!==undefined && field) { scenarios[parseInt(idx)][field]=e.target.value; }
+});
+
+document.getElementById('scenarios-list').addEventListener('click',e=>{
+  const idx = e.target.dataset.scRemove;
+  if (idx!==undefined) { scenarios.splice(parseInt(idx),1); renderScenariosList(); }
+});
+
+// ═════════════════════════════════════════════════════════════════
+//  LOCALSTORAGE: SAVE / LOAD / DELETE
+// ═════════════════════════════════════════════════════════════════
+function getSavedScenarios() { try { return JSON.parse(localStorage.getItem('forecaster_scenarios')||'{}'); } catch { return {}; } }
+function setSavedScenarios(obj) { localStorage.setItem('forecaster_scenarios', JSON.stringify(obj)); }
+
+function refreshLoadDropdown() {
+  const sel = document.getElementById('load-scenario-select');
+  const saved = getSavedScenarios();
+  sel.innerHTML='<option value="">— select —</option>';
+  Object.keys(saved).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=k; sel.appendChild(o); });
+}
+
+document.getElementById('save-scenario-btn').addEventListener('click',()=>{
+  const name = document.getElementById('save-name').value.trim();
+  if (!name) { alert('Enter a name to save.'); return; }
+  const saved = getSavedScenarios();
+  saved[name] = captureInputs();
+  setSavedScenarios(saved);
+  refreshLoadDropdown();
+  document.getElementById('save-name').value='';
+  alert(`Saved "${name}".`);
+});
+
+document.getElementById('load-scenario-btn').addEventListener('click',()=>{
+  const name = document.getElementById('load-scenario-select').value;
+  if (!name) return;
+  const saved = getSavedScenarios();
+  if (saved[name]) restoreInputs(saved[name]);
+});
+
+document.getElementById('delete-scenario-btn').addEventListener('click',()=>{
+  const name = document.getElementById('load-scenario-select').value;
+  if (!name) return;
+  const saved = getSavedScenarios();
+  delete saved[name];
+  setSavedScenarios(saved);
+  refreshLoadDropdown();
+});
+
+function captureInputs() {
+  return {
+    sprintData: document.getElementById('sprint-data').value,
+    backlogSize: document.getElementById('backlog-size').value,
+    simCount: document.getElementById('sim-count').value,
+    forecastType, dataType, appMode,
+    sprintLength: document.getElementById('sprint-length').value,
+    startDate: document.getElementById('start-date').value,
+    targetDate: document.getElementById('target-date').value,
+    backlogGrowth: document.getElementById('backlog-growth').value,
+    teamCurrent: document.getElementById('team-current').value,
+    teamHistorical: document.getElementById('team-historical').value,
+    itemsSprints: document.getElementById('items-sprints').value,
+    scenarios: JSON.stringify(scenarios),
+    excludedIdx: JSON.stringify([...excludedIdx])
+  };
+}
+
+function restoreInputs(data) {
+  if (data.sprintData!==undefined) { document.getElementById('sprint-data').value=data.sprintData; document.getElementById('sprint-data').dispatchEvent(new Event('input')); }
+  if (data.backlogSize) document.getElementById('backlog-size').value=data.backlogSize;
+  if (data.simCount) document.getElementById('sim-count').value=data.simCount;
+  if (data.sprintLength) document.getElementById('sprint-length').value=data.sprintLength;
+  if (data.startDate) document.getElementById('start-date').value=data.startDate;
+  if (data.targetDate) document.getElementById('target-date').value=data.targetDate;
+  if (data.backlogGrowth) document.getElementById('backlog-growth').value=data.backlogGrowth;
+  if (data.teamCurrent) document.getElementById('team-current').value=data.teamCurrent;
+  if (data.teamHistorical) document.getElementById('team-historical').value=data.teamHistorical;
+  if (data.itemsSprints) document.getElementById('items-sprints').value=data.itemsSprints;
+  if (data.scenarios) { try { scenarios=JSON.parse(data.scenarios); renderScenariosList(); } catch{} }
+  if (data.excludedIdx) { try { excludedIdx=new Set(JSON.parse(data.excludedIdx)); } catch{} }
+  if (data.forecastType) { forecastType=data.forecastType; document.querySelectorAll('#forecast-type-toggle button').forEach(b=>b.classList.toggle('active',b.dataset.forecast===forecastType)); const nd=forecastType==='date'||forecastType==='both'; document.getElementById('sprint-length-field').classList.toggle('hidden',!nd); document.getElementById('start-date-field').classList.toggle('hidden',!nd); document.getElementById('target-date-field').classList.toggle('hidden',!nd); }
+  if (data.dataType) { dataType=data.dataType; document.querySelectorAll('#data-type-toggle button').forEach(b=>b.classList.toggle('active',b.dataset.type===dataType)); }
+  if (data.appMode) { setAppMode(data.appMode); }
+  updateStats(); updateRunButton();
+}
+
+// ═════════════════════════════════════════════════════════════════
+//  COPY LINK / EXPORT CSV
+// ═════════════════════════════════════════════════════════════════
+document.getElementById('copy-link-btn').addEventListener('click',()=>{
+  const inputs = captureInputs();
+  const params = new URLSearchParams();
+  Object.entries(inputs).forEach(([k,v])=>{ if (v) params.set(k,v); });
+  const url = location.origin+location.pathname+'?'+params.toString();
+  navigator.clipboard.writeText(url).then(()=>alert('Link copied to clipboard!')).catch(()=>{ prompt('Copy this link:', url); });
+});
+
+document.getElementById('export-csv-btn').addEventListener('click',()=>{
+  const r = window._lastResult;
+  if (!r) { alert('Run a simulation first.'); return; }
+  const lines = ['Confidence %,Sprints,Date'];
+  CONF_LEVELS.forEach(p=>{
+    const s=r.percs[p];
+    const d=r.showDate && r.startDate ? sprintsToDate(s,r.sprintLen,r.startDate) : '';
+    lines.push(`${p},${s},${d}`);
+  });
+  const blob = new Blob([lines.join('\n')],{type:'text/csv'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='forecast.csv'; a.click();
+});
+
+// ═════════════════════════════════════════════════════════════════
+//  FORECAST HISTORY
+// ═════════════════════════════════════════════════════════════════
+function getHistory() { try { return JSON.parse(localStorage.getItem('forecaster_history')||'[]'); } catch { return []; } }
+function saveHistory(entry) {
+  const h=getHistory();
+  h.unshift({ts:new Date().toLocaleString(),...entry});
+  if (h.length>50) h.length=50;
+  localStorage.setItem('forecaster_history',JSON.stringify(h));
+}
+function renderHistory() {
+  const h=getHistory();
+  const empty=document.getElementById('history-empty');
+  const wrap=document.getElementById('history-table-wrap');
+  if (!h.length) { empty.classList.remove('hidden'); wrap.classList.add('hidden'); return; }
+  empty.classList.add('hidden'); wrap.classList.remove('hidden');
+  const tbody=document.getElementById('history-tbody');
+  tbody.innerHTML=h.map(r=>`<tr><td>${escHtml(r.ts)}</td><td>${r.backlog}</td><td style="color:#D97706;font-weight:600">${r.p50}</td><td style="color:#059669;font-weight:600">${r.p75}</td><td style="color:#2563EB;font-weight:600">${r.p85}</td><td style="color:#7C3AED;font-weight:600">${r.p95}</td></tr>`).join('');
+}
+document.getElementById('clear-history-btn').addEventListener('click',()=>{ if(confirm('Clear all forecast history?')){ localStorage.removeItem('forecaster_history'); renderHistory(); } });
+
+// ═════════════════════════════════════════════════════════════════
+//  CSV IMPORT
+// ═════════════════════════════════════════════════════════════════
+document.getElementById('import-csv-btn').addEventListener('click',()=>document.getElementById('csv-file-input').click());
+document.getElementById('csv-file-input').addEventListener('change',e=>{
+  const file=e.target.files[0]; if (!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const text=ev.target.result;
+    const lines=text.trim().split(/\r?\n/).filter(Boolean);
+    if (!lines.length) return;
+    const sep = lines[0].includes('\t') ? '\t' : ',';
+    const rows = lines.map(l=>l.split(sep));
+    const headers = rows[0];
+    // Find numeric columns
+    const numericCols=[];
+    headers.forEach((h,ci)=>{
+      const vals=rows.slice(1).map(r=>r[ci]?.trim()).filter(Boolean);
+      if (vals.length && vals.every(v=>!isNaN(Number(v)))) numericCols.push({ci,name:h});
+    });
+    // If no header row detected (all numbers), treat col 0
+    if (!numericCols.length) {
+      // try first col
+      const vals=rows.map(r=>r[0]?.trim()).filter(Boolean);
+      if (vals.every(v=>!isNaN(Number(v)))) { csvParsed={rows,headers:null}; importCsvColumn(0,rows,null); return; }
+      alert('No numeric columns detected.'); return;
+    }
+    if (numericCols.length===1) { importCsvColumn(numericCols[0].ci, rows, headers); return; }
+    // Show picker
+    const sel=document.getElementById('csv-col-select');
+    sel.innerHTML=numericCols.map(c=>`<option value="${c.ci}">${escHtml(c.name)}</option>`).join('');
+    csvParsed={rows,headers};
+    document.getElementById('csv-modal').style.display='flex';
+    document.getElementById('csv-modal').classList.remove('hidden');
+  };
+  reader.readAsText(file);
+  e.target.value='';
+});
+
+document.getElementById('csv-modal-confirm').addEventListener('click',()=>{
+  const ci=parseInt(document.getElementById('csv-col-select').value);
+  if (csvParsed) importCsvColumn(ci, csvParsed.rows, csvParsed.headers);
+  closeCsvModal();
+});
+document.getElementById('csv-modal-cancel').addEventListener('click',closeCsvModal);
+function closeCsvModal(){ document.getElementById('csv-modal').style.display='none'; document.getElementById('csv-modal').classList.add('hidden'); csvParsed=null; }
+
+function importCsvColumn(ci, rows, headers) {
+  const startRow = headers ? 1 : 0;
+  const vals = rows.slice(startRow).map(r=>r[ci]?.trim()).filter(v=>v&&!isNaN(Number(v))).map(Number);
+  if (!vals.length) { alert('No numeric values found in selected column.'); return; }
+  document.getElementById('sprint-data').value=vals.join(', ');
+  document.getElementById('sprint-data').dispatchEvent(new Event('input'));
+}
+
+// ═════════════════════════════════════════════════════════════════
+//  APP MODE (Backlog→Sprints | Sprints→Items)
+// ═════════════════════════════════════════════════════════════════
+function setAppMode(mode) {
+  appMode=mode;
+  document.querySelectorAll('#mode-toggle button').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+  document.getElementById('backlog-mode-settings').classList.toggle('hidden',mode!=='backlog');
+  document.getElementById('items-mode-settings').classList.toggle('hidden',mode!=='items');
+  document.getElementById('results-section').classList.add('hidden');
+  document.getElementById('items-results-section').classList.add('hidden');
+  updateRunButton();
+}
+
+document.getElementById('mode-toggle').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-mode]'); if (!btn) return;
+  setAppMode(btn.dataset.mode);
+});
+
+// ═════════════════════════════════════════════════════════════════
 //  EVENT HANDLERS
-// ─────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════
 
 // Data type toggle
-document.getElementById('data-type-toggle').addEventListener('click', e => {
-  const btn = e.target.closest('[data-type]');
-  if (!btn) return;
-  dataType = btn.dataset.type;
-  document.querySelectorAll('#data-type-toggle .toggle').forEach(b => b.classList.toggle('active', b === btn));
-  document.getElementById('backlog-label').textContent =
-    dataType === 'items' ? 'Backlog Size (items)' : 'Backlog Size (points)';
-  document.getElementById('sprint-data').placeholder =
-    dataType === 'items'
-      ? 'Paste throughput per sprint — comma or newline separated.\nExample:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33'
-      : 'Paste story points per sprint — comma or newline separated.\nExample:  42, 55, 38, 61, 48, 53, 45, 59, 41, 67';
+document.getElementById('data-type-toggle').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-type]'); if (!btn) return;
+  dataType=btn.dataset.type;
+  document.querySelectorAll('#data-type-toggle button').forEach(b=>b.classList.toggle('active',b===btn));
+  document.getElementById('backlog-label').textContent=dataType==='items'?'Backlog Size (items)':'Backlog Size (points)';
+  document.getElementById('sprint-data').placeholder=dataType==='items'
+    ?'Paste throughput per sprint — comma or newline separated.\nExample:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33'
+    :'Paste story points per sprint — comma or newline separated.\nExample:  42, 55, 38, 61, 48, 53, 45, 59, 41, 67';
 });
 
 // Forecast type toggle
-document.getElementById('forecast-type-toggle').addEventListener('click', e => {
-  const btn = e.target.closest('[data-forecast]');
-  if (!btn) return;
-  forecastType = btn.dataset.forecast;
-  document.querySelectorAll('#forecast-type-toggle .toggle').forEach(b => b.classList.toggle('active', b === btn));
+document.getElementById('forecast-type-toggle').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-forecast]'); if (!btn) return;
+  forecastType=btn.dataset.forecast;
+  document.querySelectorAll('#forecast-type-toggle button').forEach(b=>b.classList.toggle('active',b===btn));
+  const nd=forecastType==='date'||forecastType==='both';
+  document.getElementById('sprint-length-field').classList.toggle('hidden',!nd);
+  document.getElementById('start-date-field').classList.toggle('hidden',!nd);
+  document.getElementById('target-date-field').classList.toggle('hidden',!nd);
+});
 
-  const needDate = forecastType === 'date' || forecastType === 'both';
-  document.getElementById('sprint-length-field').classList.toggle('hidden', !needDate);
-  document.getElementById('start-date-field').classList.toggle('hidden', !needDate);
+// Settings tabs
+document.querySelectorAll('.section-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    const target=tab.dataset.settab;
+    document.querySelectorAll('.section-tab').forEach(t=>t.classList.toggle('active',t===tab));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id===target));
+  });
 });
 
 // Sprint data textarea
-document.getElementById('sprint-data').addEventListener('input', () => {
-  const text = document.getElementById('sprint-data').value;
-  const errEl = document.getElementById('data-error');
-  const warnEl = document.getElementById('data-warning');
+document.getElementById('sprint-data').addEventListener('input',()=>{
+  const text=document.getElementById('sprint-data').value;
+  const errEl=document.getElementById('data-error');
   errEl.classList.add('hidden');
-  warnEl.classList.add('hidden');
-
-  if (!text.trim()) {
-    parsedData = [];
-    updateStats([]);
-    updateRunButton();
-    return;
-  }
-
-  const result = parseData(text);
-  if (result.error) {
-    errEl.textContent = result.error;
-    errEl.classList.remove('hidden');
-    parsedData = [];
-    updateStats([]);
-  } else {
-    parsedData = result.values;
-    if (parsedData.length < 5) {
-      warnEl.textContent = `Only ${parsedData.length} sprint${parsedData.length > 1 ? 's' : ''} entered — more data (5+) gives more reliable forecasts.`;
-      warnEl.classList.remove('hidden');
+  excludedIdx.clear();
+  if (!text.trim()) { parsedData=[]; updateStats(); updateRunButton(); return; }
+  const result=parseData(text);
+  if (result.error) { errEl.textContent=result.error; errEl.classList.remove('hidden'); parsedData=[]; updateStats(); }
+  else {
+    parsedData=result.values;
+    const active=getActiveData();
+    if (active.length<5) {
+      // don't clobber trend banner; just note low count elsewhere
     }
-    updateStats(parsedData);
+    updateStats();
   }
   updateRunButton();
 });
 
-// Backlog input
-document.getElementById('backlog-size').addEventListener('input', updateRunButton);
+// Backlog / items inputs
+document.getElementById('backlog-size').addEventListener('input',updateRunButton);
+document.getElementById('items-sprints').addEventListener('input',updateRunButton);
+document.getElementById('team-current').addEventListener('input',()=>{ checkCapacityNote(); updateStats(); });
+document.getElementById('team-historical').addEventListener('input',()=>{ checkCapacityNote(); updateStats(); });
 
 // Sample data
-document.getElementById('sample-btn').addEventListener('click', () => {
-  const data = dataType === 'items' ? SAMPLE_DATA_ITEMS : SAMPLE_DATA_POINTS;
-  document.getElementById('sprint-data').value = data.join(', ');
+document.getElementById('sample-btn').addEventListener('click',()=>{
+  const data=dataType==='items'?SAMPLE_DATA_ITEMS:SAMPLE_DATA_POINTS;
+  document.getElementById('sprint-data').value=data.join(', ');
   document.getElementById('sprint-data').dispatchEvent(new Event('input'));
-  document.getElementById('backlog-size').value = dataType === 'items' ? 200 : 420;
+  document.getElementById('backlog-size').value=dataType==='items'?200:420;
+  document.getElementById('start-date').valueAsDate=new Date();
   updateRunButton();
 });
 
-// Run simulation
-document.getElementById('run-btn').addEventListener('click', () => {
-  const backlog = parseFloat(document.getElementById('backlog-size').value);
-  const simCount = Math.max(1000, Math.min(100000, parseInt(document.getElementById('sim-count').value) || 10000));
-
-  if (!parsedData.length || isNaN(backlog) || backlog <= 0) return;
-
-  const btn = document.getElementById('run-btn');
-  btn.textContent = 'Simulating…';
-  btn.disabled = true;
-  window._runStart = Date.now();
-
-  // defer to allow repaint
-  setTimeout(() => {
-    const sorted = simulate(parsedData, backlog, simCount);
-    displayResults(sorted, simCount);
-    btn.textContent = 'Run Simulation';
-    btn.disabled = false;
-  }, 16);
+// Run Backlog→Sprints
+document.getElementById('run-btn').addEventListener('click',()=>{
+  const backlog=parseFloat(document.getElementById('backlog-size').value);
+  const simCount=Math.max(1000,Math.min(100000,parseInt(document.getElementById('sim-count').value)||10000));
+  const growthPct=parseFloat(document.getElementById('backlog-growth').value)||0;
+  const active=getActiveData();
+  if (!active.length||isNaN(backlog)||backlog<=0) return;
+  const scaled=capacityScaledData(active);
+  const btn=document.getElementById('run-btn');
+  btn.textContent='Simulating…'; btn.disabled=true;
+  window._runStart=Date.now();
+  document.getElementById('sim-badge').textContent=`${simCount.toLocaleString()} SIMULATIONS`;
+  setTimeout(()=>{
+    const sorted=simulate(scaled, backlog, simCount, growthPct);
+    displayResults(sorted, simCount, backlog, growthPct);
+    btn.textContent='Run Simulation'; btn.disabled=false;
+  },16);
 });
 
-// Set default start date to today
-const today = new Date();
-document.getElementById('start-date').valueAsDate = today;
+// Run Sprints→Items
+document.getElementById('run-items-btn').addEventListener('click',()=>{
+  const numSprints=parseInt(document.getElementById('items-sprints').value);
+  const simCount=Math.max(1000,Math.min(100000,parseInt(document.getElementById('items-sim-count').value)||10000));
+  const active=getActiveData();
+  if (!active.length||isNaN(numSprints)||numSprints<=0) return;
+  const scaled=capacityScaledData(active);
+  const btn=document.getElementById('run-items-btn');
+  btn.textContent='Simulating…'; btn.disabled=true;
+  setTimeout(()=>{
+    const sorted=simulateItemsInSprints(scaled,numSprints,simCount);
+    displayItemsResults(sorted);
+    btn.textContent='Run Simulation'; btn.disabled=false;
+  },16);
+});
 
-// Init
+// ═════════════════════════════════════════════════════════════════
+//  URL PARAMS RESTORE
+// ═════════════════════════════════════════════════════════════════
+function loadFromUrl() {
+  const params=new URLSearchParams(location.search);
+  if (!params.has('sprintData')) return;
+  const data={};
+  for (const [k,v] of params) data[k]=v;
+  restoreInputs(data);
+}
+
+// ═════════════════════════════════════════════════════════════════
+//  INIT
+// ═════════════════════════════════════════════════════════════════
+document.getElementById('start-date').valueAsDate=new Date();
+refreshLoadDropdown();
+renderHistory();
+loadFromUrl();
 updateRunButton();
 </script>
 </body>
