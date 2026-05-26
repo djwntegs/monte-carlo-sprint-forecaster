@@ -184,6 +184,7 @@
         <div class="field">
           <label>Backlog Growth / Sprint (%)</label>
           <input type="number" id="backlog-growth" min="0" max="100" step="1" value="0" placeholder="0">
+          <div id="growth-error" class="error-text hidden"></div>
         </div>
         <div class="field">
           <label>Forecast Output</label>
@@ -488,8 +489,22 @@ function capacityScaledData(active) {
 // ═════════════════════════════════════════════════════════════════
 //  MONTE CARLO — Backlog→Sprints
 // ═════════════════════════════════════════════════════════════════
+function validateGrowth(throughput, backlog, growthPct) {
+  if (!growthPct) return null;
+  const avg = throughput.reduce((a,b)=>a+b,0) / throughput.length;
+  const addedPerSprint = backlog * (growthPct/100);
+  if (addedPerSprint >= avg) {
+    return `Growth adds ${addedPerSprint.toFixed(1)} items/sprint but avg velocity is only ${avg.toFixed(1)}. The backlog will never complete. Reduce growth % or increase backlog size.`;
+  }
+  if (addedPerSprint > avg * 0.5) {
+    return `Warning: growth adds ${addedPerSprint.toFixed(1)} items/sprint (${Math.round(addedPerSprint/avg*100)}% of avg velocity). Forecast will be significantly longer.`;
+  }
+  return null;
+}
+
 function simulate(throughput, backlog, simCount, growthPct) {
   const growth = (growthPct||0)/100;
+  const SAFETY = 300;
   const n = throughput.length;
   const results = [];
   for (let i=0; i<simCount; i++) {
@@ -499,9 +514,14 @@ function simulate(throughput, backlog, simCount, growthPct) {
       remaining -= throughput[Math.floor(Math.random()*n)];
       sprints++;
       if (growth > 0) remaining += original * growth;
-      if (sprints > 5000) break;
+      if (sprints >= SAFETY) break;
     }
-    results.push(sprints);
+    // Only include simulations that actually completed (exclude cap-hits)
+    if (sprints < SAFETY) results.push(sprints);
+  }
+  // If too many hit the cap, fall back to including them capped
+  if (results.length < simCount * 0.5) {
+    for (let i=results.length; i<simCount; i++) results.push(SAFETY);
   }
   return results.sort((a,b)=>a-b);
 }
@@ -1239,6 +1259,20 @@ document.getElementById('run-btn').addEventListener('click',()=>{
   const active=getActiveData();
   if (!active.length||isNaN(backlog)||backlog<=0) return;
   const scaled=capacityScaledData(active);
+
+  // Validate growth rate before running
+  const growthErr = validateGrowth(scaled, backlog, growthPct);
+  const errEl = document.getElementById('growth-error');
+  if (growthErr) {
+    errEl.textContent = growthErr;
+    errEl.classList.remove('hidden');
+    const avg = scaled.reduce((a,b)=>a+b,0)/scaled.length;
+    const addedPerSprint = backlog * (growthPct/100);
+    if (addedPerSprint >= avg) return; // fatal — don't run
+  } else {
+    errEl.classList.add('hidden');
+  }
+
   const btn=document.getElementById('run-btn');
   btn.textContent='Simulating…'; btn.disabled=true;
   window._runStart=Date.now();
