@@ -810,18 +810,23 @@ function displayResults(sortedResult, simCount, backlog, growthPct) {
     scSection.classList.remove('hidden');
   } else scSection.classList.add('hidden');
 
-  // Charts
-  renderDistChart(sortedResult, percs, scenarioSortedArr);
-  renderCumChart(sortedResult, percs);
-
-  // Burndown — run full path simulation
-  const {sorted:s2, paths, maxSprints} = simulateWithPaths(scaled, backlog, Math.min(simCount,2000), growthPct);
-  renderBurndownChart(paths, maxSprints, backlog, percs[95]);
-
   const elapsed = ((Date.now()-window._runStart)/1000).toFixed(2);
   document.getElementById('sim-meta').textContent = `${simCount.toLocaleString()} simulations · ${elapsed}s`;
+
+  // Reveal section BEFORE rendering charts — Chart.js needs visible canvas dimensions
   document.getElementById('results-section').classList.remove('hidden');
-  document.getElementById('results-section').scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  // Use rAF to ensure the browser has painted the visible section before chart init
+  requestAnimationFrame(() => {
+    renderDistChart(sortedResult, percs, scenarioSortedArr);
+    renderCumChart(sortedResult, percs);
+
+    // Burndown — run full path simulation
+    const {sorted:s2, paths, maxSprints} = simulateWithPaths(scaled, backlog, Math.min(simCount,2000), growthPct);
+    renderBurndownChart(paths, maxSprints, backlog, percs[95]);
+
+    document.getElementById('results-section').scrollIntoView({behavior:'smooth',block:'nearest'});
+  });
 
   // Save to history
   saveHistory({ backlog, p50:percs[50], p75:percs[75], p85:percs[85], p95:percs[95] });
@@ -864,7 +869,7 @@ function updateStats() {
   document.getElementById('stat-std').textContent = s.std.toFixed(1);
   document.getElementById('data-stats').classList.remove('hidden');
   document.getElementById('mini-chart-wrap').classList.remove('hidden');
-  renderThroughputChart(active, allData);
+  requestAnimationFrame(() => renderThroughputChart(active, allData));
   renderChips();
   checkTrend(active);
   checkCapacityNote();
