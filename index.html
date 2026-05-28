@@ -111,12 +111,12 @@
 
 <main>
 
-<!-- ── MODE TOGGLE (Backlog→Sprints | Sprints→Items) ─────────── -->
+<!-- ── MODE TOGGLE (Batch→Sprints | Sprints→Items) ─────────── -->
 <div class="card" style="padding:14px 20px">
   <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
     <div style="font-size:0.78rem;font-weight:600;color:#475569">Forecast Mode:</div>
     <div class="toggle-group" id="mode-toggle">
-      <button class="active" data-mode="backlog">Backlog → Sprints</button>
+      <button class="active" data-mode="batch">Batch → Sprints</button>
       <button data-mode="items">Sprints → Items</button>
     </div>
     <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
@@ -163,7 +163,7 @@
   </div>
 </div>
 
-<!-- ── SETTINGS (two panels: Backlog→Sprints vs Sprints→Items) ── -->
+<!-- ── SETTINGS (two panels: Batch→Sprints vs Sprints→Items) ── -->
 <div class="card">
   <div class="section-tabs">
     <button class="section-tab active" data-settab="main-settings">Settings</button>
@@ -175,15 +175,15 @@
   <!-- Main Settings -->
   <div class="tab-panel active" id="main-settings">
     <!-- BACKLOG MODE -->
-    <div id="backlog-mode-settings">
+    <div id="batch-mode-settings">
       <div class="settings-row">
         <div class="field">
-          <label id="backlog-label">Backlog Size (items)</label>
-          <input type="number" id="backlog-size" min="1" placeholder="e.g. 150">
+          <label id="batch-label">Batch Size (items)</label>
+          <input type="number" id="batch-size" min="1" placeholder="e.g. 150">
         </div>
         <div class="field">
-          <label>Backlog Growth / Sprint (%)</label>
-          <input type="number" id="backlog-growth" min="0" max="100" step="1" value="0" placeholder="0">
+          <label>Batch Growth / Sprint (%)</label>
+          <input type="number" id="batch-growth" min="0" max="100" step="1" value="0" placeholder="0">
           <div id="growth-error" class="error-text hidden"></div>
         </div>
         <div class="field">
@@ -253,7 +253,7 @@
   <div class="tab-panel" id="scenario-settings">
     <div id="scenarios-list"></div>
     <button class="btn-ghost" id="add-scenario-btn" style="margin-top:8px">+ Add Scenario</button>
-    <p style="font-size:0.73rem;color:#94A3B8;margin-top:8px">Each scenario uses its own backlog size and label. All scenarios overlay on the distribution chart.</p>
+    <p style="font-size:0.73rem;color:#94A3B8;margin-top:8px">Each scenario uses its own batch size and label. All scenarios overlay on the distribution chart.</p>
   </div>
 
   <!-- Save / Load -->
@@ -276,7 +276,7 @@
   </div>
 </div>
 
-<!-- ── RESULTS (Backlog→Sprints) ──────────────────────────────── -->
+<!-- ── RESULTS (Batch→Sprints) ──────────────────────────────── -->
 <div class="card hidden" id="results-section">
   <div class="card-title">Forecast Results</div>
 
@@ -398,7 +398,7 @@
   <div id="history-empty" style="font-size:0.78rem;color:#94A3B8;text-align:center;padding:16px 0">No forecasts run yet. Run a simulation to start tracking history.</div>
   <div id="history-table-wrap" class="hidden">
     <table class="history-table">
-      <thead><tr><th>Time</th><th>Backlog</th><th>p50</th><th>p75</th><th>p85</th><th>p95</th></tr></thead>
+      <thead><tr><th>Time</th><th>Batch</th><th>p50</th><th>p75</th><th>p85</th><th>p95</th></tr></thead>
       <tbody id="history-tbody"></tbody>
     </table>
   </div>
@@ -424,10 +424,10 @@
 // ═════════════════════════════════════════════════════════════════
 let dataType     = 'items';
 let forecastType = 'sprints';
-let appMode      = 'backlog'; // 'backlog' | 'items'
+let appMode      = 'batch'; // 'batch' | 'items'
 let parsedData   = [];        // all parsed values
 let excludedIdx  = new Set(); // indices of excluded sprints
-let scenarios    = [];        // [{label, backlog, color}]
+let scenarios    = [];        // [{label, batch, color}]
 let csvParsed    = null;      // temp for CSV import
 
 let chartThroughput = null;
@@ -487,14 +487,14 @@ function capacityScaledData(active) {
 }
 
 // ═════════════════════════════════════════════════════════════════
-//  MONTE CARLO — Backlog→Sprints
+//  MONTE CARLO — Batch→Sprints
 // ═════════════════════════════════════════════════════════════════
-function validateGrowth(throughput, backlog, growthPct) {
+function validateGrowth(throughput, batch, growthPct) {
   if (!growthPct) return null;
   const avg = throughput.reduce((a,b)=>a+b,0) / throughput.length;
-  const addedPerSprint = backlog * (growthPct/100);
+  const addedPerSprint = batch * (growthPct/100);
   if (addedPerSprint >= avg) {
-    return `Growth adds ${addedPerSprint.toFixed(1)} items/sprint but avg velocity is only ${avg.toFixed(1)}. The backlog will never complete. Reduce growth % or increase backlog size.`;
+    return `Growth adds ${addedPerSprint.toFixed(1)} items/sprint but avg velocity is only ${avg.toFixed(1)}. The batch will never complete. Reduce growth % or increase batch size.`;
   }
   if (addedPerSprint > avg * 0.5) {
     return `Warning: growth adds ${addedPerSprint.toFixed(1)} items/sprint (${Math.round(addedPerSprint/avg*100)}% of avg velocity). Forecast will be significantly longer.`;
@@ -502,14 +502,14 @@ function validateGrowth(throughput, backlog, growthPct) {
   return null;
 }
 
-function simulate(throughput, backlog, simCount, growthPct) {
+function simulate(throughput, batch, simCount, growthPct) {
   const growth = (growthPct||0)/100;
   const SAFETY = 300;
   const n = throughput.length;
   const results = [];
   for (let i=0; i<simCount; i++) {
-    let remaining = backlog, sprints = 0;
-    const original = backlog;
+    let remaining = batch, sprints = 0;
+    const original = batch;
     while (remaining > 0) {
       remaining -= throughput[Math.floor(Math.random()*n)];
       sprints++;
@@ -541,12 +541,12 @@ function simulateItemsInSprints(throughput, numSprints, simCount) {
 }
 
 // Burndown: track remaining items at each sprint for each path
-function simulateWithPaths(throughput, backlog, simCount, growthPct) {
+function simulateWithPaths(throughput, batch, simCount, growthPct) {
   const growth = (growthPct||0)/100;
   const n = throughput.length;
   const p95sprints = Math.ceil(simCount * 0.95); // we'll collect up to p95 max
   // We need to know max sprints first — run a quick estimate
-  const quickSorted = simulate(throughput, backlog, Math.min(simCount, 1000), growthPct);
+  const quickSorted = simulate(throughput, batch, Math.min(simCount, 1000), growthPct);
   const maxSprints = quickSorted[Math.floor(quickSorted.length*0.97)] + 2;
 
   // paths[s] = array of remaining at end of sprint s across all simulations
@@ -554,8 +554,8 @@ function simulateWithPaths(throughput, backlog, simCount, growthPct) {
 
   const results = [];
   for (let i=0; i<simCount; i++) {
-    let remaining = backlog, sprints = 0;
-    const original = backlog;
+    let remaining = batch, sprints = 0;
+    const original = batch;
     while (remaining > 0 && sprints < maxSprints) {
       remaining -= throughput[Math.floor(Math.random()*n)];
       if (growth > 0 && remaining > 0) remaining += original * growth;
@@ -750,12 +750,12 @@ function renderCumChart(sorted, percs) {
 // ═════════════════════════════════════════════════════════════════
 //  RENDER BURNDOWN CHART
 // ═════════════════════════════════════════════════════════════════
-function renderBurndownChart(paths, maxSprints, backlog, p95val) {
+function renderBurndownChart(paths, maxSprints, batch, p95val) {
   const ctx = document.getElementById('burndown-chart').getContext('2d');
   if (chartBurndown) chartBurndown.destroy();
   const nSprints = Math.min(p95val+2, maxSprints);
   const labels = Array.from({length:nSprints+1},(_,i)=>i);
-  const p50data=[backlog], p85data=[backlog], p95data=[backlog];
+  const p50data=[batch], p85data=[batch], p95data=[batch];
   for (let s=1; s<=nSprints; s++) {
     const sp = paths[s] ? [...paths[s]].sort((a,b)=>a-b) : [];
     if (sp.length) {
@@ -790,7 +790,7 @@ function renderBurndownChart(paths, maxSprints, backlog, p95val) {
 // ═════════════════════════════════════════════════════════════════
 //  DISPLAY RESULTS
 // ═════════════════════════════════════════════════════════════════
-function displayResults(sortedResult, simCount, backlog, growthPct) {
+function displayResults(sortedResult, simCount, batch, growthPct) {
   const percs = {};
   CONF_LEVELS.forEach(p=>{ percs[p]=percentile(sortedResult,p); });
 
@@ -828,7 +828,7 @@ function displayResults(sortedResult, simCount, backlog, growthPct) {
   } else tdResult.classList.add('hidden');
 
   // Scenarios
-  const activeScenarios = scenarios.filter(s=>s.backlog && s.label);
+  const activeScenarios = scenarios.filter(s=>s.batch && s.label);
   const scSection = document.getElementById('scenarios-results');
   const scRows = document.getElementById('scenarios-conf-rows');
   const active = getActiveData();
@@ -837,7 +837,7 @@ function displayResults(sortedResult, simCount, backlog, growthPct) {
   if (activeScenarios.length) {
     scRows.innerHTML='';
     activeScenarios.forEach((sc,idx)=>{
-      const srt = simulate(scaled, sc.backlog, simCount, growthPct);
+      const srt = simulate(scaled, sc.batch, simCount, growthPct);
       const sp={};CONF_LEVELS.forEach(p=>{sp[p]=percentile(srt,p);});
       const row = document.createElement('div');
       row.className='scenario-conf-row';
@@ -861,18 +861,18 @@ function displayResults(sortedResult, simCount, backlog, growthPct) {
     renderCumChart(sortedResult, percs);
 
     // Burndown — run full path simulation
-    const {sorted:s2, paths, maxSprints} = simulateWithPaths(scaled, backlog, Math.min(simCount,2000), growthPct);
-    renderBurndownChart(paths, maxSprints, backlog, percs[95]);
+    const {sorted:s2, paths, maxSprints} = simulateWithPaths(scaled, batch, Math.min(simCount,2000), growthPct);
+    renderBurndownChart(paths, maxSprints, batch, percs[95]);
 
     document.getElementById('results-section').scrollIntoView({behavior:'smooth',block:'nearest'});
   });
 
   // Save to history
-  saveHistory({ backlog, p50:percs[50], p75:percs[75], p85:percs[85], p95:percs[95] });
+  saveHistory({ batch, p50:percs[50], p75:percs[75], p85:percs[85], p95:percs[95] });
   renderHistory();
 
   // Store last result for export
-  window._lastResult = { sorted:sortedResult, percs, backlog, simCount, sprintLen, startDate, showDate };
+  window._lastResult = { sorted:sortedResult, percs, batch, simCount, sprintLen, startDate, showDate };
 }
 
 function displayItemsResults(sorted) {
@@ -956,9 +956,9 @@ function checkCapacityNote() {
 }
 
 function updateRunButton() {
-  if (appMode==='backlog') {
-    const backlog = parseFloat(document.getElementById('backlog-size').value);
-    const ok = getActiveData().length>=1 && !isNaN(backlog) && backlog>0;
+  if (appMode==='batch') {
+    const batch = parseFloat(document.getElementById('batch-size').value);
+    const ok = getActiveData().length>=1 && !isNaN(batch) && batch>0;
     document.getElementById('run-btn').disabled=!ok;
   } else {
     const sp = parseFloat(document.getElementById('items-sprints').value);
@@ -970,7 +970,7 @@ function updateRunButton() {
 // ═════════════════════════════════════════════════════════════════
 //  SCENARIOS
 // ═════════════════════════════════════════════════════════════════
-const SCENARIO_DEFAULTS = [{label:'Optimistic',backlog:''},{label:'Realistic',backlog:''},{label:'Pessimistic',backlog:''}];
+const SCENARIO_DEFAULTS = [{label:'Optimistic',batch:''},{label:'Realistic',batch:''},{label:'Pessimistic',batch:''}];
 
 function renderScenariosList() {
   const list = document.getElementById('scenarios-list');
@@ -980,7 +980,7 @@ function renderScenariosList() {
     row.className='scenario-row';
     row.innerHTML=`<div class="scenario-dot" style="background:${sc.color}"></div>`
       +`<div class="field"><label>Label</label><input type="text" value="${escHtml(sc.label)}" data-sc-idx="${idx}" data-sc-field="label" style="min-width:100px"></div>`
-      +`<div class="field"><label>Backlog</label><input type="number" value="${sc.backlog||''}" data-sc-idx="${idx}" data-sc-field="backlog" placeholder="e.g. 150" style="min-width:80px"></div>`
+      +`<div class="field"><label>Batch</label><input type="number" value="${sc.batch||''}" data-sc-idx="${idx}" data-sc-field="batch" placeholder="e.g. 150" style="min-width:80px"></div>`
       +`<button class="btn-ghost" data-sc-remove="${idx}" style="color:#EF4444;border-color:#FCA5A5;margin-left:auto">Remove</button>`;
     list.appendChild(row);
   });
@@ -988,8 +988,8 @@ function renderScenariosList() {
 
 document.getElementById('add-scenario-btn').addEventListener('click',()=>{
   if (scenarios.length>=5) return;
-  const def = SCENARIO_DEFAULTS[scenarios.length] || {label:`Scenario ${scenarios.length+1}`,backlog:''};
-  scenarios.push({label:def.label, backlog:def.backlog||'', color:SCENARIO_COLORS[scenarios.length%SCENARIO_COLORS.length]});
+  const def = SCENARIO_DEFAULTS[scenarios.length] || {label:`Scenario ${scenarios.length+1}`,batch:''};
+  scenarios.push({label:def.label, batch:def.batch||'', color:SCENARIO_COLORS[scenarios.length%SCENARIO_COLORS.length]});
   renderScenariosList();
 });
 
@@ -1047,13 +1047,13 @@ document.getElementById('delete-scenario-btn').addEventListener('click',()=>{
 function captureInputs() {
   return {
     sprintData: document.getElementById('sprint-data').value,
-    backlogSize: document.getElementById('backlog-size').value,
+    batchSize: document.getElementById('batch-size').value,
     simCount: document.getElementById('sim-count').value,
     forecastType, dataType, appMode,
     sprintLength: document.getElementById('sprint-length').value,
     startDate: document.getElementById('start-date').value,
     targetDate: document.getElementById('target-date').value,
-    backlogGrowth: document.getElementById('backlog-growth').value,
+    batchGrowth: document.getElementById('batch-growth').value,
     teamCurrent: document.getElementById('team-current').value,
     teamHistorical: document.getElementById('team-historical').value,
     itemsSprints: document.getElementById('items-sprints').value,
@@ -1064,12 +1064,12 @@ function captureInputs() {
 
 function restoreInputs(data) {
   if (data.sprintData!==undefined) { document.getElementById('sprint-data').value=data.sprintData; document.getElementById('sprint-data').dispatchEvent(new Event('input')); }
-  if (data.backlogSize) document.getElementById('backlog-size').value=data.backlogSize;
+  if (data.batchSize) document.getElementById('batch-size').value=data.batchSize;
   if (data.simCount) document.getElementById('sim-count').value=data.simCount;
   if (data.sprintLength) document.getElementById('sprint-length').value=data.sprintLength;
   if (data.startDate) document.getElementById('start-date').value=data.startDate;
   if (data.targetDate) document.getElementById('target-date').value=data.targetDate;
-  if (data.backlogGrowth) document.getElementById('backlog-growth').value=data.backlogGrowth;
+  if (data.batchGrowth) document.getElementById('batch-growth').value=data.batchGrowth;
   if (data.teamCurrent) document.getElementById('team-current').value=data.teamCurrent;
   if (data.teamHistorical) document.getElementById('team-historical').value=data.teamHistorical;
   if (data.itemsSprints) document.getElementById('items-sprints').value=data.itemsSprints;
@@ -1122,7 +1122,7 @@ function renderHistory() {
   if (!h.length) { empty.classList.remove('hidden'); wrap.classList.add('hidden'); return; }
   empty.classList.add('hidden'); wrap.classList.remove('hidden');
   const tbody=document.getElementById('history-tbody');
-  tbody.innerHTML=h.map(r=>`<tr><td>${escHtml(r.ts)}</td><td>${r.backlog}</td><td style="color:#D97706;font-weight:600">${r.p50}</td><td style="color:#059669;font-weight:600">${r.p75}</td><td style="color:#2563EB;font-weight:600">${r.p85}</td><td style="color:#7C3AED;font-weight:600">${r.p95}</td></tr>`).join('');
+  tbody.innerHTML=h.map(r=>`<tr><td>${escHtml(r.ts)}</td><td>${r.batch}</td><td style="color:#D97706;font-weight:600">${r.p50}</td><td style="color:#059669;font-weight:600">${r.p75}</td><td style="color:#2563EB;font-weight:600">${r.p85}</td><td style="color:#7C3AED;font-weight:600">${r.p95}</td></tr>`).join('');
 }
 document.getElementById('clear-history-btn').addEventListener('click',()=>{ if(confirm('Clear all forecast history?')){ localStorage.removeItem('forecaster_history'); renderHistory(); } });
 
@@ -1182,12 +1182,12 @@ function importCsvColumn(ci, rows, headers) {
 }
 
 // ═════════════════════════════════════════════════════════════════
-//  APP MODE (Backlog→Sprints | Sprints→Items)
+//  APP MODE (Batch→Sprints | Sprints→Items)
 // ═════════════════════════════════════════════════════════════════
 function setAppMode(mode) {
   appMode=mode;
   document.querySelectorAll('#mode-toggle button').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
-  document.getElementById('backlog-mode-settings').classList.toggle('hidden',mode!=='backlog');
+  document.getElementById('batch-mode-settings').classList.toggle('hidden',mode!=='batch');
   document.getElementById('items-mode-settings').classList.toggle('hidden',mode!=='items');
   document.getElementById('results-section').classList.add('hidden');
   document.getElementById('items-results-section').classList.add('hidden');
@@ -1208,7 +1208,7 @@ document.getElementById('data-type-toggle').addEventListener('click',e=>{
   const btn=e.target.closest('[data-type]'); if (!btn) return;
   dataType=btn.dataset.type;
   document.querySelectorAll('#data-type-toggle button').forEach(b=>b.classList.toggle('active',b===btn));
-  document.getElementById('backlog-label').textContent=dataType==='items'?'Backlog Size (items)':'Backlog Size (points)';
+  document.getElementById('batch-label').textContent=dataType==='items'?'Batch Size (items)':'Batch Size (points)';
   document.getElementById('sprint-data').placeholder=dataType==='items'
     ?'Paste throughput per sprint — comma or newline separated.\nExample:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33'
     :'Paste story points per sprint — comma or newline separated.\nExample:  42, 55, 38, 61, 48, 53, 45, 59, 41, 67';
@@ -1254,8 +1254,8 @@ document.getElementById('sprint-data').addEventListener('input',()=>{
   updateRunButton();
 });
 
-// Backlog / items inputs
-document.getElementById('backlog-size').addEventListener('input',updateRunButton);
+// Batch / items inputs
+document.getElementById('batch-size').addEventListener('input',updateRunButton);
 document.getElementById('items-sprints').addEventListener('input',updateRunButton);
 document.getElementById('team-current').addEventListener('input',()=>{ checkCapacityNote(); updateStats(); });
 document.getElementById('team-historical').addEventListener('input',()=>{ checkCapacityNote(); updateStats(); });
@@ -1265,28 +1265,28 @@ document.getElementById('sample-btn').addEventListener('click',()=>{
   const data=dataType==='items'?SAMPLE_DATA_ITEMS:SAMPLE_DATA_POINTS;
   document.getElementById('sprint-data').value=data.join(', ');
   document.getElementById('sprint-data').dispatchEvent(new Event('input'));
-  document.getElementById('backlog-size').value=dataType==='items'?200:420;
+  document.getElementById('batch-size').value=dataType==='items'?200:420;
   document.getElementById('start-date').valueAsDate=new Date();
   updateRunButton();
 });
 
-// Run Backlog→Sprints
+// Run Batch→Sprints
 document.getElementById('run-btn').addEventListener('click',()=>{
-  const backlog=parseFloat(document.getElementById('backlog-size').value);
+  const batch=parseFloat(document.getElementById('batch-size').value);
   const simCount=Math.max(1000,Math.min(100000,parseInt(document.getElementById('sim-count').value)||10000));
-  const growthPct=parseFloat(document.getElementById('backlog-growth').value)||0;
+  const growthPct=parseFloat(document.getElementById('batch-growth').value)||0;
   const active=getActiveData();
-  if (!active.length||isNaN(backlog)||backlog<=0) return;
+  if (!active.length||isNaN(batch)||batch<=0) return;
   const scaled=capacityScaledData(active);
 
   // Validate growth rate before running
-  const growthErr = validateGrowth(scaled, backlog, growthPct);
+  const growthErr = validateGrowth(scaled, batch, growthPct);
   const errEl = document.getElementById('growth-error');
   if (growthErr) {
     errEl.textContent = growthErr;
     errEl.classList.remove('hidden');
     const avg = scaled.reduce((a,b)=>a+b,0)/scaled.length;
-    const addedPerSprint = backlog * (growthPct/100);
+    const addedPerSprint = batch * (growthPct/100);
     if (addedPerSprint >= avg) return; // fatal — don't run
   } else {
     errEl.classList.add('hidden');
@@ -1297,8 +1297,8 @@ document.getElementById('run-btn').addEventListener('click',()=>{
   window._runStart=Date.now();
   document.getElementById('sim-badge').textContent=`${simCount.toLocaleString()} SIMULATIONS`;
   setTimeout(()=>{
-    const sorted=simulate(scaled, backlog, simCount, growthPct);
-    displayResults(sorted, simCount, backlog, growthPct);
+    const sorted=simulate(scaled, batch, simCount, growthPct);
+    displayResults(sorted, simCount, batch, growthPct);
     btn.textContent='Run Simulation'; btn.disabled=false;
   },16);
 });
