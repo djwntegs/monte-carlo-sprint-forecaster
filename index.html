@@ -651,31 +651,47 @@ function renderThroughputChart(active, allData) {
 // ═════════════════════════════════════════════════════════════════
 //  RENDER DISTRIBUTION CHART (with optional scenario overlays)
 // ═════════════════════════════════════════════════════════════════
+
+// Build frequency map from a sorted results array for any sprint value
+function freqAtSprint(sorted, sprint) {
+  let count = 0;
+  for (const v of sorted) { if (v === sprint) count++; }
+  return (count / sorted.length) * 100;
+}
+
 function renderDistChart(sorted, percs, scenarioSortedArr) {
   const ctx = document.getElementById('dist-chart').getContext('2d');
   if (chartDist) chartDist.destroy();
-  const {labels, data, binStarts} = buildHistogram(sorted);
-  const colors = binStarts.map(b => {
-    if (b<=percs[50]) return 'rgba(245,158,11,0.85)';
-    if (b<=percs[75]) return 'rgba(16,185,129,0.85)';
-    if (b<=percs[85]) return 'rgba(59,130,246,0.85)';
-    if (b<=percs[95]) return 'rgba(139,92,246,0.85)';
+
+  // Build a UNIFIED x-axis across main + all scenarios so every dataset is on the same scale
+  const allSortedArrays = [sorted, ...(scenarioSortedArr||[]).map(s=>s.sorted)];
+  const globalMin = Math.max(1, Math.min(...allSortedArrays.map(a=>a[0])) - 2);
+  const globalMax = Math.max(...allSortedArrays.map(a=>a[a.length-1])) + 2;
+  const unifiedLabels = [];
+  for (let i = globalMin; i <= globalMax; i++) unifiedLabels.push(String(i));
+
+  // Main bars — frequency at each unified sprint value, coloured by percentile zone
+  const mainData = unifiedLabels.map(lbl => freqAtSprint(sorted, Number(lbl)));
+  const colors = unifiedLabels.map(lbl => {
+    const b = Number(lbl);
+    if (b <= percs[50]) return 'rgba(245,158,11,0.85)';
+    if (b <= percs[75]) return 'rgba(16,185,129,0.85)';
+    if (b <= percs[85]) return 'rgba(59,130,246,0.85)';
+    if (b <= percs[95]) return 'rgba(139,92,246,0.85)';
     return 'rgba(203,213,225,0.7)';
   });
-  const datasets = [{ label:'Main', data, backgroundColor:colors, borderRadius:3, borderSkipped:false }];
 
-  // Overlay scenarios
+  const datasets = [{ label:'Main', data:mainData, backgroundColor:colors, borderRadius:3, borderSkipped:false }];
+
+  // Scenario lines — distinct colours that don't clash with bar zone colours
+  const scenarioLineColors = ['#1D4ED8','#059669','#9333EA','#DB2777','#0891B2'];
   if (scenarioSortedArr && scenarioSortedArr.length) {
-    scenarioSortedArr.forEach(({sorted:ss, label, color}, idx) => {
-      const {data:sd, labels:sl, binStarts:sbs} = buildHistogram(ss);
-      // Align to main labels
-      const aligned = labels.map(lbl => {
-        const i = sl.indexOf(lbl);
-        return i>=0 ? sd[i] : 0;
-      });
+    scenarioSortedArr.forEach(({sorted:ss, label}, idx) => {
+      const lineData = unifiedLabels.map(lbl => freqAtSprint(ss, Number(lbl)));
       datasets.push({
-        type:'line', label, data:aligned, borderColor:color, borderWidth:2,
-        pointRadius:0, fill:false, tension:0.3,
+        type:'line', label, data:lineData,
+        borderColor: scenarioLineColors[idx % scenarioLineColors.length],
+        borderWidth:2.5, pointRadius:0, fill:false, tension:0.35,
         backgroundColor:'transparent'
       });
     });
@@ -683,10 +699,13 @@ function renderDistChart(sorted, percs, scenarioSortedArr) {
 
   chartDist = new Chart(ctx, {
     type:'bar',
-    data: { labels, datasets },
+    data: { labels: unifiedLabels, datasets },
     options: {
       responsive:true, maintainAspectRatio:false, animation:{duration:500},
-      plugins: { legend:{display:!!(scenarioSortedArr&&scenarioSortedArr.length),labels:{font:{size:10}}}, tooltip:{ filter:item=>item.dataset.label==='Main', callbacks:{ title:items=>`${items[0].label} sprints`, label:ctx=>`${ctx.raw.toFixed(1)}% of simulations` } } },
+      plugins: {
+        legend:{ display:!!(scenarioSortedArr&&scenarioSortedArr.length), labels:{font:{size:10}, usePointStyle:true, pointStyle:'line'} },
+        tooltip:{ callbacks:{ title:items=>`${items[0].label} sprints`, label:ctx=>`${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%` } }
+      },
       scales: {
         x:{ title:{display:true,text:'Sprints',font:{size:9},color:'#94A3B8'}, grid:{display:false}, ticks:{font:{size:9},color:'#94A3B8'} },
         y:{ title:{display:true,text:'% Simulations',font:{size:9},color:'#94A3B8'}, grid:{color:'#F1F5F9'}, ticks:{font:{size:9},color:'#94A3B8',callback:v=>v+'%'} }
