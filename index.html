@@ -253,7 +253,7 @@
   <div class="tab-panel" id="scenario-settings">
     <div id="scenarios-list"></div>
     <button class="btn-ghost" id="add-scenario-btn" style="margin-top:8px">+ Add Scenario</button>
-    <p style="font-size:0.73rem;color:#94A3B8;margin-top:8px">Each scenario uses its own batch size and label. All scenarios overlay on the distribution chart.</p>
+    <p style="font-size:0.73rem;color:#94A3B8;margin-top:8px">Each scenario scales throughput by the given %. The batch size from Settings is used for all scenarios.</p>
   </div>
 
   <!-- Save / Load -->
@@ -427,7 +427,7 @@ let forecastType = 'sprints';
 let appMode      = 'batch'; // 'batch' | 'items'
 let parsedData   = [];        // all parsed values
 let excludedIdx  = new Set(); // indices of excluded sprints
-let scenarios    = [];        // [{label, batch, color}]
+let scenarios    = [];        // [{label, throughputPct, color}]
 let csvParsed    = null;      // temp for CSV import
 
 let chartThroughput = null;
@@ -828,7 +828,7 @@ function displayResults(sortedResult, simCount, batch, growthPct) {
   } else tdResult.classList.add('hidden');
 
   // Scenarios
-  const activeScenarios = scenarios.filter(s=>s.batch && s.label);
+  const activeScenarios = scenarios.filter(s=>s.throughputPct && s.label);
   const scSection = document.getElementById('scenarios-results');
   const scRows = document.getElementById('scenarios-conf-rows');
   const active = getActiveData();
@@ -837,14 +837,15 @@ function displayResults(sortedResult, simCount, batch, growthPct) {
   if (activeScenarios.length) {
     scRows.innerHTML='';
     activeScenarios.forEach((sc,idx)=>{
-      const srt = simulate(scaled, sc.batch, simCount, growthPct);
+      const scaledThroughput = scaled.map(v => v * (sc.throughputPct / 100));
+      const srt = simulate(scaledThroughput, batch, simCount, growthPct);
       const sp={};CONF_LEVELS.forEach(p=>{sp[p]=percentile(srt,p);});
       const row = document.createElement('div');
       row.className='scenario-conf-row';
-      row.innerHTML=`<div class="scenario-label-cell" style="display:flex;align-items:center;gap:6px"><div class="scenario-dot" style="background:${sc.color}"></div>${escHtml(sc.label)}</div>`
+      row.innerHTML=`<div class="scenario-label-cell" style="display:flex;align-items:center;gap:6px"><div class="scenario-dot" style="background:${sc.color}"></div>${escHtml(sc.label)} <span style="font-size:0.68rem;color:#94A3B8;font-weight:400">(${sc.throughputPct}%)</span></div>`
         +CONF_LEVELS.map(p=>`<div class="scenario-val-cell" style="color:${CONF_COLORS[p]}">${sp[p]}</div>`).join('');
       scRows.appendChild(row);
-      scenarioSortedArr.push({sorted:srt, label:sc.label, color:sc.color});
+      scenarioSortedArr.push({sorted:srt, label:`${sc.label} (${sc.throughputPct}%)`, color:sc.color});
     });
     scSection.classList.remove('hidden');
   } else scSection.classList.add('hidden');
@@ -970,7 +971,11 @@ function updateRunButton() {
 // ═════════════════════════════════════════════════════════════════
 //  SCENARIOS
 // ═════════════════════════════════════════════════════════════════
-const SCENARIO_DEFAULTS = [{label:'Optimistic',batch:''},{label:'Realistic',batch:''},{label:'Pessimistic',batch:''}];
+const SCENARIO_DEFAULTS = [
+  {label:'Pessimistic', throughputPct:75,  color:'#9333EA'},
+  {label:'Realistic',   throughputPct:100, color:'#10B981'},
+  {label:'Optimistic',  throughputPct:125, color:'#1D4ED8'},
+];
 
 function renderScenariosList() {
   const list = document.getElementById('scenarios-list');
@@ -980,7 +985,7 @@ function renderScenariosList() {
     row.className='scenario-row';
     row.innerHTML=`<div class="scenario-dot" style="background:${sc.color}"></div>`
       +`<div class="field"><label>Label</label><input type="text" value="${escHtml(sc.label)}" data-sc-idx="${idx}" data-sc-field="label" style="min-width:100px"></div>`
-      +`<div class="field"><label>Batch</label><input type="number" value="${sc.batch||''}" data-sc-idx="${idx}" data-sc-field="batch" placeholder="e.g. 150" style="min-width:80px"></div>`
+      +`<div class="field"><label>Throughput %</label><input type="number" min="10" max="300" step="5" value="${sc.throughputPct||100}" data-sc-idx="${idx}" data-sc-field="throughputPct" placeholder="e.g. 100" style="min-width:80px"></div>`
       +`<button class="btn-ghost" data-sc-remove="${idx}" style="color:#EF4444;border-color:#FCA5A5;margin-left:auto">Remove</button>`;
     list.appendChild(row);
   });
@@ -988,8 +993,8 @@ function renderScenariosList() {
 
 document.getElementById('add-scenario-btn').addEventListener('click',()=>{
   if (scenarios.length>=5) return;
-  const def = SCENARIO_DEFAULTS[scenarios.length] || {label:`Scenario ${scenarios.length+1}`,batch:''};
-  scenarios.push({label:def.label, batch:def.batch||'', color:SCENARIO_COLORS[scenarios.length%SCENARIO_COLORS.length]});
+  const def = SCENARIO_DEFAULTS[scenarios.length] || {label:`Scenario ${scenarios.length+1}`, throughputPct:100};
+  scenarios.push({label:def.label, throughputPct:def.throughputPct||100, color:SCENARIO_COLORS[scenarios.length%SCENARIO_COLORS.length]});
   renderScenariosList();
 });
 
@@ -1336,6 +1341,15 @@ function loadFromUrl() {
 document.getElementById('start-date').valueAsDate=new Date();
 refreshLoadDropdown();
 renderHistory();
+// Initialise default scenarios if none exist yet
+if (!scenarios.length) {
+  scenarios = [
+    {label:'Pessimistic', throughputPct:75,  color:'#9333EA'},
+    {label:'Realistic',   throughputPct:100, color:'#10B981'},
+    {label:'Optimistic',  throughputPct:125, color:'#1D4ED8'},
+  ];
+  renderScenariosList();
+}
 loadFromUrl();
 updateRunButton();
 </script>
