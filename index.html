@@ -252,8 +252,7 @@
   <!-- Scenarios -->
   <div class="tab-panel" id="scenario-settings">
     <div id="scenarios-list"></div>
-    <button class="btn-ghost" id="add-scenario-btn" style="margin-top:8px">+ Add Scenario</button>
-    <p style="font-size:0.73rem;color:#94A3B8;margin-top:8px">Each scenario scales throughput by the given %. The batch size from Settings is used for all scenarios.</p>
+    <p style="font-size:0.73rem;color:#94A3B8;margin-top:8px">Each scenario scales your historical throughput by the given %. All three use the batch size set in Settings.</p>
   </div>
 
   <!-- Save / Load -->
@@ -985,28 +984,17 @@ function renderScenariosList() {
     row.className='scenario-row';
     row.innerHTML=`<div class="scenario-dot" style="background:${sc.color}"></div>`
       +`<div class="field"><label>Label</label><input type="text" value="${escHtml(sc.label)}" data-sc-idx="${idx}" data-sc-field="label" style="min-width:100px"></div>`
-      +`<div class="field"><label>Throughput %</label><input type="number" min="10" max="300" step="5" value="${sc.throughputPct||100}" data-sc-idx="${idx}" data-sc-field="throughputPct" placeholder="e.g. 100" style="min-width:80px"></div>`
-      +`<button class="btn-ghost" data-sc-remove="${idx}" style="color:#EF4444;border-color:#FCA5A5;margin-left:auto">Remove</button>`;
+      +`<div class="field"><label>Throughput %</label><input type="number" min="10" max="300" step="5" value="${sc.throughputPct||100}" data-sc-idx="${idx}" data-sc-field="throughputPct" placeholder="e.g. 100" style="min-width:80px"></div>`;
     list.appendChild(row);
   });
 }
 
-document.getElementById('add-scenario-btn').addEventListener('click',()=>{
-  if (scenarios.length>=5) return;
-  const def = SCENARIO_DEFAULTS[scenarios.length] || {label:`Scenario ${scenarios.length+1}`, throughputPct:100};
-  scenarios.push({label:def.label, throughputPct:def.throughputPct||100, color:SCENARIO_COLORS[scenarios.length%SCENARIO_COLORS.length]});
-  renderScenariosList();
-});
-
 document.getElementById('scenarios-list').addEventListener('input',e=>{
   const idx = e.target.dataset.scIdx;
   const field = e.target.dataset.scField;
-  if (idx!==undefined && field) { scenarios[parseInt(idx)][field]=e.target.value; }
-});
-
-document.getElementById('scenarios-list').addEventListener('click',e=>{
-  const idx = e.target.dataset.scRemove;
-  if (idx!==undefined) { scenarios.splice(parseInt(idx),1); renderScenariosList(); }
+  if (idx!==undefined && field) {
+    scenarios[parseInt(idx)][field] = field === 'throughputPct' ? parseFloat(e.target.value) : e.target.value;
+  }
 });
 
 // ═════════════════════════════════════════════════════════════════
