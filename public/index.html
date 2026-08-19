@@ -876,12 +876,12 @@
   <!-- Project switcher -->
   <div class="project-switcher" id="project-switcher">
     <button class="project-btn" id="project-btn">
-      <span class="project-btn-name" id="active-project-name">Select project ▾</span>
+      <span class="project-btn-name" id="active-project-name">My Forecasts ▾</span>
     </button>
     <div class="project-dropdown hidden" id="project-dropdown">
       <div class="project-dropdown-list" id="project-list"></div>
       <div class="project-dropdown-footer">
-        <input type="text" id="new-project-input" placeholder="New project name…" maxlength="60">
+        <input type="text" id="new-project-input" placeholder="New forecast name…" maxlength="60">
         <button class="project-create-btn" id="create-project-btn">Create</button>
       </div>
     </div>
@@ -1188,7 +1188,7 @@ async function loadProjects() {
 function renderProjectList() {
   const list = document.getElementById('project-list');
   if (!projects.length) {
-    list.innerHTML = '<div class="project-empty">No projects yet — create one below</div>';
+    list.innerHTML = '<div class="project-empty">No forecasts yet — create one below</div>';
     return;
   }
   list.innerHTML = projects.map(p => `
@@ -1229,7 +1229,7 @@ async function deleteProject(id) {
     if (activeProject?.id === id) {
       activeProject = null;
       localStorage.removeItem('activeProjectId');
-      document.getElementById('active-project-name').textContent = 'Select project ▾';
+      document.getElementById('active-project-name').textContent = 'My Forecasts ▾';
       forecastHistory = [];
       baselineForecast = null;
       renderHistory();
