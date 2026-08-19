@@ -19,8 +19,31 @@ function adoAuthHeader() {
 function adoBase(org)       { return `https://dev.azure.com/${org}`; }
 function analyticsBase(org) { return `https://analytics.dev.azure.com/${org}`; }
 
+// Classification node path (\Team30\Iteration\Batch 1) → WIQL iteration path (Team30\Batch 1)
+function toWiqlIterationPath(nodePath) {
+  return nodePath
+    .replace(/^\\/, '')             // strip leading backslash
+    .replace(/\\Iteration\\/, '\\') // remove \Iteration\ structural segment
+    .replace(/\\Iteration$/, '');   // remove trailing \Iteration if at root
+}
+
+// Recursively flatten the classification node tree into a list
+function flattenIterations(node, depth, results) {
+  if (depth > 0) {
+    results.push({
+      id:          node.id,
+      name:        node.name,
+      path:        node.path,
+      wiqlPath:    toWiqlIterationPath(node.path),
+      hasChildren: !!(node.children && node.children.length)
+    });
+  }
+  if (node.children) {
+    node.children.forEach(child => flattenIterations(child, depth + 1, results));
+  }
+}
+
 // GET /api/ado/info
-// Returns the locked org and project name so the frontend can display it
 router.get('/info', (req, res) => {
   try {
     const { org, project } = getAdoConfig();
@@ -30,8 +53,29 @@ router.get('/info', (req, res) => {
   }
 });
 
+// GET /api/ado/iterations
+// Returns a flat list of all iteration paths (Batches) for the locked project
+router.get('/iterations', async (req, res) => {
+  try {
+    const { org, project } = getAdoConfig();
+    const url = `${adoBase(org)}/${project}/_apis/wit/classificationnodes/Iterations?$depth=10&api-version=7.1`;
+
+    const response = await fetch(url, { headers: { Authorization: adoAuthHeader() } });
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(response.status).json({ error: text });
+    }
+
+    const data    = await response.json();
+    const results = [];
+    flattenIterations(data, 0, results);
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/ado/throughput?weeks=12&type=Bug
-// Returns completed item counts grouped by week for the locked project
 router.get('/throughput', async (req, res) => {
   const { weeks = 12, type } = req.query;
 
@@ -44,7 +88,6 @@ router.get('/throughput', async (req, res) => {
       `&$orderby=CompletedDateSK desc&$top=${weeks * 7}`;
 
     const response = await fetch(url, { headers: { Authorization: adoAuthHeader() } });
-
     if (!response.ok) {
       const text = await response.text();
       return res.status(response.status).json({ error: text });
@@ -56,18 +99,19 @@ router.get('/throughput', async (req, res) => {
   }
 });
 
-// GET /api/ado/backlog?areaPath=MyTeam&type=Bug
-// Returns count of open work items for the locked project
+// GET /api/ado/backlog?type=Bug&iterationPath=Team30%5CBatch+2
+// Returns count of open work items, optionally scoped to an iteration (Batch)
 router.get('/backlog', async (req, res) => {
-  const { areaPath, type } = req.query;
+  const { areaPath, type, iterationPath } = req.query;
 
   try {
     const { org, project } = getAdoConfig();
-    const areaFilter = areaPath ? ` AND [Area Path] UNDER '${areaPath}'` : '';
-    const typeFilter  = type    ? ` AND [Work Item Type] = '${type}'`    : '';
+    const areaFilter      = areaPath      ? ` AND [Area Path] UNDER '${areaPath}'`             : '';
+    const typeFilter      = type          ? ` AND [Work Item Type] = '${type}'`                 : '';
+    const iterationFilter = iterationPath ? ` AND [Iteration Path] UNDER '${iterationPath}'`    : '';
 
     const wiql = {
-      query: `SELECT [Id] FROM WorkItems WHERE [State] NOT IN ('Closed','Done','Removed')${areaFilter}${typeFilter}`
+      query: `SELECT [Id] FROM WorkItems WHERE [State] NOT IN ('Closed','Done','Removed')${iterationFilter}${areaFilter}${typeFilter}`
     };
 
     const url = `${adoBase(org)}/${project}/_apis/wit/wiql?api-version=7.1`;

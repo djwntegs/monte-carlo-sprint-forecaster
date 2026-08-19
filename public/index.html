@@ -113,6 +113,85 @@
     .ado-status-msg.error { color: #EF4444; }
     .ado-status-msg.loading { color: #94A3B8; }
 
+    /* Batch selector */
+    .batch-field {
+      background: #F0FDF4;
+      border: 1.5px solid #BBF7D0;
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .batch-field label { font-size: 0.78rem; font-weight: 600; color: #166534; }
+
+    .batch-select-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .batch-select {
+      flex: 1;
+      min-width: 160px;
+      padding: 7px 10px;
+      border: 1.5px solid #BBF7D0;
+      border-radius: 7px;
+      font-size: 0.82rem;
+      color: #166534;
+      background: white;
+      cursor: pointer;
+      outline: none;
+    }
+    .batch-select:focus { border-color: #10B981; }
+    .batch-select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .batch-refresh-btn {
+      background: none;
+      border: 1.5px solid #BBF7D0;
+      color: #10B981;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .batch-refresh-btn:hover:not(:disabled) { background: #DCFCE7; }
+    .batch-refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .batch-clear-btn {
+      background: none;
+      border: 1.5px solid #FCA5A5;
+      color: #EF4444;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .batch-clear-btn:hover { background: #FEF2F2; }
+
+    .batch-info {
+      font-size: 0.75rem;
+      color: #166534;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .batch-count-badge {
+      background: #10B981;
+      color: white;
+      font-weight: 700;
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
     /* Backlog ADO button */
     .backlog-ado-wrap {
       display: flex;
@@ -796,6 +875,23 @@
         <label>Period Name</label>
         <input type="text" id="period-label" value="Sprint" placeholder="e.g. Week" style="width:120px">
       </div>
+      <!-- Batch (iteration) selector -->
+      <div class="batch-field" id="batch-field" style="display:none">
+        <label>Batch (Iteration)</label>
+        <div class="batch-select-row">
+          <select class="batch-select" id="batch-select" disabled>
+            <option value="">— Select a Batch —</option>
+          </select>
+          <button class="batch-refresh-btn" id="batch-refresh-btn" title="Reload batches from ADO" disabled>⟳</button>
+          <button class="batch-clear-btn hidden" id="batch-clear-btn">✕ Clear</button>
+        </div>
+        <div class="batch-info hidden" id="batch-info">
+          <span id="batch-info-text"></span>
+          <span class="batch-count-badge" id="batch-count-badge"></span>
+          <span class="ado-status-msg hidden" id="batch-load-status"></span>
+        </div>
+      </div>
+
       <div class="field">
         <label id="backlog-label">Backlog Size (items)</label>
         <div class="backlog-ado-wrap">
@@ -1782,6 +1878,109 @@ function aggregateWeekly(odataValue) {
     .map(([, count]) => count);
 }
 
+// ──────────────────────────────────────────────────────
+//  BATCH (ITERATION) SELECTOR
+// ──────────────────────────────────────────────────────
+let selectedBatch = null; // { name, wiqlPath }
+let iterationsList = [];
+
+async function loadIterations() {
+  const select  = document.getElementById('batch-select');
+  const refresh = document.getElementById('batch-refresh-btn');
+  refresh.disabled = true;
+  select.disabled  = true;
+
+  try {
+    iterationsList = await api('/api/ado/iterations');
+
+    select.innerHTML = '<option value="">— Select a Batch —</option>';
+    iterationsList.forEach(it => {
+      const opt = document.createElement('option');
+      opt.value       = it.wiqlPath;
+      opt.textContent = it.name;
+      opt.title       = it.wiqlPath;
+      select.appendChild(opt);
+    });
+
+    select.disabled  = false;
+    refresh.disabled = false;
+
+    // Re-select previously selected batch if it still exists
+    if (selectedBatch) {
+      const found = iterationsList.find(it => it.wiqlPath === selectedBatch.wiqlPath);
+      if (found) select.value = found.wiqlPath;
+      else clearBatch();
+    }
+  } catch (e) {
+    select.innerHTML = '<option value="">Failed to load batches</option>';
+  }
+}
+
+async function fetchBatchBacklog(wiqlPath, type) {
+  const status = document.getElementById('batch-load-status');
+  const badge  = document.getElementById('batch-count-badge');
+  const info   = document.getElementById('batch-info');
+
+  status.textContent = 'Loading…';
+  status.className   = 'ado-status-msg loading';
+  status.classList.remove('hidden');
+  info.classList.remove('hidden');
+  badge.textContent = '…';
+
+  try {
+    const params = new URLSearchParams({ iterationPath: wiqlPath });
+    if (type) params.set('type', type);
+    const data = await api(`/api/ado/backlog?${params}`);
+
+    badge.textContent = data.count + ' items';
+    document.getElementById('backlog-size').value = data.count;
+    document.getElementById('backlog-size').dispatchEvent(new Event('input'));
+    updateRunButton();
+
+    status.classList.add('hidden');
+    return data.count;
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className   = 'ado-status-msg error';
+    badge.textContent  = '—';
+    return null;
+  }
+}
+
+function clearBatch() {
+  selectedBatch = null;
+  document.getElementById('batch-select').value = '';
+  document.getElementById('batch-info').classList.add('hidden');
+  document.getElementById('batch-clear-btn').classList.add('hidden');
+  document.getElementById('batch-info-text').textContent = '';
+  document.getElementById('batch-count-badge').textContent = '';
+}
+
+document.getElementById('batch-select').addEventListener('change', async e => {
+  const wiqlPath = e.target.value;
+  if (!wiqlPath) { clearBatch(); return; }
+
+  const it = iterationsList.find(x => x.wiqlPath === wiqlPath);
+  selectedBatch = it || { name: wiqlPath, wiqlPath };
+
+  document.getElementById('batch-info-text').textContent = selectedBatch.name + ':';
+  document.getElementById('batch-clear-btn').classList.remove('hidden');
+
+  const type = document.getElementById('ado-backlog-type').value;
+  await fetchBatchBacklog(wiqlPath, type);
+});
+
+document.getElementById('batch-refresh-btn').addEventListener('click', () => loadIterations());
+
+document.getElementById('batch-clear-btn').addEventListener('click', () => clearBatch());
+
+// When backlog type filter changes and a batch is selected, refresh the count
+document.getElementById('ado-backlog-type').addEventListener('change', async () => {
+  if (selectedBatch) {
+    await fetchBatchBacklog(selectedBatch.wiqlPath, document.getElementById('ado-backlog-type').value);
+  }
+});
+
 // Load ADO info to verify connection and enable buttons
 async function loadAdoInfo() {
   const chip     = document.getElementById('ado-chip');
@@ -1793,8 +1992,12 @@ async function loadAdoInfo() {
     adoReady = true;
     document.getElementById('ado-pull-main').disabled    = false;
     document.getElementById('ado-pull-backlog').disabled = false;
+    document.getElementById('batch-refresh-btn').disabled = false;
+    document.getElementById('batch-field').style.display  = '';
     // Re-render categories so their pull buttons enable
     renderCategories();
+    // Load iterations in the background
+    loadIterations();
   } catch (e) {
     // Running against static Python server or backend not reachable — hide gracefully
     chip.className = 'ado-chip error';
