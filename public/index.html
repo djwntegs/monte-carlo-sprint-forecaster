@@ -823,11 +823,6 @@
       </select>
       <select class="ado-select" id="ado-type-main">
         <option value="">All work types</option>
-        <option value="Bug">Bugs</option>
-        <option value="Feature">Features</option>
-        <option value="User Story">User Stories</option>
-        <option value="Task">Tasks</option>
-        <option value="Epic">Epics</option>
       </select>
       <span class="ado-status-msg hidden" id="ado-main-status"></span>
     </div>
@@ -901,11 +896,6 @@
         <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
           <select class="ado-select" id="ado-backlog-type" style="font-size:0.72rem;padding:3px 7px">
             <option value="">All types</option>
-            <option value="Bug">Bugs</option>
-            <option value="Feature">Features</option>
-            <option value="User Story">User Stories</option>
-            <option value="Task">Tasks</option>
-            <option value="Epic">Epics</option>
           </select>
           <span class="ado-status-msg hidden" id="ado-backlog-status"></span>
         </div>
@@ -1415,12 +1405,7 @@ function renderCategories() {
             <option value="24">24 weeks</option>
           </select>
           <select class="ado-select ado-cat-type" data-cat-id="${cat.id}">
-            <option value="">All types</option>
-            <option value="Bug">Bugs</option>
-            <option value="Feature">Features</option>
-            <option value="User Story">User Stories</option>
-            <option value="Task">Tasks</option>
-            <option value="Epic">Epics</option>
+            ${buildTypeOptions()}
           </select>
           <span class="ado-status-msg hidden ado-cat-status" data-cat-id="${cat.id}"></span>
         </div>
@@ -1879,6 +1864,40 @@ function aggregateWeekly(odataValue) {
 }
 
 // ──────────────────────────────────────────────────────
+//  WORK ITEM TYPES (dynamic from ADO)
+// ──────────────────────────────────────────────────────
+let workItemTypes = []; // [{ name: 'Batch Task' }, ...]
+
+function buildTypeOptions(selectedValue = '') {
+  const allOpt = `<option value="">All types</option>`;
+  const typeOpts = workItemTypes.map(t =>
+    `<option value="${escHtml(t.name)}" ${t.name === selectedValue ? 'selected' : ''}>${escHtml(t.name)}</option>`
+  ).join('');
+  return allOpt + typeOpts;
+}
+
+function populateTypeSelects() {
+  // Static selects
+  ['ado-type-main', 'ado-backlog-type'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = buildTypeOptions(current);
+  });
+  // Re-render categories so their type selects pick up the new list
+  renderCategories();
+}
+
+async function loadWorkItemTypes() {
+  try {
+    workItemTypes = await api('/api/ado/workitemtypes');
+    populateTypeSelects();
+  } catch (e) {
+    console.warn('Could not load work item types:', e.message);
+  }
+}
+
+// ──────────────────────────────────────────────────────
 //  BATCH (ITERATION) SELECTOR
 // ──────────────────────────────────────────────────────
 let selectedBatch = null; // { name, wiqlPath }
@@ -1996,7 +2015,8 @@ async function loadAdoInfo() {
     document.getElementById('batch-field').style.display  = '';
     // Re-render categories so their pull buttons enable
     renderCategories();
-    // Load iterations in the background
+    // Load work item types and iterations in the background
+    loadWorkItemTypes();
     loadIterations();
   } catch (e) {
     // Running against static Python server or backend not reachable — hide gracefully

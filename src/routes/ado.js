@@ -53,6 +53,30 @@ router.get('/info', (req, res) => {
   }
 });
 
+// GET /api/ado/workitemtypes
+// Returns the work item type names defined in the locked project
+router.get('/workitemtypes', async (req, res) => {
+  try {
+    const { org, project } = getAdoConfig();
+    const url = `${adoBase(org)}/${project}/_apis/wit/workitemtypes?api-version=7.1`;
+
+    const response = await fetch(url, { headers: { Authorization: adoAuthHeader() } });
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(response.status).json({ error: text });
+    }
+
+    const data  = await response.json();
+    const types = (data.value || [])
+      .map(t => ({ name: t.name, icon: t.icon?.url || null }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    res.json(types);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/ado/iterations
 // Returns a flat list of all iteration paths (Batches) for the locked project
 router.get('/iterations', async (req, res) => {
