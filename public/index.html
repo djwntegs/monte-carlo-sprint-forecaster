@@ -2016,8 +2016,14 @@ async function autoPullThroughput(type) {
     const data = await api(`/api/ado/throughput?${params}`);
 
     if (!data.value?.length) {
-      status.textContent = 'No throughput data found — try a different type or more weeks.';
-      status.className   = 'ado-status-msg error';
+      const hasExistingData = document.getElementById('sprint-data').value.trim().length > 0;
+      if (hasExistingData) {
+        status.textContent = 'No ADO throughput found — using data entered above.';
+        status.className   = 'ado-status-msg'; // neutral grey
+      } else {
+        status.textContent = 'No ADO throughput found — enter data manually or load sample data above.';
+        status.className   = 'ado-status-msg error';
+      }
       return;
     }
 
