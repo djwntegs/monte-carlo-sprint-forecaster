@@ -1186,17 +1186,27 @@ let lastRunResults = null; // { overall, perCategory }
 // ──────────────────────────────────────────────────────
 //  API HELPERS
 // ──────────────────────────────────────────────────────
-async function api(path, opts = {}) {
-  const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...opts,
-    body: opts.body ? JSON.stringify(opts.body) : undefined
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || res.statusText);
+async function api(path, opts = {}, timeoutMs = 90000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts,
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+      signal: controller.signal
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || res.statusText);
+    }
+    return res.status === 204 ? null : res.json();
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('Server took too long to respond');
+    throw e;
+  } finally {
+    clearTimeout(timer);
   }
-  return res.status === 204 ? null : res.json();
 }
 
 // ──────────────────────────────────────────────────────
@@ -2363,23 +2373,31 @@ document.getElementById('ado-weeks').addEventListener('change', async () => {
 async function loadAdoInfo() {
   const chip     = document.getElementById('ado-chip');
   const chipText = document.getElementById('ado-chip-text');
+  chip.className = 'ado-chip loading';
+  chipText.textContent = 'ADO connecting…';
+
+  // Warn after 10s that the server may be waking up
+  const wakeTimer = setTimeout(() => {
+    if (chipText.textContent === 'ADO connecting…')
+      chipText.textContent = 'Server waking up — please wait…';
+  }, 10000);
+
   try {
     const info = await api('/api/ado/info');
+    clearTimeout(wakeTimer);
     chipText.textContent = `${info.org} / ${info.project}`;
     chip.className = 'ado-chip';
     adoReady = true;
     document.getElementById('ado-pull-main').disabled     = false;
     document.getElementById('batch-refresh-btn').disabled = false;
     document.getElementById('batch-field').style.display  = '';
-    // Re-render categories so their pull buttons enable
     renderCategories();
-    // Load work item types and iterations in the background
     loadWorkItemTypes();
     loadIterations();
   } catch (e) {
-    // Running against static Python server or backend not reachable — hide gracefully
+    clearTimeout(wakeTimer);
     chip.className = 'ado-chip error';
-    chipText.textContent = 'ADO unavailable';
+    chipText.innerHTML = 'ADO unavailable — <span style="cursor:pointer;text-decoration:underline" onclick="loadAdoInfo()">retry</span>';
   }
 }
 
