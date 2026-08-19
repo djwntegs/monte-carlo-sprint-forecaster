@@ -1055,9 +1055,7 @@
 
     <div class="ado-import-row" id="ado-main-import-row">
       <button class="ado-pull-btn" id="ado-pull-main" disabled>↓ Pull from ADO</button>
-      <select class="ado-select" id="ado-type-main">
-        <option value="">All work types</option>
-      </select>
+      <select class="ado-select" id="ado-type-main" style="display:none"></select>
       <label style="font-size:0.78rem;color:#64748B;white-space:nowrap;display:flex;align-items:center;gap:6px;">
         From
         <input type="date" id="ado-start-date" class="ado-select" style="padding:6px 8px;font-size:0.8rem;">
@@ -2543,8 +2541,8 @@ document.getElementById('ado-pull-main').addEventListener('click', async () => {
   const btn       = document.getElementById('ado-pull-main');
   const status    = document.getElementById('ado-main-status');
   const weeks     = document.getElementById('ado-weeks').value;
-  const type      = document.getElementById('ado-type-main').value;
   const startDate = document.getElementById('ado-start-date').value;
+  const types     = getSelectedTypes();
 
   btn.disabled = true;
   btn.textContent = '↓ Pulling…';
@@ -2554,17 +2552,33 @@ document.getElementById('ado-pull-main').addEventListener('click', async () => {
 
   try {
     const params = new URLSearchParams({ weeks });
-    if (type)      params.set('type', type);
     if (startDate) params.set('startDate', startDate);
-    const data = await api(`/api/ado/throughput?${params}`);
 
-    if (!data.value?.length) {
+    let rows;
+    if (types.length <= 1) {
+      if (types[0]) params.set('type', types[0]);
+      const data = await api(`/api/ado/throughput?${params}`);
+      rows = data.value || [];
+    } else {
+      const results = await Promise.all(types.map(t => {
+        const p = new URLSearchParams(params);
+        p.set('type', t);
+        return api(`/api/ado/throughput?${p}`);
+      }));
+      const merged = {};
+      results.forEach(d => (d.value || []).forEach(r => {
+        merged[r.CompletedDateSK] = (merged[r.CompletedDateSK] || 0) + (r.Count || 0);
+      }));
+      rows = Object.entries(merged).map(([sk, Count]) => ({ CompletedDateSK: Number(sk), Count }));
+    }
+
+    if (!rows.length) {
       status.textContent = 'No completed items found for that period/type.';
       status.className = 'ado-status-msg error';
       return;
     }
 
-    const weekly = aggregateWeekly(data.value);
+    const weekly = aggregateWeekly(rows);
     const textarea = document.getElementById('sprint-data');
     textarea.value = weekly.join(', ');
     textarea.dispatchEvent(new Event('input'));
