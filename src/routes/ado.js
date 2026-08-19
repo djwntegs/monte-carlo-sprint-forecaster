@@ -135,17 +135,28 @@ router.get('/batchprogress', async (req, res) => {
   }
 });
 
-// GET /api/ado/throughput?weeks=12&type=Bug
+// GET /api/ado/throughput?weeks=12&type=Bug&startDate=2024-01-01
 router.get('/throughput', async (req, res) => {
-  const { weeks = 12, type } = req.query;
+  const { weeks = 12, type, startDate } = req.query;
 
   try {
     const { org, project } = getAdoConfig();
     const typeFilter = type ? ` and WorkItemType eq '${type}'` : '';
+
+    let dateFilter = '';
+    let topClause  = `&$orderby=CompletedDateSK desc&$top=${weeks * 7}`;
+
+    if (startDate) {
+      // CompletedDateSK is an integer YYYYMMDD
+      const sk = startDate.replace(/-/g, '');
+      dateFilter = ` and CompletedDateSK ge ${sk}`;
+      topClause  = `&$orderby=CompletedDateSK asc`; // no $top when using start date
+    }
+
     const url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemSnapshot?` +
-      `$apply=filter(StateCategory eq 'Completed'${typeFilter})` +
+      `$apply=filter(StateCategory eq 'Completed'${typeFilter}${dateFilter})` +
       `/groupby((CompletedDateSK),aggregate($count as Count))` +
-      `&$orderby=CompletedDateSK desc&$top=${weeks * 7}`;
+      topClause;
 
     const response = await fetch(url, { headers: { Authorization: adoAuthHeader() } });
     if (!response.ok) {
