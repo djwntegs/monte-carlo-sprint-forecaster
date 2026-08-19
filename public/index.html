@@ -747,6 +747,10 @@
     .hist-action-btn.pin-btn:hover { background: #10B981; color: white; }
     .hist-action-btn.del-btn:hover { border-color: #EF4444; color: #EF4444; }
 
+    details.card summary { user-select: none; }
+    details.card summary span:first-child { transition: transform 0.15s; display: inline-block; }
+    details.card[open] summary span:first-child { transform: rotate(90deg); }
+
     .hidden { display: none !important; }
 
     @media (max-width: 860px) {
@@ -799,6 +803,82 @@
 
 <main>
 
+  <!-- ── FORECAST SETUP ────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">Forecast Setup</div>
+
+    <!-- Batch selector — shown when ADO is connected -->
+    <div class="batch-field" id="batch-field" style="display:none">
+      <label>Select Batch</label>
+      <div class="batch-select-row">
+        <select class="batch-select" id="batch-select" disabled>
+          <option value="">— Select a Batch —</option>
+        </select>
+        <button class="batch-refresh-btn" id="batch-refresh-btn" title="Reload batches from ADO" disabled>⟳</button>
+        <button class="batch-clear-btn hidden" id="batch-clear-btn">✕ Clear</button>
+      </div>
+      <div class="batch-info hidden" id="batch-info">
+        <span id="batch-info-text"></span>
+        <span class="batch-count-badge" id="batch-count-badge"></span>
+        <span class="ado-status-msg hidden" id="batch-load-status"></span>
+      </div>
+    </div>
+
+    <div class="settings-row" style="margin-top:16px">
+      <!-- Work type -->
+      <div class="field" id="batch-type-field">
+        <label>Work Item Type</label>
+        <select class="ado-select" id="ado-backlog-type" style="width:100%">
+          <option value="">All types</option>
+        </select>
+        <span class="ado-status-msg hidden" id="ado-backlog-status" style="margin-top:4px"></span>
+      </div>
+
+      <!-- Backlog size -->
+      <div class="field">
+        <label id="backlog-label">Backlog Size (items)</label>
+        <div class="backlog-ado-wrap">
+          <input type="number" id="backlog-size" min="1" placeholder="e.g. 150" style="flex:1">
+          <button class="backlog-ado-btn" id="ado-pull-backlog" disabled title="Pull live backlog count from ADO">↓ ADO</button>
+        </div>
+      </div>
+
+      <!-- Throughput weeks -->
+      <div class="field" id="throughput-weeks-field">
+        <label>Throughput History</label>
+        <select class="ado-select" id="ado-weeks" style="width:100%">
+          <option value="8">Last 8 periods</option>
+          <option value="12" selected>Last 12 periods</option>
+          <option value="16">Last 16 periods</option>
+          <option value="24">Last 24 periods</option>
+        </select>
+      </div>
+
+      <!-- Forecast output -->
+      <div class="field">
+        <label>Forecast Output</label>
+        <div class="toggle-group" id="forecast-type-toggle">
+          <button class="toggle active" data-forecast="sprints" id="forecast-sprints-btn">Periods</button>
+          <button class="toggle" data-forecast="date">Date</button>
+          <button class="toggle" data-forecast="both">Both</button>
+        </div>
+      </div>
+      <div class="field hidden" id="sprint-length-field">
+        <label id="sprint-length-label">Period Length (days)</label>
+        <input type="number" id="sprint-length" min="1" value="14">
+      </div>
+      <div class="field hidden" id="start-date-field">
+        <label>Start Date</label>
+        <input type="date" id="start-date">
+      </div>
+
+      <!-- Run -->
+      <div class="field" style="justify-content:flex-end; flex:1; align-items:flex-end">
+        <button class="run-btn" id="run-btn" disabled>Run Simulation</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── HISTORICAL DATA ───────────────────────────────── -->
   <div class="card">
     <div class="input-header">
@@ -815,12 +895,6 @@
 
     <div class="ado-import-row" id="ado-main-import-row">
       <button class="ado-pull-btn" id="ado-pull-main" disabled>↓ Pull from ADO</button>
-      <select class="ado-select" id="ado-weeks">
-        <option value="8">8 weeks</option>
-        <option value="12" selected>12 weeks</option>
-        <option value="16">16 weeks</option>
-        <option value="24">24 weeks</option>
-      </select>
       <select class="ado-select" id="ado-type-main">
         <option value="">All work types</option>
       </select>
@@ -846,11 +920,7 @@
 
   <!-- ── BACKLOG ALLOCATION ───────────────────────────── -->
   <div class="card">
-    <div class="card-title">Backlog Allocation</div>
-    <p class="allocation-hint">
-      Split your backlog across work types. Each category draws from its own throughput data, or falls back to the main data above.
-      Percentages must total 100%.
-    </p>
+    <div class="card-title">Backlog Allocation <span style="font-size:0.65rem;color:#CBD5E1;font-weight:400;text-transform:none;letter-spacing:0">— optional: split backlog across work types</span></div>
     <div class="cat-list" id="cat-list"></div>
     <div class="allocation-footer">
       <button class="add-cat-btn" id="add-cat-btn">+ Add Category</button>
@@ -862,69 +932,22 @@
     </div>
   </div>
 
-  <!-- ── SETTINGS ──────────────────────────────────────── -->
-  <div class="card">
-    <div class="card-title">Forecast Settings</div>
-    <div class="settings-row">
+  <!-- ── ADVANCED SETTINGS ─────────────────────────────── -->
+  <details class="card" style="cursor:default">
+    <summary style="cursor:pointer;font-size:0.7rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.08em;list-style:none;display:flex;align-items:center;gap:6px">
+      <span>▶</span> Advanced Settings
+    </summary>
+    <div class="settings-row" style="margin-top:16px">
       <div class="field">
         <label>Period Name</label>
         <input type="text" id="period-label" value="Period" placeholder="e.g. Week" style="width:120px">
-      </div>
-      <!-- Batch (iteration) selector -->
-      <div class="batch-field" id="batch-field" style="display:none">
-        <label>Batch (Iteration)</label>
-        <div class="batch-select-row">
-          <select class="batch-select" id="batch-select" disabled>
-            <option value="">— Select a Batch —</option>
-          </select>
-          <button class="batch-refresh-btn" id="batch-refresh-btn" title="Reload batches from ADO" disabled>⟳</button>
-          <button class="batch-clear-btn hidden" id="batch-clear-btn">✕ Clear</button>
-        </div>
-        <div class="batch-info hidden" id="batch-info">
-          <span id="batch-info-text"></span>
-          <span class="batch-count-badge" id="batch-count-badge"></span>
-          <span class="ado-status-msg hidden" id="batch-load-status"></span>
-        </div>
-      </div>
-
-      <div class="field">
-        <label id="backlog-label">Backlog Size (items)</label>
-        <div class="backlog-ado-wrap">
-          <input type="number" id="backlog-size" min="1" placeholder="e.g. 150" style="flex:1">
-          <button class="backlog-ado-btn" id="ado-pull-backlog" disabled title="Pull live backlog count from ADO">↓ ADO</button>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
-          <select class="ado-select" id="ado-backlog-type" style="font-size:0.72rem;padding:3px 7px">
-            <option value="">All types</option>
-          </select>
-          <span class="ado-status-msg hidden" id="ado-backlog-status"></span>
-        </div>
-      </div>
-      <div class="field">
-        <label>Forecast Output</label>
-        <div class="toggle-group" id="forecast-type-toggle">
-          <button class="toggle active" data-forecast="sprints" id="forecast-sprints-btn">Sprints</button>
-          <button class="toggle" data-forecast="date">Date</button>
-          <button class="toggle" data-forecast="both">Both</button>
-        </div>
-      </div>
-      <div class="field hidden" id="sprint-length-field">
-        <label id="sprint-length-label">Period Length (days)</label>
-        <input type="number" id="sprint-length" min="1" value="14">
-      </div>
-      <div class="field hidden" id="start-date-field">
-        <label>Start Date</label>
-        <input type="date" id="start-date">
       </div>
       <div class="field">
         <label>Simulations</label>
         <input type="number" id="sim-count" min="1000" max="100000" value="10000" step="1000">
       </div>
-      <div class="field" style="justify-content:flex-end; flex:1; align-items:flex-end">
-        <button class="run-btn" id="run-btn" disabled>Run Simulation</button>
-      </div>
     </div>
-  </div>
+  </details>
 
   <!-- ── RESULTS ────────────────────────────────────────── -->
   <div class="card hidden" id="results-section">
@@ -1876,14 +1899,29 @@ function buildTypeOptions(selectedValue = '') {
   return allOpt + typeOpts;
 }
 
+// Preferred type names for auto-defaulting (checked in order)
+const BATCH_TYPE_PREFERENCES = ['Batch Task', 'Task', 'User Story'];
+
+function getPreferredType() {
+  for (const pref of BATCH_TYPE_PREFERENCES) {
+    if (workItemTypes.some(t => t.name === pref)) return pref;
+  }
+  return '';
+}
+
 function populateTypeSelects() {
-  // Static selects
-  ['ado-type-main', 'ado-backlog-type'].forEach(id => {
-    const sel = document.getElementById(id);
-    if (!sel) return;
-    const current = sel.value;
-    sel.innerHTML = buildTypeOptions(current);
-  });
+  // Primary type selector (setup card)
+  const backlogSel = document.getElementById('ado-backlog-type');
+  if (backlogSel) {
+    const current = backlogSel.value || getPreferredType();
+    backlogSel.innerHTML = buildTypeOptions(current);
+  }
+  // Secondary (historical data card manual pull)
+  const mainSel = document.getElementById('ado-type-main');
+  if (mainSel) {
+    const current = mainSel.value || getPreferredType();
+    mainSel.innerHTML = buildTypeOptions(current);
+  }
   // Re-render categories so their type selects pick up the new list
   renderCategories();
 }
@@ -1966,6 +2004,43 @@ async function fetchBatchBacklog(wiqlPath, type) {
   }
 }
 
+async function autoPullThroughput(type) {
+  const weeks  = document.getElementById('ado-weeks').value;
+  const status = document.getElementById('ado-main-status');
+
+  // Sync the historical-data type select to match
+  const mainTypeSelect = document.getElementById('ado-type-main');
+  if (mainTypeSelect) mainTypeSelect.value = type || '';
+
+  status.textContent = 'Loading throughput…';
+  status.className   = 'ado-status-msg loading';
+  status.classList.remove('hidden');
+
+  try {
+    const params = new URLSearchParams({ weeks });
+    if (type) params.set('type', type);
+    const data = await api(`/api/ado/throughput?${params}`);
+
+    if (!data.value?.length) {
+      status.textContent = 'No throughput data found — try a different type or more weeks.';
+      status.className   = 'ado-status-msg error';
+      return;
+    }
+
+    const weekly = aggregateWeekly(data.value);
+    const textarea = document.getElementById('sprint-data');
+    textarea.value = weekly.join(', ');
+    textarea.dispatchEvent(new Event('input'));
+
+    const typeLabel = type || 'all types';
+    status.textContent = `✓ ${weekly.length} periods of throughput loaded (${typeLabel})`;
+    status.className   = 'ado-status-msg ok';
+  } catch (e) {
+    status.textContent = 'Throughput error: ' + e.message;
+    status.className   = 'ado-status-msg error';
+  }
+}
+
 function clearBatch() {
   selectedBatch = null;
   document.getElementById('batch-select').value = '';
@@ -1986,18 +2061,33 @@ document.getElementById('batch-select').addEventListener('change', async e => {
   document.getElementById('batch-clear-btn').classList.remove('hidden');
 
   const type = document.getElementById('ado-backlog-type').value;
-  await fetchBatchBacklog(wiqlPath, type);
+
+  // Pull backlog count and throughput data in parallel
+  await Promise.all([
+    fetchBatchBacklog(wiqlPath, type),
+    autoPullThroughput(type)
+  ]);
 });
 
 document.getElementById('batch-refresh-btn').addEventListener('click', () => loadIterations());
 
 document.getElementById('batch-clear-btn').addEventListener('click', () => clearBatch());
 
-// When backlog type filter changes and a batch is selected, refresh the count
+// When work item type changes and a batch is selected, refresh both count and throughput
 document.getElementById('ado-backlog-type').addEventListener('change', async () => {
-  if (selectedBatch) {
-    await fetchBatchBacklog(selectedBatch.wiqlPath, document.getElementById('ado-backlog-type').value);
-  }
+  if (!selectedBatch) return;
+  const type = document.getElementById('ado-backlog-type').value;
+  await Promise.all([
+    fetchBatchBacklog(selectedBatch.wiqlPath, type),
+    autoPullThroughput(type)
+  ]);
+});
+
+// When weeks changes and a batch is selected, re-pull throughput
+document.getElementById('ado-weeks').addEventListener('change', async () => {
+  if (!selectedBatch) return;
+  const type = document.getElementById('ado-backlog-type').value;
+  await autoPullThroughput(type);
 });
 
 // Load ADO info to verify connection and enable buttons
