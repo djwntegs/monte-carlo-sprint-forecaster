@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monte Carlo Sprint Forecaster</title>
+  <title>Monte Carlo Forecaster</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -620,7 +620,7 @@
 
 <header>
   <div>
-    <h1>Monte Carlo Sprint Forecaster</h1>
+    <h1>Monte Carlo Forecaster</h1>
     <p>Probabilistic forecasting from historical throughput data</p>
   </div>
   <span class="header-badge">10,000 SIMULATIONS</span>
@@ -631,7 +631,7 @@
   <!-- ── HISTORICAL DATA ───────────────────────────────── -->
   <div class="card">
     <div class="input-header">
-      <span class="card-title" style="margin-bottom:0">Historical Sprint Data</span>
+      <span class="card-title" style="margin-bottom:0" id="hist-data-title">Historical Period Data</span>
       <div class="toggle-group" id="data-type-toggle">
         <button class="toggle active" data-type="items">Work Items</button>
         <button class="toggle" data-type="points">Story Points</button>
@@ -640,13 +640,13 @@
     </div>
 
     <textarea id="sprint-data"
-      placeholder="Paste throughput per sprint — comma or newline separated.&#10;Example:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33"></textarea>
+      placeholder="Paste throughput per period — comma or newline separated.&#10;Example:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33"></textarea>
 
     <div id="data-error"   class="error-text hidden"></div>
     <div id="data-warning" class="warning-text hidden"></div>
 
     <div id="data-stats" class="stats-bar hidden">
-      <div class="stat-item"><span class="stat-lbl">Sprints</span><span class="stat-val" id="stat-count">-</span></div>
+      <div class="stat-item"><span class="stat-lbl" id="stat-count-lbl">Periods</span><span class="stat-val" id="stat-count">-</span></div>
       <div class="stat-item"><span class="stat-lbl">Avg</span><span class="stat-val" id="stat-avg">-</span></div>
       <div class="stat-item"><span class="stat-lbl">Median</span><span class="stat-val" id="stat-median">-</span></div>
       <div class="stat-item"><span class="stat-lbl">Min</span><span class="stat-val" id="stat-min">-</span></div>
@@ -684,6 +684,11 @@
     <div class="card-title">Forecast Settings</div>
     <div class="settings-row">
       <div class="field">
+        <label>Period Name</label>
+        <input type="text" id="period-label" value="Sprint" placeholder="e.g. Week" style="width:120px">
+      </div>
+
+      <div class="field">
         <label id="backlog-label">Backlog Size (items)</label>
         <input type="number" id="backlog-size" min="1" placeholder="e.g. 150">
       </div>
@@ -691,14 +696,14 @@
       <div class="field">
         <label>Forecast Output</label>
         <div class="toggle-group" id="forecast-type-toggle">
-          <button class="toggle active" data-forecast="sprints">Sprints</button>
+          <button class="toggle active" data-forecast="sprints" id="forecast-sprints-btn">Sprints</button>
           <button class="toggle" data-forecast="date">Date</button>
           <button class="toggle" data-forecast="both">Both</button>
         </div>
       </div>
 
       <div class="field hidden" id="sprint-length-field">
-        <label>Sprint Length (days)</label>
+        <label id="sprint-length-label">Period Length (days)</label>
         <input type="number" id="sprint-length" min="1" value="14">
       </div>
 
@@ -803,6 +808,19 @@ const SAMPLE_BUG_DATA    = [4,7,3,6,5,8,4,6,3,7,5,4,6,5,7];
 let dataType     = 'items';
 let forecastType = 'sprints';
 let parsedData   = [];
+let periodLabel  = 'Sprint';
+
+function getPeriod(n) { return n === 1 ? periodLabel : periodLabel + 's'; }
+
+function applyPeriodLabel() {
+  const p = periodLabel;
+  document.getElementById('hist-data-title').textContent  = `Historical ${p} Data`;
+  document.getElementById('stat-count-lbl').textContent   = `${p}s`;
+  document.getElementById('sprint-length-label').textContent = `${p} Length (days)`;
+  document.getElementById('forecast-sprints-btn').textContent = `${p}s`;
+  const ta = document.getElementById('sprint-data');
+  ta.placeholder = `Paste throughput per ${p.toLowerCase()} — comma or newline separated.\nExample:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33`;
+}
 
 let chartThroughput = null;
 let chartDist       = null;
@@ -1084,7 +1102,7 @@ function renderThroughputChart(data) {
   chartThroughput = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: data.map((_, i) => `S${i+1}`),
+      labels: data.map((_, i) => `${periodLabel.slice(0,1)}${i+1}`),
       datasets: [
         { label: 'Throughput', data, backgroundColor: data.map(v => v >= avg ? 'rgba(99,102,241,0.7)' : 'rgba(99,102,241,0.3)'), borderRadius: 3, borderSkipped: false },
         { type: 'line', label: 'Avg', data: data.map(() => avg), borderColor: '#F43F5E', borderWidth: 1.5, borderDash: [4,4], pointRadius: 0, tension: 0 }
@@ -1131,7 +1149,7 @@ function renderDistChart(sorted, percs) {
         tooltip: { callbacks: { title: items => `${items[0].label} sprints`, label: ctx => `${ctx.raw.toFixed(1)}% of simulations` } }
       },
       scales: {
-        x: { title: { display: true, text: 'Sprints to Complete', font: { size: 10 }, color: '#94A3B8' }, grid: { display: false }, ticks: { font: { size: 10 }, color: '#94A3B8' } },
+        x: { title: { display: true, text: `${getPeriod(2)} to Complete`, font: { size: 10 }, color: '#94A3B8' }, grid: { display: false }, ticks: { font: { size: 10 }, color: '#94A3B8' } },
         y: { title: { display: true, text: '% of Simulations', font: { size: 10 }, color: '#94A3B8' }, grid: { color: '#F1F5F9' }, ticks: { font: { size: 10 }, color: '#94A3B8', callback: v => v + '%' } }
       }
     }
@@ -1167,7 +1185,7 @@ function renderCumChart(sorted, percs) {
         tooltip: { filter: item => item.dataset.label === 'Probability', callbacks: { title: items => `Sprint ${items[0].parsed.x}`, label: ctx => `${ctx.parsed.y.toFixed(1)}% probability of completion` } }
       },
       scales: {
-        x: { type: 'linear', title: { display: true, text: 'Sprints to Complete', font: { size: 10 }, color: '#94A3B8' }, grid: { color: '#F1F5F9' }, ticks: { font: { size: 10 }, color: '#94A3B8', stepSize: 1 } },
+        x: { type: 'linear', title: { display: true, text: `${getPeriod(2)} to Complete`, font: { size: 10 }, color: '#94A3B8' }, grid: { color: '#F1F5F9' }, ticks: { font: { size: 10 }, color: '#94A3B8', stepSize: 1 } },
         y: { min: 0, max: 100, title: { display: true, text: 'Probability (%)', font: { size: 10 }, color: '#94A3B8' }, grid: { color: '#F1F5F9' }, ticks: { font: { size: 10 }, color: '#94A3B8', callback: v => v + '%' } }
       }
     }
@@ -1189,7 +1207,7 @@ function displayResults(overallSorted, perCatSorted, simCount) {
   CONF_LEVELS.forEach(p => {
     const s = percs[p];
     document.getElementById(`v${p}-sprints`).textContent = s;
-    document.getElementById(`v${p}-unit`).textContent = `sprint${s !== 1 ? 's' : ''}`;
+    document.getElementById(`v${p}-unit`).textContent = getPeriod(s);
     document.getElementById(`v${p}-sprints`).style.display = showSprints ? '' : 'none';
     document.getElementById(`v${p}-unit`).style.display    = showSprints ? '' : 'none';
     const dateEl = document.getElementById(`v${p}-date`);
@@ -1326,7 +1344,7 @@ document.getElementById('sprint-data').addEventListener('input', () => {
   } else {
     parsedData = result.values;
     if (parsedData.length < 5) {
-      warnEl.textContent = `Only ${parsedData.length} sprint${parsedData.length > 1 ? 's' : ''} — more data (5+) gives more reliable forecasts.`;
+      warnEl.textContent = `Only ${parsedData.length} ${getPeriod(parsedData.length)} — more data (5+) gives more reliable forecasts.`;
       warnEl.classList.remove('hidden');
     }
     updateStats(parsedData);
@@ -1363,12 +1381,21 @@ document.getElementById('run-btn').addEventListener('click', () => {
 });
 
 // ──────────────────────────────────────────────────────
+//  PERIOD LABEL
+// ──────────────────────────────────────────────────────
+document.getElementById('period-label').addEventListener('input', e => {
+  periodLabel = e.target.value.trim() || 'Period';
+  applyPeriodLabel();
+});
+
+// ──────────────────────────────────────────────────────
 //  INIT
 // ──────────────────────────────────────────────────────
 document.getElementById('start-date').valueAsDate = new Date();
 
 // Default categories
 addCategory('Feature Work', 100, CAT_COLORS[0]);
+applyPeriodLabel();
 updateRunButton();
 </script>
 </body>
