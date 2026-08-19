@@ -626,6 +626,20 @@
     .conf-85 .conf-date { background: #DBEAFE; color: #1E3A8A; }
     .conf-95 .conf-date { background: #EDE9FE; color: #4C1D95; }
 
+    .baseline-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #F0FDF4;
+      border: 1.5px solid #BBF7D0;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #166534;
+      margin-bottom: 16px;
+    }
+
     /* Baseline deviation badge */
     .conf-deviation {
       font-size: 0.68rem;
@@ -1008,6 +1022,12 @@
   <!-- ── RESULTS ────────────────────────────────────────── -->
   <div class="card hidden" id="results-section">
     <div class="card-title">Forecast Results <span id="results-subtitle" style="font-size:0.65rem;color:#CBD5E1;font-weight:500;text-transform:none;letter-spacing:0">— overall completion</span></div>
+
+    <!-- Baseline comparison banner -->
+    <div class="baseline-banner hidden" id="baseline-banner">
+      <span>📍</span>
+      <span id="baseline-banner-text"></span>
+    </div>
 
     <div class="confidence-grid">
       <div class="conf-card conf-50">
@@ -1790,6 +1810,19 @@ function displayResults(overallSorted, perCatSorted, simCount, storedResults) {
     const dateEl = document.getElementById(`v${p}-date`);
     if (showDate && startDate) { dateEl.textContent = sprintsToDate(s, sprintLen, startDate); dateEl.classList.remove('hidden'); }
     else { dateEl.classList.add('hidden'); }
+
+    // Baseline banner
+    const banner     = document.getElementById('baseline-banner');
+    const bannerText = document.getElementById('baseline-banner-text');
+    if (baselineForecast) {
+      const d     = new Date(baselineForecast.run_date);
+      const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      const note  = baselineForecast.notes ? ` — "${baselineForecast.notes}"` : '';
+      bannerText.textContent = `Comparing to baseline from ${dateStr}${note}`;
+      banner.classList.remove('hidden');
+    } else {
+      banner.classList.add('hidden');
+    }
 
     // Baseline deviation
     const devEl = document.getElementById(`v${p}-dev`);
