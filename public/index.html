@@ -1165,7 +1165,7 @@ async function loadProjects() {
     const savedId = localStorage.getItem('activeProjectId');
     if (savedId) {
       const found = projects.find(p => p.id === savedId);
-      if (found) await selectProject(found, false);
+      if (found) await selectProject(found);
     }
   } catch(e) {
     console.error('Failed to load projects', e);
