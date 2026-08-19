@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monte Carlo Forecaster</title>
+  <title>BatchCast</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -849,9 +849,22 @@
 <body>
 
 <header>
-  <div>
-    <h1>Monte Carlo Forecaster</h1>
-    <p>Probabilistic forecasting from historical throughput data</p>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <!-- BatchCast logo -->
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <!-- Stack of batch bars -->
+      <rect x="4" y="22" width="8" height="10" rx="1.5" fill="#6366F1"/>
+      <rect x="14" y="15" width="8" height="17" rx="1.5" fill="#818CF8"/>
+      <rect x="24" y="9" width="8" height="23" rx="1.5" fill="#A5B4FC"/>
+      <!-- Forecast curve -->
+      <path d="M4 20 Q12 8 32 4" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      <!-- Dot at end of curve -->
+      <circle cx="32" cy="4" r="2.5" fill="#10B981"/>
+    </svg>
+    <div>
+      <h1 style="font-size:1.25rem;font-weight:800;letter-spacing:-0.02em;">Batch<span style="color:#818CF8;">Cast</span></h1>
+      <p>Probabilistic batch forecasting</p>
+    </div>
   </div>
 
   <!-- ADO status chip -->
