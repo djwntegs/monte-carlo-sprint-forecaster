@@ -15,21 +15,22 @@
       min-height: 100vh;
     }
 
+    /* ── HEADER ───────────────────────────────────────── */
     header {
       background: #0F172A;
       color: white;
-      padding: 20px 40px;
+      padding: 14px 40px;
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 16px;
       border-bottom: 1px solid #1E293B;
+      flex-wrap: wrap;
     }
 
-    header h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.01em; }
-    header p  { font-size: 0.8rem; color: #64748B; }
+    header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
+    header p  { font-size: 0.75rem; color: #64748B; white-space: nowrap; }
 
     .header-badge {
-      margin-left: auto;
       background: #6366F1;
       color: white;
       font-size: 0.7rem;
@@ -37,8 +38,128 @@
       padding: 3px 8px;
       border-radius: 4px;
       letter-spacing: 0.05em;
+      white-space: nowrap;
     }
 
+    /* Project switcher */
+    .project-switcher {
+      position: relative;
+      margin-left: auto;
+    }
+
+    .project-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #1E293B;
+      border: 1px solid #334155;
+      color: white;
+      padding: 7px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 500;
+      transition: background 0.12s;
+      white-space: nowrap;
+      max-width: 220px;
+    }
+
+    .project-btn:hover { background: #273549; }
+
+    .project-btn-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .project-btn-arrow { color: #64748B; font-size: 0.7rem; flex-shrink: 0; }
+
+    .project-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      width: 280px;
+      background: white;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      z-index: 100;
+      overflow: hidden;
+    }
+
+    .project-dropdown-list { max-height: 220px; overflow-y: auto; }
+
+    .project-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 14px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      color: #334155;
+      transition: background 0.1s;
+      gap: 8px;
+    }
+
+    .project-item:hover { background: #F8FAFC; }
+    .project-item.active { background: #EEF2FF; color: #4F46E5; font-weight: 600; }
+
+    .project-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .project-delete-btn {
+      background: none;
+      border: none;
+      color: #CBD5E1;
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 2px 4px;
+      border-radius: 3px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .project-delete-btn:hover { color: #EF4444; }
+
+    .project-empty {
+      padding: 18px 14px;
+      font-size: 0.8rem;
+      color: #94A3B8;
+      text-align: center;
+    }
+
+    .project-dropdown-footer {
+      padding: 10px 12px;
+      border-top: 1px solid #F1F5F9;
+      display: flex;
+      gap: 6px;
+    }
+
+    .project-dropdown-footer input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      outline: none;
+    }
+
+    .project-dropdown-footer input:focus { border-color: #6366F1; }
+
+    .project-create-btn {
+      background: #6366F1;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .project-create-btn:hover { background: #4F46E5; }
+
+    /* ── LAYOUT ───────────────────────────────────────── */
     main {
       max-width: 1100px;
       margin: 0 auto;
@@ -117,12 +238,7 @@
       line-height: 1.7;
     }
 
-    textarea:focus {
-      outline: none;
-      border-color: #6366F1;
-      box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
-    }
-
+    textarea:focus { outline: none; border-color: #6366F1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
     textarea::placeholder { color: #CBD5E1; font-family: inherit; }
 
     .sample-btn {
@@ -159,30 +275,15 @@
     .warning-text { color: #D97706; font-size: 0.78rem; margin-top: 6px; }
     .error-text   { color: #EF4444; font-size: 0.78rem; margin-top: 6px; }
 
-    .mini-chart-wrap {
-      margin-top: 14px;
-      position: relative;
-      height: 110px;
-    }
+    .mini-chart-wrap { margin-top: 14px; position: relative; height: 110px; }
 
     /* Settings */
-    .settings-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      align-items: flex-end;
-    }
+    .settings-row { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
 
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      min-width: 130px;
-    }
-
+    .field { display: flex; flex-direction: column; gap: 5px; min-width: 130px; }
     .field label { font-size: 0.78rem; font-weight: 500; color: #64748B; }
 
-    input[type="number"], input[type="date"] {
+    input[type="number"], input[type="date"], input[type="text"] {
       padding: 7px 11px;
       border: 1.5px solid #E2E8F0;
       border-radius: 8px;
@@ -213,239 +314,71 @@
     .run-btn:active:not(:disabled) { transform: translateY(0); }
     .run-btn:disabled { background: #CBD5E1; cursor: not-allowed; transform: none; }
 
-    /* ── ALLOCATION CARD ─────────────────────────────── */
-    .allocation-hint {
-      font-size: 0.8rem;
-      color: #64748B;
-      margin-bottom: 16px;
-      line-height: 1.5;
-    }
-
+    /* ── ALLOCATION CARD ──────────────────────────────── */
+    .allocation-hint { font-size: 0.8rem; color: #64748B; margin-bottom: 16px; line-height: 1.5; }
     .cat-list { display: flex; flex-direction: column; gap: 10px; }
 
-    .cat-row {
-      border: 1.5px solid #E2E8F0;
-      border-radius: 10px;
-      overflow: hidden;
-      transition: border-color 0.15s;
-    }
-
+    .cat-row { border: 1.5px solid #E2E8F0; border-radius: 10px; overflow: hidden; transition: border-color 0.15s; }
     .cat-row:focus-within { border-color: #6366F1; }
 
-    .cat-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      background: #F8FAFC;
-    }
+    .cat-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #F8FAFC; }
 
-    .cat-swatch {
-      width: 12px;
-      height: 12px;
-      border-radius: 3px;
-      flex-shrink: 0;
-    }
+    .cat-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
 
-    .cat-name {
-      flex: 1;
-      border: none;
-      background: transparent;
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: #1E293B;
-      outline: none;
-      min-width: 80px;
-    }
-
+    .cat-name { flex: 1; border: none; background: transparent; font-size: 0.875rem; font-weight: 600; color: #1E293B; outline: none; min-width: 80px; }
     .cat-name::placeholder { color: #CBD5E1; font-weight: 400; }
 
-    .cat-pct-wrap {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: white;
-      border: 1.5px solid #E2E8F0;
-      border-radius: 6px;
-      padding: 3px 8px;
-      transition: border-color 0.15s;
-    }
-
+    .cat-pct-wrap { display: flex; align-items: center; gap: 4px; background: white; border: 1.5px solid #E2E8F0; border-radius: 6px; padding: 3px 8px; transition: border-color 0.15s; }
     .cat-pct-wrap:focus-within { border-color: #6366F1; }
 
-    .cat-pct {
-      width: 48px;
-      border: none;
-      outline: none;
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: #1E293B;
-      text-align: right;
-      background: transparent;
-      -moz-appearance: textfield;
-    }
-
-    .cat-pct::-webkit-inner-spin-button,
-    .cat-pct::-webkit-outer-spin-button { -webkit-appearance: none; }
-
+    .cat-pct { width: 48px; border: none; outline: none; font-size: 0.875rem; font-weight: 600; color: #1E293B; text-align: right; background: transparent; -moz-appearance: textfield; }
+    .cat-pct::-webkit-inner-spin-button, .cat-pct::-webkit-outer-spin-button { -webkit-appearance: none; }
     .cat-pct-sym { font-size: 0.8rem; color: #94A3B8; font-weight: 500; }
 
-    .cat-data-btn {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      background: none;
-      border: 1.5px solid #E2E8F0;
-      border-radius: 6px;
-      padding: 3px 9px;
-      font-size: 0.72rem;
-      font-weight: 500;
-      color: #64748B;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.12s;
-    }
-
+    .cat-data-btn { display: flex; align-items: center; gap: 5px; background: none; border: 1.5px solid #E2E8F0; border-radius: 6px; padding: 3px 9px; font-size: 0.72rem; font-weight: 500; color: #64748B; cursor: pointer; white-space: nowrap; transition: all 0.12s; }
     .cat-data-btn:hover { border-color: #6366F1; color: #6366F1; }
     .cat-data-btn.active { background: #EEF2FF; border-color: #6366F1; color: #4F46E5; }
-
-    .cat-data-btn .dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: #CBD5E1;
-      flex-shrink: 0;
-    }
-
+    .cat-data-btn .dot { width: 6px; height: 6px; border-radius: 50%; background: #CBD5E1; flex-shrink: 0; }
     .cat-data-btn.active .dot { background: #6366F1; }
 
-    .cat-remove {
-      background: none;
-      border: none;
-      color: #CBD5E1;
-      cursor: pointer;
-      font-size: 1rem;
-      line-height: 1;
-      padding: 2px 4px;
-      border-radius: 4px;
-      transition: color 0.12s;
-    }
-
+    .cat-remove { background: none; border: none; color: #CBD5E1; cursor: pointer; font-size: 1rem; line-height: 1; padding: 2px 4px; border-radius: 4px; transition: color 0.12s; }
     .cat-remove:hover { color: #EF4444; }
 
-    .cat-body {
-      padding: 12px 14px;
-      border-top: 1px solid #E2E8F0;
-      background: white;
-    }
-
-    .cat-body-label {
-      font-size: 0.72rem;
-      color: #94A3B8;
-      margin-bottom: 6px;
-      font-weight: 500;
-    }
-
-    .cat-body textarea {
-      min-height: 64px;
-      font-size: 0.8rem;
-      border-color: #E2E8F0;
-    }
-
-    .cat-body .cat-stats {
-      margin-top: 6px;
-      font-size: 0.72rem;
-      color: #64748B;
-    }
-
+    .cat-body { padding: 12px 14px; border-top: 1px solid #E2E8F0; background: white; }
+    .cat-body-label { font-size: 0.72rem; color: #94A3B8; margin-bottom: 6px; font-weight: 500; }
+    .cat-body textarea { min-height: 64px; font-size: 0.8rem; border-color: #E2E8F0; }
+    .cat-body .cat-stats { margin-top: 6px; font-size: 0.72rem; color: #64748B; }
     .cat-body .cat-err { margin-top: 4px; }
 
-    .allocation-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 14px;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
+    .allocation-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; flex-wrap: wrap; gap: 8px; }
 
-    .add-cat-btn {
-      background: none;
-      border: 1.5px dashed #CBD5E1;
-      border-radius: 8px;
-      padding: 6px 14px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: #64748B;
-      cursor: pointer;
-      transition: all 0.12s;
-    }
-
+    .add-cat-btn { background: none; border: 1.5px dashed #CBD5E1; border-radius: 8px; padding: 6px 14px; font-size: 0.8rem; font-weight: 500; color: #64748B; cursor: pointer; transition: all 0.12s; }
     .add-cat-btn:hover { border-color: #6366F1; color: #6366F1; background: #F5F3FF; }
 
-    .pct-total-wrap {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.8rem;
-    }
-
+    .pct-total-wrap { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; }
     .pct-total-label { color: #94A3B8; }
-
-    .pct-total-val {
-      font-weight: 700;
-      font-size: 0.9rem;
-      transition: color 0.15s;
-    }
-
+    .pct-total-val { font-weight: 700; font-size: 0.9rem; transition: color 0.15s; }
     .pct-total-val.ok    { color: #10B981; }
     .pct-total-val.error { color: #EF4444; }
-
-    .pct-total-msg {
-      font-size: 0.72rem;
-      color: #EF4444;
-      font-weight: 500;
-    }
+    .pct-total-msg { font-size: 0.72rem; color: #EF4444; font-weight: 500; }
 
     /* ── RESULTS ──────────────────────────────────────── */
-    .confidence-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin-bottom: 24px;
-    }
+    .confidence-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
 
-    .conf-card {
-      border-radius: 10px;
-      padding: 18px 16px;
-      text-align: center;
-      border-top: 3px solid transparent;
-    }
+    .conf-card { border-radius: 10px; padding: 18px 16px; text-align: center; border-top: 3px solid transparent; position: relative; }
 
     .conf-50 { background: #FFFBEB; border-top-color: #F59E0B; }
     .conf-75 { background: #ECFDF5; border-top-color: #10B981; }
     .conf-85 { background: #EFF6FF; border-top-color: #3B82F6; }
     .conf-95 { background: #F5F3FF; border-top-color: #8B5CF6; }
 
-    .conf-pct {
-      font-size: 0.68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      margin-bottom: 6px;
-    }
-
+    .conf-pct { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
     .conf-50 .conf-pct { color: #B45309; }
     .conf-75 .conf-pct { color: #065F46; }
     .conf-85 .conf-pct { color: #1E40AF; }
     .conf-95 .conf-pct { color: #5B21B6; }
 
-    .conf-sprints {
-      font-size: 1.6rem;
-      font-weight: 800;
-      line-height: 1;
-      margin-bottom: 2px;
-    }
-
+    .conf-sprints { font-size: 1.6rem; font-weight: 800; line-height: 1; margin-bottom: 2px; }
     .conf-50 .conf-sprints { color: #D97706; }
     .conf-75 .conf-sprints { color: #059669; }
     .conf-85 .conf-sprints { color: #2563EB; }
@@ -453,150 +386,194 @@
 
     .conf-unit  { font-size: 0.72rem; color: #94A3B8; margin-bottom: 6px; }
 
-    .conf-date {
-      font-size: 0.78rem;
-      font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 5px;
-      display: inline-block;
-    }
-
+    .conf-date { font-size: 0.78rem; font-weight: 600; padding: 3px 8px; border-radius: 5px; display: inline-block; }
     .conf-50 .conf-date { background: #FEF3C7; color: #92400E; }
     .conf-75 .conf-date { background: #D1FAE5; color: #064E3B; }
     .conf-85 .conf-date { background: #DBEAFE; color: #1E3A8A; }
     .conf-95 .conf-date { background: #EDE9FE; color: #4C1D95; }
 
-    /* Charts */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
+    /* Baseline deviation badge */
+    .conf-deviation {
+      font-size: 0.68rem;
+      font-weight: 700;
+      margin-top: 6px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      display: inline-block;
     }
 
-    .chart-box {
-      background: #F8FAFC;
-      border-radius: 10px;
-      padding: 18px;
-      border: 1px solid #E2E8F0;
-    }
+    .conf-deviation.better { background: #D1FAE5; color: #065F46; }
+    .conf-deviation.worse  { background: #FEE2E2; color: #991B1B; }
+    .conf-deviation.same   { background: #F1F5F9; color: #64748B; }
 
-    .chart-box h3 {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: #475569;
-      margin-bottom: 12px;
-    }
-
-    .chart-container { position: relative; height: 240px; }
-
-    .chart-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 14px;
-      margin-bottom: 10px;
-    }
-
-    .legend-item {
+    /* Save forecast bar */
+    .save-bar {
       display: flex;
       align-items: center;
-      gap: 5px;
-      font-size: 0.7rem;
-      color: #64748B;
+      gap: 10px;
+      margin-top: 18px;
+      padding: 12px 16px;
+      background: #F8FAFC;
+      border-radius: 8px;
+      border: 1px solid #E2E8F0;
+      flex-wrap: wrap;
     }
 
-    .legend-dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 2px;
-      flex-shrink: 0;
-    }
+    .save-bar-label { font-size: 0.78rem; color: #64748B; font-weight: 500; white-space: nowrap; }
 
-    /* Category breakdown table */
-    .breakdown-title {
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: #94A3B8;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin: 24px 0 14px;
-    }
-
-    .breakdown-table {
-      width: 100%;
-      border-collapse: collapse;
+    .save-bar input {
+      flex: 1;
+      min-width: 160px;
+      padding: 6px 10px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 6px;
       font-size: 0.82rem;
     }
 
-    .breakdown-table th {
-      text-align: left;
-      padding: 7px 12px;
-      font-size: 0.7rem;
+    .save-btn {
+      background: #0F172A;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 16px;
+      font-size: 0.82rem;
       font-weight: 600;
-      color: #94A3B8;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border-bottom: 1.5px solid #E2E8F0;
+      cursor: pointer;
+      transition: background 0.12s;
+      white-space: nowrap;
     }
 
+    .save-btn:hover:not(:disabled) { background: #1E293B; }
+    .save-btn:disabled { background: #CBD5E1; cursor: not-allowed; }
+
+    .save-status { font-size: 0.75rem; color: #10B981; font-weight: 500; }
+    .save-status.error { color: #EF4444; }
+
+    /* Charts */
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .chart-box { background: #F8FAFC; border-radius: 10px; padding: 18px; border: 1px solid #E2E8F0; }
+    .chart-box h3 { font-size: 0.78rem; font-weight: 600; color: #475569; margin-bottom: 12px; }
+    .chart-container { position: relative; height: 240px; }
+
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 10px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.7rem; color: #64748B; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+
+    /* Category breakdown */
+    .breakdown-title { font-size: 0.7rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.08em; margin: 24px 0 14px; }
+
+    .breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .breakdown-table th { text-align: left; padding: 7px 12px; font-size: 0.7rem; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1.5px solid #E2E8F0; }
     .breakdown-table th:not(:first-child) { text-align: center; }
-
-    .breakdown-table td {
-      padding: 9px 12px;
-      border-bottom: 1px solid #F1F5F9;
-      vertical-align: middle;
-    }
-
+    .breakdown-table td { padding: 9px 12px; border-bottom: 1px solid #F1F5F9; vertical-align: middle; }
     .breakdown-table td:not(:first-child) { text-align: center; }
-
     .breakdown-table tr:last-child td { border-bottom: none; }
+    .breakdown-table tr.overall-row td { font-weight: 700; background: #F8FAFC; border-top: 1.5px solid #E2E8F0; }
+    .breakdown-table .cat-name-cell { display: flex; align-items: center; gap: 8px; }
+    .breakdown-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+    .breakdown-pct-badge { font-size: 0.68rem; color: #94A3B8; background: #F1F5F9; padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+    .breakdown-data-note { font-size: 0.68rem; color: #94A3B8; margin-left: 4px; }
 
-    .breakdown-table tr.overall-row td {
-      font-weight: 700;
-      background: #F8FAFC;
-      border-top: 1.5px solid #E2E8F0;
-    }
-
-    .breakdown-table .cat-name-cell {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .breakdown-swatch {
-      width: 10px;
-      height: 10px;
-      border-radius: 2px;
-      flex-shrink: 0;
-    }
-
-    .breakdown-pct-badge {
-      font-size: 0.68rem;
-      color: #94A3B8;
-      background: #F1F5F9;
-      padding: 1px 6px;
-      border-radius: 4px;
-      margin-left: 4px;
-    }
-
-    .breakdown-data-note {
-      font-size: 0.68rem;
-      color: #94A3B8;
-      margin-left: 4px;
-    }
-
-    .conf-chip {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 5px;
-      font-weight: 600;
-    }
-
+    .conf-chip { display: inline-block; padding: 2px 8px; border-radius: 5px; font-weight: 600; }
     .chip-50 { background: #FEF3C7; color: #92400E; }
     .chip-75 { background: #D1FAE5; color: #064E3B; }
     .chip-85 { background: #DBEAFE; color: #1E3A8A; }
     .chip-95 { background: #EDE9FE; color: #4C1D95; }
 
     .sim-meta { font-size: 0.72rem; color: #94A3B8; text-align: right; margin-top: 10px; }
+
+    /* ── FORECAST HISTORY ─────────────────────────────── */
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .history-header .card-title { margin-bottom: 0; }
+
+    .history-project-tag {
+      font-size: 0.72rem;
+      color: #6366F1;
+      background: #EEF2FF;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .history-empty { font-size: 0.82rem; color: #94A3B8; text-align: center; padding: 24px 0; }
+
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .history-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.12s;
+      flex-wrap: wrap;
+    }
+
+    .history-row:hover { border-color: #6366F1; background: #FAFBFF; }
+    .history-row.is-baseline { border-color: #10B981; background: #F0FDF4; }
+
+    .history-date { font-size: 0.75rem; color: #64748B; white-space: nowrap; min-width: 110px; }
+
+    .history-backlog { font-size: 0.78rem; color: #334155; font-weight: 600; white-space: nowrap; }
+
+    .history-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+
+    .history-chip {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    .hchip-50 { background: #FEF3C7; color: #92400E; }
+    .hchip-85 { background: #DBEAFE; color: #1E3A8A; }
+    .hchip-95 { background: #EDE9FE; color: #4C1D95; }
+
+    .history-notes { font-size: 0.75rem; color: #64748B; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .history-badges { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+
+    .baseline-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      background: #10B981;
+      color: white;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .history-actions { display: flex; gap: 5px; flex-shrink: 0; }
+
+    .hist-action-btn {
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 5px;
+      border: 1px solid #E2E8F0;
+      background: white;
+      color: #64748B;
+      cursor: pointer;
+      transition: all 0.1s;
+      white-space: nowrap;
+    }
+
+    .hist-action-btn:hover { border-color: #6366F1; color: #6366F1; }
+    .hist-action-btn.pin-btn { border-color: #10B981; color: #10B981; }
+    .hist-action-btn.pin-btn:hover { background: #10B981; color: white; }
+    .hist-action-btn.del-btn:hover { border-color: #EF4444; color: #EF4444; }
 
     .hidden { display: none !important; }
 
@@ -606,13 +583,14 @@
     }
 
     @media (max-width: 600px) {
-      header { padding: 16px 16px; }
+      header { padding: 12px 16px; }
       main   { padding: 16px 12px; }
       .card  { padding: 18px 16px; }
       .settings-row { gap: 14px; }
       .field { min-width: 100px; }
       header p { display: none; }
       .breakdown-table { font-size: 0.75rem; }
+      .project-btn { max-width: 160px; }
     }
   </style>
 </head>
@@ -623,6 +601,21 @@
     <h1>Monte Carlo Forecaster</h1>
     <p>Probabilistic forecasting from historical throughput data</p>
   </div>
+
+  <!-- Project switcher -->
+  <div class="project-switcher" id="project-switcher">
+    <button class="project-btn" id="project-btn">
+      <span class="project-btn-name" id="active-project-name">Select project ▾</span>
+    </button>
+    <div class="project-dropdown hidden" id="project-dropdown">
+      <div class="project-dropdown-list" id="project-list"></div>
+      <div class="project-dropdown-footer">
+        <input type="text" id="new-project-input" placeholder="New project name…" maxlength="60">
+        <button class="project-create-btn" id="create-project-btn">Create</button>
+      </div>
+    </div>
+  </div>
+
   <span class="header-badge">10,000 SIMULATIONS</span>
 </header>
 
@@ -666,9 +659,7 @@
       Split your backlog across work types. Each category draws from its own throughput data, or falls back to the main data above.
       Percentages must total 100%.
     </p>
-
     <div class="cat-list" id="cat-list"></div>
-
     <div class="allocation-footer">
       <button class="add-cat-btn" id="add-cat-btn">+ Add Category</button>
       <div class="pct-total-wrap">
@@ -687,12 +678,10 @@
         <label>Period Name</label>
         <input type="text" id="period-label" value="Sprint" placeholder="e.g. Week" style="width:120px">
       </div>
-
       <div class="field">
         <label id="backlog-label">Backlog Size (items)</label>
         <input type="number" id="backlog-size" min="1" placeholder="e.g. 150">
       </div>
-
       <div class="field">
         <label>Forecast Output</label>
         <div class="toggle-group" id="forecast-type-toggle">
@@ -701,22 +690,18 @@
           <button class="toggle" data-forecast="both">Both</button>
         </div>
       </div>
-
       <div class="field hidden" id="sprint-length-field">
         <label id="sprint-length-label">Period Length (days)</label>
         <input type="number" id="sprint-length" min="1" value="14">
       </div>
-
       <div class="field hidden" id="start-date-field">
         <label>Start Date</label>
         <input type="date" id="start-date">
       </div>
-
       <div class="field">
         <label>Simulations</label>
         <input type="number" id="sim-count" min="1000" max="100000" value="10000" step="1000">
       </div>
-
       <div class="field" style="justify-content:flex-end; flex:1; align-items:flex-end">
         <button class="run-btn" id="run-btn" disabled>Run Simulation</button>
       </div>
@@ -733,39 +718,37 @@
         <div class="conf-sprints" id="v50-sprints">—</div>
         <div class="conf-unit" id="v50-unit">sprints</div>
         <span class="conf-date hidden" id="v50-date"></span>
+        <div class="conf-deviation hidden" id="v50-dev"></div>
       </div>
       <div class="conf-card conf-75">
         <div class="conf-pct">75% Confidence</div>
         <div class="conf-sprints" id="v75-sprints">—</div>
         <div class="conf-unit" id="v75-unit">sprints</div>
         <span class="conf-date hidden" id="v75-date"></span>
+        <div class="conf-deviation hidden" id="v75-dev"></div>
       </div>
       <div class="conf-card conf-85">
         <div class="conf-pct">85% Confidence</div>
         <div class="conf-sprints" id="v85-sprints">—</div>
         <div class="conf-unit" id="v85-unit">sprints</div>
         <span class="conf-date hidden" id="v85-date"></span>
+        <div class="conf-deviation hidden" id="v85-dev"></div>
       </div>
       <div class="conf-card conf-95">
         <div class="conf-pct">95% Confidence</div>
         <div class="conf-sprints" id="v95-sprints">—</div>
         <div class="conf-unit" id="v95-unit">sprints</div>
         <span class="conf-date hidden" id="v95-date"></span>
+        <div class="conf-deviation hidden" id="v95-dev"></div>
       </div>
     </div>
 
-    <!-- Category breakdown (hidden when only one category) -->
+    <!-- Category breakdown -->
     <div id="breakdown-section" class="hidden">
       <div class="breakdown-title">Category Breakdown</div>
       <table class="breakdown-table">
         <thead>
-          <tr>
-            <th>Category</th>
-            <th>50%</th>
-            <th>75%</th>
-            <th>85%</th>
-            <th>95%</th>
-          </tr>
+          <tr><th>Category</th><th>50%</th><th>75%</th><th>85%</th><th>95%</th></tr>
         </thead>
         <tbody id="breakdown-body"></tbody>
       </table>
@@ -783,7 +766,6 @@
         </div>
         <div class="chart-container"><canvas id="dist-chart"></canvas></div>
       </div>
-
       <div class="chart-box">
         <h3>Cumulative Probability</h3>
         <div class="chart-container"><canvas id="cum-chart"></canvas></div>
@@ -791,6 +773,23 @@
     </div>
 
     <div class="sim-meta" id="sim-meta"></div>
+
+    <!-- Save forecast bar -->
+    <div class="save-bar hidden" id="save-bar">
+      <span class="save-bar-label">Save to project:</span>
+      <input type="text" id="forecast-notes" placeholder="Add notes (optional)…" style="flex:1;min-width:140px">
+      <button class="save-btn" id="save-btn">Save Forecast</button>
+      <span class="save-status hidden" id="save-status"></span>
+    </div>
+  </div>
+
+  <!-- ── FORECAST HISTORY ───────────────────────────────── -->
+  <div class="card hidden" id="history-card">
+    <div class="history-header">
+      <span class="card-title" style="margin-bottom:0">Forecast History</span>
+      <span class="history-project-tag" id="history-project-tag"></span>
+    </div>
+    <div id="history-list"></div>
   </div>
 
 </main>
@@ -803,31 +802,335 @@ const CAT_COLORS  = ['#6366F1','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6'
 const CONF_LEVELS = [50, 75, 85, 95];
 const SAMPLE_DATA_ITEMS  = [23,31,18,27,34,22,29,25,19,33,28,24,30,26,21,35,17,28];
 const SAMPLE_DATA_POINTS = [42,55,38,61,48,53,45,59,41,67,50,44,57,49,63,46];
-const SAMPLE_BUG_DATA    = [4,7,3,6,5,8,4,6,3,7,5,4,6,5,7];
 
 let dataType     = 'items';
 let forecastType = 'sprints';
 let parsedData   = [];
 let periodLabel  = 'Sprint';
 
-function getPeriod(n) { return n === 1 ? periodLabel : periodLabel + 's'; }
-
-function applyPeriodLabel() {
-  const p = periodLabel;
-  document.getElementById('hist-data-title').textContent  = `Historical ${p} Data`;
-  document.getElementById('stat-count-lbl').textContent   = `${p}s`;
-  document.getElementById('sprint-length-label').textContent = `${p} Length (days)`;
-  document.getElementById('forecast-sprints-btn').textContent = `${p}s`;
-  const ta = document.getElementById('sprint-data');
-  ta.placeholder = `Paste throughput per ${p.toLowerCase()} — comma or newline separated.\nExample:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33`;
-}
-
 let chartThroughput = null;
 let chartDist       = null;
 let chartCum        = null;
 
-let categories  = [];
-let nextCatId   = 1;
+let categories = [];
+let nextCatId  = 1;
+
+// Project & history state
+let projects       = [];
+let activeProject  = null;
+let forecastHistory = [];
+let baselineForecast = null;
+let lastRunResults = null; // { overall, perCategory }
+
+// ──────────────────────────────────────────────────────
+//  API HELPERS
+// ──────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || res.statusText);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+// ──────────────────────────────────────────────────────
+//  PROJECT SWITCHER
+// ──────────────────────────────────────────────────────
+async function loadProjects() {
+  try {
+    projects = await api('/api/projects');
+    renderProjectList();
+    const savedId = localStorage.getItem('activeProjectId');
+    if (savedId) {
+      const found = projects.find(p => p.id === savedId);
+      if (found) await selectProject(found, false);
+    }
+  } catch(e) {
+    console.error('Failed to load projects', e);
+  }
+}
+
+function renderProjectList() {
+  const list = document.getElementById('project-list');
+  if (!projects.length) {
+    list.innerHTML = '<div class="project-empty">No projects yet — create one below</div>';
+    return;
+  }
+  list.innerHTML = projects.map(p => `
+    <div class="project-item ${activeProject?.id === p.id ? 'active' : ''}" data-id="${p.id}">
+      <span class="project-item-name">${escHtml(p.name)}</span>
+      <button class="project-delete-btn" data-delete="${p.id}" title="Delete project">×</button>
+    </div>
+  `).join('');
+}
+
+async function selectProject(project, reload = true) {
+  activeProject = project;
+  localStorage.setItem('activeProjectId', project.id);
+  document.getElementById('active-project-name').textContent = project.name + ' ▾';
+  document.getElementById('project-dropdown').classList.add('hidden');
+  renderProjectList();
+  if (reload) await loadHistory();
+  updateSaveBar();
+}
+
+async function createProject(name) {
+  try {
+    const project = await api('/api/projects', { method: 'POST', body: { name } });
+    projects.unshift(project);
+    renderProjectList();
+    await selectProject(project);
+    document.getElementById('new-project-input').value = '';
+  } catch(e) {
+    alert('Failed to create project: ' + e.message);
+  }
+}
+
+async function deleteProject(id) {
+  if (!confirm('Delete this project and all its forecasts?')) return;
+  try {
+    await api(`/api/projects/${id}`, { method: 'DELETE' });
+    projects = projects.filter(p => p.id !== id);
+    if (activeProject?.id === id) {
+      activeProject = null;
+      localStorage.removeItem('activeProjectId');
+      document.getElementById('active-project-name').textContent = 'Select project ▾';
+      forecastHistory = [];
+      baselineForecast = null;
+      renderHistory();
+      updateSaveBar();
+    }
+    renderProjectList();
+  } catch(e) {
+    alert('Failed to delete project: ' + e.message);
+  }
+}
+
+// Toggle dropdown
+document.getElementById('project-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  document.getElementById('project-dropdown').classList.toggle('hidden');
+});
+
+document.addEventListener('click', e => {
+  if (!document.getElementById('project-switcher').contains(e.target)) {
+    document.getElementById('project-dropdown').classList.add('hidden');
+  }
+});
+
+document.getElementById('project-list').addEventListener('click', async e => {
+  const deleteId = e.target.dataset.delete;
+  if (deleteId) { e.stopPropagation(); await deleteProject(deleteId); return; }
+  const item = e.target.closest('.project-item');
+  if (item) await selectProject(projects.find(p => p.id === item.dataset.id));
+});
+
+document.getElementById('create-project-btn').addEventListener('click', async () => {
+  const name = document.getElementById('new-project-input').value.trim();
+  if (name) await createProject(name);
+});
+
+document.getElementById('new-project-input').addEventListener('keydown', async e => {
+  if (e.key === 'Enter') {
+    const name = e.target.value.trim();
+    if (name) await createProject(name);
+  }
+});
+
+// ──────────────────────────────────────────────────────
+//  FORECAST HISTORY
+// ──────────────────────────────────────────────────────
+async function loadHistory() {
+  if (!activeProject) return;
+  try {
+    forecastHistory  = await api(`/api/forecasts?project_id=${activeProject.id}`);
+    baselineForecast = forecastHistory.find(f => f.is_baseline) || null;
+    renderHistory();
+  } catch(e) {
+    console.error('Failed to load history', e);
+  }
+}
+
+function renderHistory() {
+  const card = document.getElementById('history-card');
+  const list = document.getElementById('history-list');
+  const tag  = document.getElementById('history-project-tag');
+
+  if (!activeProject) { card.classList.add('hidden'); return; }
+
+  card.classList.remove('hidden');
+  tag.textContent = activeProject.name;
+
+  if (!forecastHistory.length) {
+    list.innerHTML = '<div class="history-empty">No forecasts saved yet for this project.</div>';
+    return;
+  }
+
+  list.innerHTML = forecastHistory.map(f => {
+    const r   = f.results?.overall || {};
+    const dt  = new Date(f.run_date).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    return `
+      <div class="history-row ${f.is_baseline ? 'is-baseline' : ''}" data-id="${f.id}">
+        <span class="history-date">${dt}</span>
+        <span class="history-backlog">${f.backlog_size ? f.backlog_size + ' items' : '—'}</span>
+        <div class="history-chips">
+          <span class="history-chip hchip-50">50%: ${r.p50 ?? '—'}</span>
+          <span class="history-chip hchip-85">85%: ${r.p85 ?? '—'}</span>
+          <span class="history-chip hchip-95">95%: ${r.p95 ?? '—'}</span>
+        </div>
+        <span class="history-notes">${escHtml(f.notes || '')}</span>
+        <div class="history-badges">
+          ${f.is_baseline ? '<span class="baseline-badge">Baseline</span>' : ''}
+        </div>
+        <div class="history-actions">
+          <button class="hist-action-btn" data-action="load" data-id="${f.id}">Load</button>
+          ${!f.is_baseline ? `<button class="hist-action-btn pin-btn" data-action="baseline" data-id="${f.id}">Set Baseline</button>` : ''}
+          <button class="hist-action-btn del-btn" data-action="delete" data-id="${f.id}">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+document.getElementById('history-list').addEventListener('click', async e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  const action = btn.dataset.action;
+
+  if (action === 'load') {
+    const f = forecastHistory.find(x => x.id === id);
+    if (f) loadForecastFromHistory(f);
+  } else if (action === 'baseline') {
+    try {
+      await api(`/api/forecasts/${id}/baseline`, { method: 'PUT' });
+      await loadHistory();
+    } catch(e) { alert('Failed to set baseline: ' + e.message); }
+  } else if (action === 'delete') {
+    if (!confirm('Delete this forecast?')) return;
+    try {
+      await api(`/api/forecasts/${id}`, { method: 'DELETE' });
+      await loadHistory();
+    } catch(e) { alert('Failed to delete: ' + e.message); }
+  }
+});
+
+function loadForecastFromHistory(f) {
+  // Restore throughput data
+  if (f.throughput_data?.length) {
+    document.getElementById('sprint-data').value = f.throughput_data.join(', ');
+    document.getElementById('sprint-data').dispatchEvent(new Event('input'));
+  }
+  // Restore backlog size
+  if (f.backlog_size) {
+    document.getElementById('backlog-size').value = f.backlog_size;
+    updateRunButton();
+  }
+  // Scroll to results and show them
+  if (f.results) {
+    const overall = f.results.overall;
+    const sorted  = buildSortedFromPercentiles(overall);
+    displayResults(sorted, [], parseInt(f.sim_count), f.results);
+  }
+  document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function buildSortedFromPercentiles(r) {
+  // Reconstruct a minimal sorted array from stored percentiles for chart rendering
+  if (!r) return [];
+  const { p50 = 1, p75 = 1, p85 = 1, p95 = 1 } = r;
+  const arr = [];
+  const n = 10000;
+  for (let i = 0; i < n * 0.50; i++) arr.push(p50);
+  for (let i = 0; i < n * 0.25; i++) arr.push(p75);
+  for (let i = 0; i < n * 0.10; i++) arr.push(p85);
+  for (let i = 0; i < n * 0.10; i++) arr.push(p95);
+  for (let i = 0; i < n * 0.05; i++) arr.push(p95 + 1);
+  return arr.sort((a, b) => a - b);
+}
+
+// ──────────────────────────────────────────────────────
+//  SAVE FORECAST
+// ──────────────────────────────────────────────────────
+function updateSaveBar() {
+  const bar = document.getElementById('save-bar');
+  const resultsVisible = !document.getElementById('results-section').classList.contains('hidden');
+  bar.classList.toggle('hidden', !activeProject || !resultsVisible);
+}
+
+document.getElementById('save-btn').addEventListener('click', async () => {
+  if (!activeProject || !lastRunResults) return;
+
+  const btn    = document.getElementById('save-btn');
+  const status = document.getElementById('save-status');
+  const notes  = document.getElementById('forecast-notes').value.trim();
+  const backlog = parseFloat(document.getElementById('backlog-size').value) || null;
+
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  status.classList.add('hidden');
+
+  try {
+    const overall = lastRunResults.overall;
+    const payload = {
+      project_id:      activeProject.id,
+      backlog_size:    backlog,
+      period_label:    periodLabel,
+      sim_count:       parseInt(document.getElementById('sim-count').value) || 10000,
+      throughput_data: parsedData,
+      notes,
+      results: {
+        overall: {
+          p50: percentile(overall, 50),
+          p75: percentile(overall, 75),
+          p85: percentile(overall, 85),
+          p95: percentile(overall, 95)
+        }
+      }
+    };
+
+    await api('/api/forecasts', { method: 'POST', body: payload });
+    await loadHistory();
+
+    status.textContent = '✓ Saved';
+    status.className = 'save-status';
+    status.classList.remove('hidden');
+    document.getElementById('forecast-notes').value = '';
+    setTimeout(() => status.classList.add('hidden'), 3000);
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'save-status error';
+    status.classList.remove('hidden');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Save Forecast';
+});
+
+// ──────────────────────────────────────────────────────
+//  PERIOD LABEL
+// ──────────────────────────────────────────────────────
+function getPeriod(n) { return n === 1 ? periodLabel : periodLabel + 's'; }
+
+function applyPeriodLabel() {
+  const p = periodLabel;
+  document.getElementById('hist-data-title').textContent        = `Historical ${p} Data`;
+  document.getElementById('stat-count-lbl').textContent         = `${p}s`;
+  document.getElementById('sprint-length-label').textContent    = `${p} Length (days)`;
+  document.getElementById('forecast-sprints-btn').textContent   = `${p}s`;
+  document.getElementById('sprint-data').placeholder =
+    `Paste throughput per ${p.toLowerCase()} — comma or newline separated.\nExample:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33`;
+}
+
+document.getElementById('period-label').addEventListener('input', e => {
+  periodLabel = e.target.value.trim() || 'Period';
+  applyPeriodLabel();
+});
 
 // ──────────────────────────────────────────────────────
 //  CATEGORY STATE
@@ -857,14 +1160,9 @@ function renderCategories() {
     const row = document.createElement('div');
     row.className = 'cat-row';
     row.dataset.id = cat.id;
-
     const statsText = cat.parsed.length
-      ? (() => {
-          const avg = (cat.parsed.reduce((a,b)=>a+b,0)/cat.parsed.length).toFixed(1);
-          return `${cat.parsed.length} sprints · avg ${avg}`;
-        })()
+      ? (() => { const avg = (cat.parsed.reduce((a,b)=>a+b,0)/cat.parsed.length).toFixed(1); return `${cat.parsed.length} periods · avg ${avg}`; })()
       : '';
-
     row.innerHTML = `
       <div class="cat-header">
         <div class="cat-swatch" style="background:${cat.color}"></div>
@@ -876,7 +1174,7 @@ function renderCategories() {
         <button class="cat-data-btn ${cat.expanded ? 'active' : ''}" data-action="toggle-data">
           <span class="dot"></span>${cat.expanded ? 'Custom data ▲' : 'Custom data ▼'}
         </button>
-        <button class="cat-remove" data-action="remove" title="Remove category">×</button>
+        <button class="cat-remove" data-action="remove" title="Remove">×</button>
       </div>
       <div class="cat-body" style="${cat.expanded ? '' : 'display:none'}">
         <div class="cat-body-label">Historical throughput for this category (optional — inherits main data if blank)</div>
@@ -893,9 +1191,6 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ──────────────────────────────────────────────────────
-//  ALLOCATION EVENT DELEGATION
-// ──────────────────────────────────────────────────────
 document.getElementById('cat-list').addEventListener('input', e => {
   const row  = e.target.closest('.cat-row');
   if (!row) return;
@@ -908,28 +1203,22 @@ document.getElementById('cat-list').addEventListener('input', e => {
     cat.name = e.target.value;
   } else if (field === 'pct') {
     cat.pct = parseFloat(e.target.value) || 0;
-    updatePctTotal();
-    updateRunButton();
+    updatePctTotal(); updateRunButton();
   } else if (field === 'rawText') {
     cat.rawText = e.target.value;
     const errEl   = row.querySelector('.cat-err');
     const statsEl = row.querySelector('.cat-stats');
     if (!e.target.value.trim()) {
-      cat.parsed = [];
-      errEl.classList.add('hidden');
-      statsEl.textContent = '';
+      cat.parsed = []; errEl.classList.add('hidden'); statsEl.textContent = '';
     } else {
       const result = parseData(e.target.value);
       if (result.error) {
-        errEl.textContent = result.error;
-        errEl.classList.remove('hidden');
-        cat.parsed = [];
-        statsEl.textContent = '';
+        errEl.textContent = result.error; errEl.classList.remove('hidden');
+        cat.parsed = []; statsEl.textContent = '';
       } else {
-        cat.parsed = result.values;
-        errEl.classList.add('hidden');
+        cat.parsed = result.values; errEl.classList.add('hidden');
         const avg = (cat.parsed.reduce((a,b)=>a+b,0)/cat.parsed.length).toFixed(1);
-        statsEl.textContent = `${cat.parsed.length} sprints · avg ${avg}`;
+        statsEl.textContent = `${cat.parsed.length} periods · avg ${avg}`;
       }
     }
     updateRunButton();
@@ -942,18 +1231,12 @@ document.getElementById('cat-list').addEventListener('click', e => {
   const row = btn.closest('.cat-row');
   const id  = Number(row.dataset.id);
   const cat = getCatById(id);
-
-  if (btn.dataset.action === 'remove') {
-    removeCategory(id);
-  } else if (btn.dataset.action === 'toggle-data') {
-    cat.expanded = !cat.expanded;
-    renderCategories();
-  }
+  if (btn.dataset.action === 'remove') removeCategory(id);
+  else if (btn.dataset.action === 'toggle-data') { cat.expanded = !cat.expanded; renderCategories(); }
 });
 
 document.getElementById('add-cat-btn').addEventListener('click', () => {
-  const color = CAT_COLORS[categories.length % CAT_COLORS.length];
-  addCategory('New Category', 0, color);
+  addCategory('New Category', 0, CAT_COLORS[categories.length % CAT_COLORS.length]);
 });
 
 function updatePctTotal() {
@@ -967,21 +1250,16 @@ function updatePctTotal() {
 }
 
 function allocationValid() {
-  const total = categories.reduce((s, c) => s + (c.pct || 0), 0);
-  return Math.abs(total - 100) < 0.01;
+  return Math.abs(categories.reduce((s, c) => s + (c.pct || 0), 0) - 100) < 0.01;
 }
 
 // ──────────────────────────────────────────────────────
 //  PARSING & STATS
 // ──────────────────────────────────────────────────────
 function parseData(text) {
-  const values = text
-    .split(/[\n,;\t]+/)
-    .map(s => s.trim())
-    .filter(Boolean)
-    .map(Number);
-  if (values.some(isNaN))  return { error: 'Some values could not be parsed. Use numbers separated by commas or new lines.' };
-  if (values.some(v => v < 0)) return { error: 'Throughput values cannot be negative.' };
+  const values = text.split(/[\n,;\t]+/).map(s => s.trim()).filter(Boolean).map(Number);
+  if (values.some(isNaN))      return { error: 'Some values could not be parsed.' };
+  if (values.some(v => v < 0)) return { error: 'Values cannot be negative.' };
   return { values };
 }
 
@@ -997,29 +1275,15 @@ function calcStats(arr) {
 // ──────────────────────────────────────────────────────
 //  MONTE CARLO
 // ──────────────────────────────────────────────────────
-function simulate(throughput, backlog, simCount) {
-  const results = [];
-  const n = throughput.length;
-  for (let i = 0; i < simCount; i++) {
-    let total = 0, sprints = 0;
-    while (total < backlog) {
-      total += throughput[Math.floor(Math.random() * n)];
-      if (++sprints > 5000) break;
-    }
-    results.push(sprints);
-  }
-  return results.sort((a, b) => a - b);
-}
-
-function simulateAllocations(categories, backlog, simCount) {
-  const nCats = categories.length;
-  const catBuf = categories.map(() => new Array(simCount));
+function simulateAllocations(cats, backlog, simCount) {
+  const nCats = cats.length;
+  const catBuf = cats.map(() => new Array(simCount));
   const overallBuf = new Array(simCount);
 
   for (let i = 0; i < simCount; i++) {
     let maxSprints = 0;
     for (let ci = 0; ci < nCats; ci++) {
-      const cat = categories[ci];
+      const cat = cats[ci];
       const tp  = cat.parsed.length > 0 ? cat.parsed : parsedData;
       const n   = tp.length;
       const subBacklog = backlog * (cat.pct / 100);
@@ -1049,23 +1313,19 @@ function percentile(sorted, p) {
 //  HISTOGRAM / CUMULATIVE
 // ──────────────────────────────────────────────────────
 function buildHistogram(sorted) {
-  const rawMin = sorted[0], rawMax = sorted[sorted.length-1];
-  const min = Math.max(1, rawMin - 2);
-  const max = rawMax + 2;
+  const min = Math.max(1, sorted[0] - 2);
+  const max = sorted[sorted.length-1] + 2;
   const range = max - min + 1;
   const binSize = range > 60 ? Math.ceil(range / 40) : 1;
   const counts = {};
-  for (const v of sorted) {
-    const b = Math.floor((v - min) / binSize) * binSize + min;
-    counts[b] = (counts[b] || 0) + 1;
-  }
+  for (const v of sorted) { const b = Math.floor((v - min) / binSize) * binSize + min; counts[b] = (counts[b] || 0) + 1; }
   const labels = [], data = [], binStarts = [];
   for (let i = min; i <= max; i += binSize) {
     binStarts.push(i);
     labels.push(binSize === 1 ? String(i) : `${i}–${Math.min(i+binSize-1, max)}`);
     data.push(((counts[i] || 0) / sorted.length) * 100);
   }
-  return { labels, data, binStarts, binSize };
+  return { labels, data, binStarts };
 }
 
 function buildCumulative(sorted) {
@@ -1073,12 +1333,8 @@ function buildCumulative(sorted) {
   const max = sorted[sorted.length-1] + 2;
   const counts = {};
   for (const v of sorted) counts[v] = (counts[v] || 0) + 1;
-  const points = [];
-  let cum = 0;
-  for (let i = min; i <= max; i++) {
-    cum += counts[i] || 0;
-    points.push({ x: i, y: (cum / sorted.length) * 100 });
-  }
+  const points = []; let cum = 0;
+  for (let i = min; i <= max; i++) { cum += counts[i] || 0; points.push({ x: i, y: (cum / sorted.length) * 100 }); }
   return points;
 }
 
@@ -1097,7 +1353,7 @@ function sprintsToDate(sprints, lengthDays, startStr) {
 function renderThroughputChart(data) {
   const ctx = document.getElementById('throughput-chart').getContext('2d');
   if (chartThroughput) chartThroughput.destroy();
-  const avg = data.reduce((a,b)=>a+b,0) / data.length;
+  const avg  = data.reduce((a,b)=>a+b,0) / data.length;
   const unit = dataType === 'items' ? 'items' : 'pts';
   chartThroughput = new Chart(ctx, {
     type: 'bar',
@@ -1112,13 +1368,7 @@ function renderThroughputChart(data) {
       responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: items => items[0].dataset.label === 'Avg' ? `Average: ${avg.toFixed(1)} ${unit}` : `Sprint ${items[0].dataIndex + 1}`,
-            label:  ctx  => ctx.dataset.label === 'Avg' ? null : `${ctx.raw} ${unit}`
-          },
-          filter: item => item.dataset.label !== 'Avg'
-        }
+        tooltip: { callbacks: { title: items => items[0].dataset.label === 'Avg' ? `Average: ${avg.toFixed(1)} ${unit}` : `${periodLabel} ${items[0].dataIndex + 1}`, label: ctx => ctx.dataset.label === 'Avg' ? null : `${ctx.raw} ${unit}` }, filter: item => item.dataset.label !== 'Avg' }
       },
       scales: {
         x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#94A3B8' } },
@@ -1144,10 +1394,7 @@ function renderDistChart(sorted, percs) {
     data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 4, borderSkipped: false }] },
     options: {
       responsive: true, maintainAspectRatio: false, animation: { duration: 500 },
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { title: items => `${items[0].label} sprints`, label: ctx => `${ctx.raw.toFixed(1)}% of simulations` } }
-      },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { title: items => `${items[0].label} ${getPeriod(2)}`, label: ctx => `${ctx.raw.toFixed(1)}% of simulations` } } },
       scales: {
         x: { title: { display: true, text: `${getPeriod(2)} to Complete`, font: { size: 10 }, color: '#94A3B8' }, grid: { display: false }, ticks: { font: { size: 10 }, color: '#94A3B8' } },
         y: { title: { display: true, text: '% of Simulations', font: { size: 10 }, color: '#94A3B8' }, grid: { color: '#F1F5F9' }, ticks: { font: { size: 10 }, color: '#94A3B8', callback: v => v + '%' } }
@@ -1172,18 +1419,10 @@ function renderCumChart(sorted, percs) {
   });
   chartCum = new Chart(ctx, {
     type: 'line',
-    data: {
-      datasets: [
-        { data: points, borderColor: '#6366F1', borderWidth: 2.5, backgroundColor: gradient, fill: true, pointRadius: 0, tension: 0.4, label: 'Probability' },
-        ...refDatasets
-      ]
-    },
+    data: { datasets: [{ data: points, borderColor: '#6366F1', borderWidth: 2.5, backgroundColor: gradient, fill: true, pointRadius: 0, tension: 0.4, label: 'Probability' }, ...refDatasets] },
     options: {
       responsive: true, maintainAspectRatio: false, animation: { duration: 500 },
-      plugins: {
-        legend: { display: false },
-        tooltip: { filter: item => item.dataset.label === 'Probability', callbacks: { title: items => `Sprint ${items[0].parsed.x}`, label: ctx => `${ctx.parsed.y.toFixed(1)}% probability of completion` } }
-      },
+      plugins: { legend: { display: false }, tooltip: { filter: item => item.dataset.label === 'Probability', callbacks: { title: items => `${periodLabel} ${items[0].parsed.x}`, label: ctx => `${ctx.parsed.y.toFixed(1)}% probability of completion` } } },
       scales: {
         x: { type: 'linear', title: { display: true, text: `${getPeriod(2)} to Complete`, font: { size: 10 }, color: '#94A3B8' }, grid: { color: '#F1F5F9' }, ticks: { font: { size: 10 }, color: '#94A3B8', stepSize: 1 } },
         y: { min: 0, max: 100, title: { display: true, text: 'Probability (%)', font: { size: 10 }, color: '#94A3B8' }, grid: { color: '#F1F5F9' }, ticks: { font: { size: 10 }, color: '#94A3B8', callback: v => v + '%' } }
@@ -1195,7 +1434,7 @@ function renderCumChart(sorted, percs) {
 // ──────────────────────────────────────────────────────
 //  DISPLAY RESULTS
 // ──────────────────────────────────────────────────────
-function displayResults(overallSorted, perCatSorted, simCount) {
+function displayResults(overallSorted, perCatSorted, simCount, storedResults) {
   const percs = {};
   CONF_LEVELS.forEach(p => { percs[p] = percentile(overallSorted, p); });
 
@@ -1207,53 +1446,46 @@ function displayResults(overallSorted, perCatSorted, simCount) {
   CONF_LEVELS.forEach(p => {
     const s = percs[p];
     document.getElementById(`v${p}-sprints`).textContent = s;
-    document.getElementById(`v${p}-unit`).textContent = getPeriod(s);
+    document.getElementById(`v${p}-unit`).textContent    = getPeriod(s);
     document.getElementById(`v${p}-sprints`).style.display = showSprints ? '' : 'none';
     document.getElementById(`v${p}-unit`).style.display    = showSprints ? '' : 'none';
+
     const dateEl = document.getElementById(`v${p}-date`);
-    if (showDate && startDate) {
-      dateEl.textContent = sprintsToDate(s, sprintLen, startDate);
-      dateEl.classList.remove('hidden');
-    } else {
-      dateEl.classList.add('hidden');
-    }
+    if (showDate && startDate) { dateEl.textContent = sprintsToDate(s, sprintLen, startDate); dateEl.classList.remove('hidden'); }
+    else { dateEl.classList.add('hidden'); }
+
+    // Baseline deviation
+    const devEl = document.getElementById(`v${p}-dev`);
+    if (baselineForecast?.results?.overall) {
+      const bVal = baselineForecast.results.overall[`p${p}`];
+      if (bVal != null) {
+        const diff = s - bVal;
+        if (diff === 0) { devEl.textContent = '= baseline'; devEl.className = 'conf-deviation same'; }
+        else if (diff < 0) { devEl.textContent = `↓ ${Math.abs(diff)} vs baseline`; devEl.className = 'conf-deviation better'; }
+        else { devEl.textContent = `↑ ${diff} vs baseline`; devEl.className = 'conf-deviation worse'; }
+        devEl.classList.remove('hidden');
+      } else { devEl.classList.add('hidden'); }
+    } else { devEl.classList.add('hidden'); }
   });
 
   // Category breakdown
-  const multiCat = categories.length > 1;
-  const breakdownSection = document.getElementById('breakdown-section');
-  breakdownSection.classList.toggle('hidden', !multiCat);
-
+  const multiCat = perCatSorted.length > 1;
+  document.getElementById('breakdown-section').classList.toggle('hidden', !multiCat);
   if (multiCat) {
     const tbody = document.getElementById('breakdown-body');
     tbody.innerHTML = '';
-
-    // Per-category rows
     categories.forEach((cat, ci) => {
       const sorted = perCatSorted[ci];
       const tr = document.createElement('tr');
-      const usingOwn = cat.parsed.length > 0;
       tr.innerHTML = `
-        <td>
-          <div class="cat-name-cell">
-            <div class="breakdown-swatch" style="background:${cat.color}"></div>
-            <span>${escHtml(cat.name)}</span>
-            <span class="breakdown-pct-badge">${cat.pct}%</span>
-            ${!usingOwn ? '<span class="breakdown-data-note">↑ main data</span>' : ''}
-          </div>
-        </td>
+        <td><div class="cat-name-cell"><div class="breakdown-swatch" style="background:${cat.color}"></div><span>${escHtml(cat.name)}</span><span class="breakdown-pct-badge">${cat.pct}%</span>${!cat.parsed.length ? '<span class="breakdown-data-note">↑ main data</span>' : ''}</div></td>
         ${CONF_LEVELS.map(p => `<td><span class="conf-chip chip-${p}">${percentile(sorted, p)}</span></td>`).join('')}
       `;
       tbody.appendChild(tr);
     });
-
-    // Overall row
     const tr = document.createElement('tr');
     tr.className = 'overall-row';
-    tr.innerHTML = `
-      <td><div class="cat-name-cell"><span>Overall</span></div></td>
-      ${CONF_LEVELS.map(p => `<td><span class="conf-chip chip-${p}">${percs[p]}</span></td>`).join('')}
-    `;
+    tr.innerHTML = `<td><div class="cat-name-cell"><span>Overall</span></div></td>${CONF_LEVELS.map(p => `<td><span class="conf-chip chip-${p}">${percs[p]}</span></td>`).join('')}`;
     tbody.appendChild(tr);
   }
 
@@ -1264,6 +1496,7 @@ function displayResults(overallSorted, perCatSorted, simCount) {
   document.getElementById('sim-meta').textContent = `${simCount.toLocaleString()} simulations · ${elapsed}s`;
 
   document.getElementById('results-section').classList.remove('hidden');
+  updateSaveBar();
   document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -1290,7 +1523,6 @@ function updateStats(data) {
 
 function updateRunButton() {
   const backlog = parseFloat(document.getElementById('backlog-size').value);
-  const hasData = parsedData.length >= 1 || categories.every(c => c.parsed.length >= 1);
   const ok = parsedData.length >= 1 && !isNaN(backlog) && backlog > 0 && allocationValid();
   document.getElementById('run-btn').disabled = !ok;
 }
@@ -1303,12 +1535,8 @@ document.getElementById('data-type-toggle').addEventListener('click', e => {
   if (!btn) return;
   dataType = btn.dataset.type;
   document.querySelectorAll('#data-type-toggle .toggle').forEach(b => b.classList.toggle('active', b === btn));
-  document.getElementById('backlog-label').textContent =
-    dataType === 'items' ? 'Backlog Size (items)' : 'Backlog Size (points)';
-  document.getElementById('sprint-data').placeholder =
-    dataType === 'items'
-      ? 'Paste throughput per sprint — comma or newline separated.\nExample:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33'
-      : 'Paste story points per sprint — comma or newline separated.\nExample:  42, 55, 38, 61, 48, 53, 45, 59, 41, 67';
+  document.getElementById('backlog-label').textContent = dataType === 'items' ? 'Backlog Size (items)' : 'Backlog Size (points)';
+  applyPeriodLabel();
 });
 
 document.getElementById('forecast-type-toggle').addEventListener('click', e => {
@@ -1322,25 +1550,18 @@ document.getElementById('forecast-type-toggle').addEventListener('click', e => {
 });
 
 document.getElementById('sprint-data').addEventListener('input', () => {
-  const text  = document.getElementById('sprint-data').value;
+  const text   = document.getElementById('sprint-data').value;
   const errEl  = document.getElementById('data-error');
   const warnEl = document.getElementById('data-warning');
   errEl.classList.add('hidden');
   warnEl.classList.add('hidden');
 
-  if (!text.trim()) {
-    parsedData = [];
-    updateStats([]);
-    updateRunButton();
-    return;
-  }
+  if (!text.trim()) { parsedData = []; updateStats([]); updateRunButton(); return; }
 
   const result = parseData(text);
   if (result.error) {
-    errEl.textContent = result.error;
-    errEl.classList.remove('hidden');
-    parsedData = [];
-    updateStats([]);
+    errEl.textContent = result.error; errEl.classList.remove('hidden');
+    parsedData = []; updateStats([]);
   } else {
     parsedData = result.values;
     if (parsedData.length < 5) {
@@ -1363,40 +1584,30 @@ document.getElementById('sample-btn').addEventListener('click', () => {
 });
 
 document.getElementById('run-btn').addEventListener('click', () => {
-  const backlog   = parseFloat(document.getElementById('backlog-size').value);
-  const simCount  = Math.max(1000, Math.min(100000, parseInt(document.getElementById('sim-count').value) || 10000));
+  const backlog  = parseFloat(document.getElementById('backlog-size').value);
+  const simCount = Math.max(1000, Math.min(100000, parseInt(document.getElementById('sim-count').value) || 10000));
   if (!parsedData.length || isNaN(backlog) || backlog <= 0 || !allocationValid()) return;
 
   const btn = document.getElementById('run-btn');
-  btn.textContent = 'Simulating…';
-  btn.disabled    = true;
+  btn.textContent = 'Simulating…'; btn.disabled = true;
   window._runStart = Date.now();
 
   setTimeout(() => {
-    const { perCategory, overall } = simulateAllocations(categories, backlog, simCount);
-    displayResults(overall, perCategory, simCount);
-    btn.textContent = 'Run Simulation';
-    btn.disabled    = false;
+    const results = simulateAllocations(categories, backlog, simCount);
+    lastRunResults = results;
+    displayResults(results.overall, results.perCategory, simCount);
+    btn.textContent = 'Run Simulation'; btn.disabled = false;
   }, 16);
-});
-
-// ──────────────────────────────────────────────────────
-//  PERIOD LABEL
-// ──────────────────────────────────────────────────────
-document.getElementById('period-label').addEventListener('input', e => {
-  periodLabel = e.target.value.trim() || 'Period';
-  applyPeriodLabel();
 });
 
 // ──────────────────────────────────────────────────────
 //  INIT
 // ──────────────────────────────────────────────────────
 document.getElementById('start-date').valueAsDate = new Date();
-
-// Default categories
 addCategory('Feature Work', 100, CAT_COLORS[0]);
 applyPeriodLabel();
 updateRunButton();
+loadProjects();
 </script>
 </body>
 </html>
