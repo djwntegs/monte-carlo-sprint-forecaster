@@ -834,14 +834,8 @@
         <span class="ado-status-msg hidden" id="ado-backlog-status" style="margin-top:4px"></span>
       </div>
 
-      <!-- Backlog size -->
-      <div class="field">
-        <label id="backlog-label">Backlog Size (items)</label>
-        <div class="backlog-ado-wrap">
-          <input type="number" id="backlog-size" min="1" placeholder="e.g. 150" style="flex:1">
-          <button class="backlog-ado-btn" id="ado-pull-backlog" disabled title="Pull live backlog count from ADO">↓ ADO</button>
-        </div>
-      </div>
+      <!-- Backlog size — hidden, populated by batch selection -->
+      <input type="number" id="backlog-size" style="display:none" min="1">
 
       <!-- Throughput weeks -->
       <div class="field" id="throughput-weeks-field">
@@ -2099,8 +2093,7 @@ async function loadAdoInfo() {
     chipText.textContent = `${info.org} / ${info.project}`;
     chip.className = 'ado-chip';
     adoReady = true;
-    document.getElementById('ado-pull-main').disabled    = false;
-    document.getElementById('ado-pull-backlog').disabled = false;
+    document.getElementById('ado-pull-main').disabled     = false;
     document.getElementById('batch-refresh-btn').disabled = false;
     document.getElementById('batch-field').style.display  = '';
     // Re-render categories so their pull buttons enable
@@ -2156,38 +2149,6 @@ document.getElementById('ado-pull-main').addEventListener('click', async () => {
   btn.textContent = '↓ Pull from ADO';
 });
 
-// Pull live backlog count from ADO
-document.getElementById('ado-pull-backlog').addEventListener('click', async () => {
-  const btn    = document.getElementById('ado-pull-backlog');
-  const status = document.getElementById('ado-backlog-status');
-  const type   = document.getElementById('ado-backlog-type').value;
-
-  btn.disabled = true;
-  btn.textContent = '…';
-  status.textContent = 'Fetching…';
-  status.className = 'ado-status-msg loading';
-  status.classList.remove('hidden');
-
-  try {
-    const params = new URLSearchParams();
-    if (type) params.set('type', type);
-    const data = await api(`/api/ado/backlog?${params}`);
-
-    document.getElementById('backlog-size').value = data.count;
-    document.getElementById('backlog-size').dispatchEvent(new Event('input'));
-    updateRunButton();
-
-    const typeLabel = type ? ` ${type}` : '';
-    status.textContent = `✓ ${data.count}${typeLabel} items`;
-    status.className = 'ado-status-msg ok';
-  } catch (e) {
-    status.textContent = 'Error: ' + e.message;
-    status.className = 'ado-status-msg error';
-  }
-
-  btn.disabled = false;
-  btn.textContent = '↓ ADO';
-});
 
 // Per-category pull — delegate from the cat-list container
 document.getElementById('cat-list').addEventListener('click', async e => {
