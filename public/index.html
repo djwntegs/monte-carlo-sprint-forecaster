@@ -2061,6 +2061,14 @@ function aggregateWeekly(odataValue) {
 // ──────────────────────────────────────────────────────
 let workItemTypes = []; // [{ name: 'Batch Task' }, ...]
 
+function buildTypeOptions(selectedValue = '') {
+  const allOpt = `<option value="">All types</option>`;
+  const typeOpts = workItemTypes.map(t =>
+    `<option value="${escHtml(t.name)}" ${t.name === selectedValue ? 'selected' : ''}>${escHtml(t.name)}</option>`
+  ).join('');
+  return allOpt + typeOpts;
+}
+
 // Preferred type names for auto-defaulting (checked in order)
 const BATCH_TYPE_PREFERENCES = ['Batch Task', 'Task', 'User Story'];
 
