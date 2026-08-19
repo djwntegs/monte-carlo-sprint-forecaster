@@ -500,12 +500,74 @@
     .cat-name { flex: 1; border: none; background: transparent; font-size: 0.875rem; font-weight: 600; color: #1E293B; outline: none; min-width: 80px; }
     .cat-name::placeholder { color: #CBD5E1; font-weight: 400; }
 
-    .cat-pct-wrap { display: flex; align-items: center; gap: 4px; background: white; border: 1.5px solid #E2E8F0; border-radius: 6px; padding: 3px 8px; transition: border-color 0.15s; }
-    .cat-pct-wrap:focus-within { border-color: #6366F1; }
+    .cat-type-select {
+      padding: 4px 8px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      color: #334155;
+      background: white;
+      cursor: pointer;
+      outline: none;
+      min-width: 130px;
+    }
+    .cat-type-select:focus { border-color: #6366F1; }
 
-    .cat-pct { width: 48px; border: none; outline: none; font-size: 0.875rem; font-weight: 600; color: #1E293B; text-align: right; background: transparent; -moz-appearance: textfield; }
-    .cat-pct::-webkit-inner-spin-button, .cat-pct::-webkit-outer-spin-button { -webkit-appearance: none; }
-    .cat-pct-sym { font-size: 0.8rem; color: #94A3B8; font-weight: 500; }
+    .cat-progress {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .cat-prog-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+    }
+    .cat-prog-val  { font-weight: 700; font-size: 0.85rem; color: #1E293B; }
+    .cat-prog-lbl  { font-size: 0.65rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    .cat-prog-bar-wrap {
+      width: 60px;
+      height: 6px;
+      background: #E2E8F0;
+      border-radius: 3px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .cat-prog-bar {
+      height: 100%;
+      background: #10B981;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    .cat-prog-pct {
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: #10B981;
+      min-width: 34px;
+      text-align: right;
+    }
+
+    .cat-fetch-btn {
+      background: none;
+      border: 1.5px solid #BBF7D0;
+      color: #10B981;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.12s;
+      flex-shrink: 0;
+    }
+    .cat-fetch-btn:hover:not(:disabled) { background: #DCFCE7; }
+    .cat-fetch-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
     .cat-data-btn { display: flex; align-items: center; gap: 5px; background: none; border: 1.5px solid #E2E8F0; border-radius: 6px; padding: 3px 9px; font-size: 0.72rem; font-weight: 500; color: #64748B; cursor: pointer; white-space: nowrap; transition: all 0.12s; }
     .cat-data-btn:hover { border-color: #6366F1; color: #6366F1; }
@@ -1370,11 +1432,10 @@ document.getElementById('period-label').addEventListener('input', e => {
 // ──────────────────────────────────────────────────────
 //  CATEGORY STATE
 // ──────────────────────────────────────────────────────
-function addCategory(name, pct, color) {
+function addCategory(name, color, type = '') {
   const id = nextCatId++;
-  categories.push({ id, name, pct, color, rawText: '', parsed: [], expanded: false });
+  categories.push({ id, name, color, type, remaining: null, completed: null, progressPct: null, rawText: '', parsed: [], expanded: false });
   renderCategories();
-  updatePctTotal();
   updateRunButton();
 }
 
@@ -1382,7 +1443,6 @@ function removeCategory(id) {
   if (categories.length <= 1) return;
   categories = categories.filter(c => c.id !== id);
   renderCategories();
-  updatePctTotal();
   updateRunButton();
 }
 
@@ -1395,19 +1455,36 @@ function renderCategories() {
     const row = document.createElement('div');
     row.className = 'cat-row';
     row.dataset.id = cat.id;
-    const statsText = cat.parsed.length
+
+    const hasProgress = cat.remaining !== null && cat.completed !== null;
+    const progPct     = cat.progressPct !== null ? cat.progressPct : 0;
+    const progBar     = hasProgress ? `<div class="cat-prog-bar" style="width:${progPct}%"></div>` : '';
+    const statsText   = cat.parsed.length
       ? (() => { const avg = (cat.parsed.reduce((a,b)=>a+b,0)/cat.parsed.length).toFixed(1); return `${cat.parsed.length} periods · avg ${avg}`; })()
       : '';
+
     row.innerHTML = `
       <div class="cat-header">
         <div class="cat-swatch" style="background:${cat.color}"></div>
         <input class="cat-name" type="text" value="${escHtml(cat.name)}" placeholder="Category name" data-field="name">
-        <div class="cat-pct-wrap">
-          <input class="cat-pct" type="number" value="${cat.pct}" min="0" max="100" data-field="pct">
-          <span class="cat-pct-sym">%</span>
+
+        <select class="cat-type-select" data-field="type">
+          ${buildTypeOptions(cat.type)}
+        </select>
+
+        <button class="cat-fetch-btn" data-action="fetch-progress" ${adoReady && selectedBatch ? '' : 'disabled'} title="Fetch progress from ADO">↓ Fetch</button>
+
+        <div class="cat-progress">
+          ${hasProgress ? `
+            <div class="cat-prog-stat"><span class="cat-prog-val">${cat.remaining}</span><span class="cat-prog-lbl">Remaining</span></div>
+            <div class="cat-prog-stat"><span class="cat-prog-val">${cat.completed}</span><span class="cat-prog-lbl">Done</span></div>
+            <div class="cat-prog-bar-wrap">${progBar}</div>
+            <span class="cat-prog-pct">${progPct}%</span>
+          ` : `<span style="font-size:0.72rem;color:#CBD5E1">${adoReady && selectedBatch ? 'click ↓ Fetch' : 'select a batch'}</span>`}
         </div>
+
         <button class="cat-data-btn ${cat.expanded ? 'active' : ''}" data-action="toggle-data">
-          <span class="dot"></span>${cat.expanded ? 'Custom data ▲' : 'Custom data ▼'}
+          <span class="dot"></span>${cat.expanded ? 'Throughput ▲' : 'Throughput ▼'}
         </button>
         <button class="cat-remove" data-action="remove" title="Remove">×</button>
       </div>
@@ -1422,7 +1499,7 @@ function renderCategories() {
             <option value="24">24 weeks</option>
           </select>
           <select class="ado-select ado-cat-type" data-cat-id="${cat.id}">
-            ${buildTypeOptions()}
+            ${buildTypeOptions(cat.type)}
           </select>
           <span class="ado-status-msg hidden ado-cat-status" data-cat-id="${cat.id}"></span>
         </div>
@@ -1449,9 +1526,11 @@ document.getElementById('cat-list').addEventListener('input', e => {
 
   if (field === 'name') {
     cat.name = e.target.value;
-  } else if (field === 'pct') {
-    cat.pct = parseFloat(e.target.value) || 0;
-    updatePctTotal(); updateRunButton();
+  } else if (field === 'type') {
+    cat.type = e.target.value;
+    cat.remaining = null; cat.completed = null; cat.progressPct = null;
+    renderCategories();
+    updateRunButton();
   } else if (field === 'rawText') {
     cat.rawText = e.target.value;
     const errEl   = row.querySelector('.cat-err');
@@ -1481,24 +1560,31 @@ document.getElementById('cat-list').addEventListener('click', e => {
   const cat = getCatById(id);
   if (btn.dataset.action === 'remove') removeCategory(id);
   else if (btn.dataset.action === 'toggle-data') { cat.expanded = !cat.expanded; renderCategories(); }
+  else if (btn.dataset.action === 'fetch-progress') { fetchCategoryProgress(id); }
 });
 
 document.getElementById('add-cat-btn').addEventListener('click', () => {
-  addCategory('New Category', 0, CAT_COLORS[categories.length % CAT_COLORS.length]);
+  addCategory('New Category', CAT_COLORS[categories.length % CAT_COLORS.length]);
 });
 
 function updatePctTotal() {
-  const total = categories.reduce((s, c) => s + (c.pct || 0), 0);
+  const withData  = categories.filter(c => c.remaining !== null);
+  const totalRem  = withData.reduce((s, c) => s + c.remaining, 0);
   const valEl = document.getElementById('pct-total-val');
   const msgEl = document.getElementById('pct-total-msg');
-  valEl.textContent = total + '%';
-  const ok = Math.abs(total - 100) < 0.01;
-  valEl.className = 'pct-total-val ' + (ok ? 'ok' : 'error');
-  msgEl.classList.toggle('hidden', ok);
+  if (withData.length > 0) {
+    valEl.textContent = totalRem + ' items';
+    valEl.className   = 'pct-total-val ok';
+    msgEl.classList.add('hidden');
+  } else {
+    valEl.textContent = categories.length + ' categor' + (categories.length === 1 ? 'y' : 'ies');
+    valEl.className   = 'pct-total-val';
+    msgEl.classList.add('hidden');
+  }
 }
 
 function allocationValid() {
-  return Math.abs(categories.reduce((s, c) => s + (c.pct || 0), 0) - 100) < 0.01;
+  return true; // categories are now type-bound, no percentage validation needed
 }
 
 // ──────────────────────────────────────────────────────
@@ -1534,7 +1620,10 @@ function simulateAllocations(cats, backlog, simCount) {
       const cat = cats[ci];
       const tp  = cat.parsed.length > 0 ? cat.parsed : parsedData;
       const n   = tp.length;
-      const subBacklog = backlog * (cat.pct / 100);
+      // Use live remaining count from ADO when available; fall back to even split
+      const subBacklog = cat.remaining !== null
+        ? cat.remaining
+        : Math.round(backlog / nCats);
       let total = 0, sprints = 0;
       while (total < subBacklog) {
         total += tp[Math.floor(Math.random() * n)];
@@ -1726,7 +1815,7 @@ function displayResults(overallSorted, perCatSorted, simCount, storedResults) {
       const sorted = perCatSorted[ci];
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><div class="cat-name-cell"><div class="breakdown-swatch" style="background:${cat.color}"></div><span>${escHtml(cat.name)}</span><span class="breakdown-pct-badge">${cat.pct}%</span>${!cat.parsed.length ? '<span class="breakdown-data-note">↑ main data</span>' : ''}</div></td>
+        <td><div class="cat-name-cell"><div class="breakdown-swatch" style="background:${cat.color}"></div><span>${escHtml(cat.name)}</span>${cat.remaining !== null ? `<span class="breakdown-pct-badge">${cat.remaining} rem · ${cat.progressPct}% done</span>` : ''}${!cat.parsed.length ? '<span class="breakdown-data-note">↑ main data</span>' : ''}</div></td>
         ${CONF_LEVELS.map(p => `<td><span class="conf-chip chip-${p}">${percentile(sorted, p)}</span></td>`).join('')}
       `;
       tbody.appendChild(tr);
@@ -1998,6 +2087,35 @@ async function fetchBatchBacklog(wiqlPath, type) {
   }
 }
 
+async function fetchCategoryProgress(catId) {
+  if (!selectedBatch) return;
+  const cat = getCatById(catId);
+  if (!cat || !cat.type) return;
+
+  const row     = document.querySelector(`.cat-row[data-id="${catId}"]`);
+  const fetchBtn = row?.querySelector('[data-action="fetch-progress"]');
+  if (fetchBtn) { fetchBtn.disabled = true; fetchBtn.textContent = '…'; }
+
+  try {
+    const params = new URLSearchParams({ iterationPath: selectedBatch.wiqlPath, type: cat.type });
+    const data   = await api(`/api/ado/batchprogress?${params}`);
+    cat.remaining    = data.remaining;
+    cat.completed    = data.completed;
+    cat.progressPct  = data.pct;
+    renderCategories();
+    updatePctTotal();
+    updateRunButton();
+  } catch (e) {
+    if (fetchBtn) { fetchBtn.disabled = false; fetchBtn.textContent = '↓ Fetch'; }
+  }
+}
+
+async function fetchAllCategoryProgress() {
+  if (!selectedBatch) return;
+  const cats = categories.filter(c => c.type);
+  await Promise.all(cats.map(c => fetchCategoryProgress(c.id)));
+}
+
 async function autoPullThroughput(type) {
   const weeks  = document.getElementById('ado-weeks').value;
   const status = document.getElementById('ado-main-status');
@@ -2048,6 +2166,10 @@ function clearBatch() {
   document.getElementById('batch-clear-btn').classList.add('hidden');
   document.getElementById('batch-info-text').textContent = '';
   document.getElementById('batch-count-badge').textContent = '';
+  // Clear category progress
+  categories.forEach(c => { c.remaining = null; c.completed = null; c.progressPct = null; });
+  renderCategories();
+  updatePctTotal();
 }
 
 document.getElementById('batch-select').addEventListener('change', async e => {
@@ -2062,10 +2184,11 @@ document.getElementById('batch-select').addEventListener('change', async e => {
 
   const type = document.getElementById('ado-backlog-type').value;
 
-  // Pull backlog count and throughput data in parallel
+  // Pull backlog count, throughput and category progress in parallel
   await Promise.all([
     fetchBatchBacklog(wiqlPath, type),
-    autoPullThroughput(type)
+    autoPullThroughput(type),
+    fetchAllCategoryProgress()
   ]);
 });
 
@@ -2220,7 +2343,7 @@ document.getElementById('cat-list').addEventListener('click', async e => {
 //  INIT
 // ──────────────────────────────────────────────────────
 document.getElementById('start-date').valueAsDate = new Date();
-addCategory('Feature Work', 100, CAT_COLORS[0]);
+addCategory('Feature Work', CAT_COLORS[0]);
 applyPeriodLabel();
 updateRunButton();
 loadProjects();

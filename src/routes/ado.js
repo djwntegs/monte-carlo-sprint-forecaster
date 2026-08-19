@@ -99,6 +99,42 @@ router.get('/iterations', async (req, res) => {
   }
 });
 
+// GET /api/ado/batchprogress?iterationPath=Team30%5CBatch+1&type=Batch+Task
+// Returns remaining, completed, total and % complete for a type within a batch
+router.get('/batchprogress', async (req, res) => {
+  const { iterationPath, type } = req.query;
+  if (!iterationPath) return res.status(400).json({ error: 'iterationPath is required' });
+
+  try {
+    const { org, project } = getAdoConfig();
+    const iterFilter = ` AND [Iteration Path] UNDER '${iterationPath}'`;
+    const typeFilter  = type ? ` AND [Work Item Type] = '${type}'` : '';
+    const url     = `${adoBase(org)}/${project}/_apis/wit/wiql?api-version=7.1`;
+    const headers = { Authorization: adoAuthHeader(), 'Content-Type': 'application/json' };
+
+    const [remRes, doneRes] = await Promise.all([
+      fetch(url, { method: 'POST', headers, body: JSON.stringify({
+        query: `SELECT [Id] FROM WorkItems WHERE [State] NOT IN ('Closed','Done','Removed')${iterFilter}${typeFilter}`
+      })}),
+      fetch(url, { method: 'POST', headers, body: JSON.stringify({
+        query: `SELECT [Id] FROM WorkItems WHERE [State] IN ('Closed','Done','Resolved','Completed')${iterFilter}${typeFilter}`
+      })})
+    ]);
+
+    if (!remRes.ok)  return res.status(remRes.status).json({ error: await remRes.text() });
+    if (!doneRes.ok) return res.status(doneRes.status).json({ error: await doneRes.text() });
+
+    const remaining  = (await remRes.json()).workItems.length;
+    const completed  = (await doneRes.json()).workItems.length;
+    const total      = remaining + completed;
+    const pct        = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    res.json({ remaining, completed, total, pct });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/ado/throughput?weeks=12&type=Bug
 router.get('/throughput', async (req, res) => {
   const { weeks = 12, type } = req.query;
