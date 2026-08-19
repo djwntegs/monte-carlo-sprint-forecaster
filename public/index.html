@@ -513,6 +513,29 @@
     }
     .cat-type-select:focus { border-color: #6366F1; }
 
+    /* Multi-type dropdown */
+    .multi-type-wrapper { position: relative; }
+    .multi-type-btn {
+      width: 100%; background: #1E293B; border: 1px solid #334155; color: #CBD5E1;
+      padding: 8px 12px; border-radius: 8px; cursor: pointer; text-align: left;
+      font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;
+      white-space: nowrap; overflow: hidden;
+    }
+    .multi-type-btn:hover { border-color: #6366F1; }
+    .multi-type-dropdown {
+      position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: 300px;
+      background: #1E293B; border: 1px solid #334155; border-radius: 8px;
+      z-index: 200; max-height: 260px; overflow-y: auto; padding: 4px 0; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .multi-type-dropdown.hidden { display: none; }
+    .multi-type-option {
+      display: flex; align-items: center; gap: 8px; padding: 7px 14px;
+      cursor: pointer; font-size: 0.82rem; color: #CBD5E1; user-select: none;
+    }
+    .multi-type-option:hover { background: #273549; color: white; }
+    .multi-type-option input[type=checkbox] { accent-color: #6366F1; cursor: pointer; flex-shrink: 0; }
+    .multi-type-divider { border: none; border-top: 1px solid #334155; margin: 4px 0; }
+
     .cat-progress {
       display: flex;
       align-items: center;
@@ -917,9 +940,17 @@
       <!-- Work type -->
       <div class="field" id="batch-type-field">
         <label>Work Item Type</label>
-        <select class="ado-select" id="ado-backlog-type" style="width:100%">
-          <option value="">All types</option>
-        </select>
+        <div class="multi-type-wrapper">
+          <button type="button" class="multi-type-btn" id="ado-backlog-type-btn">
+            <span id="ado-backlog-type-label">All types</span><span>▾</span>
+          </button>
+          <div class="multi-type-dropdown hidden" id="ado-backlog-type-dropdown">
+            <label class="multi-type-option">
+              <input type="checkbox" id="ado-type-all" checked> All types
+            </label>
+            <hr class="multi-type-divider">
+          </div>
+        </div>
         <span class="ado-status-msg hidden" id="ado-backlog-status" style="margin-top:4px"></span>
       </div>
 
@@ -2020,14 +2051,6 @@ function aggregateWeekly(odataValue) {
 // ──────────────────────────────────────────────────────
 let workItemTypes = []; // [{ name: 'Batch Task' }, ...]
 
-function buildTypeOptions(selectedValue = '') {
-  const allOpt = `<option value="">All types</option>`;
-  const typeOpts = workItemTypes.map(t =>
-    `<option value="${escHtml(t.name)}" ${t.name === selectedValue ? 'selected' : ''}>${escHtml(t.name)}</option>`
-  ).join('');
-  return allOpt + typeOpts;
-}
-
 // Preferred type names for auto-defaulting (checked in order)
 const BATCH_TYPE_PREFERENCES = ['Batch Task', 'Task', 'User Story'];
 
@@ -2038,20 +2061,73 @@ function getPreferredType() {
   return '';
 }
 
+// Returns array of selected type strings; empty array means "All types"
+function getSelectedTypes() {
+  const allBox = document.getElementById('ado-type-all');
+  if (!allBox || allBox.checked) return [];
+  const checks = document.querySelectorAll('#ado-backlog-type-dropdown input[type=checkbox].type-cb');
+  return Array.from(checks).filter(c => c.checked).map(c => c.value);
+}
+
+function updateTypeLabel() {
+  const types = getSelectedTypes();
+  const label = document.getElementById('ado-backlog-type-label');
+  if (!label) return;
+  label.textContent = types.length === 0 ? 'All types'
+    : types.length === 1 ? types[0]
+    : `${types.length} types selected`;
+}
+
+function onTypeCheckboxChange(e) {
+  const allBox = document.getElementById('ado-type-all');
+  if (e.target === allBox) {
+    if (allBox.checked) {
+      document.querySelectorAll('#ado-backlog-type-dropdown input.type-cb').forEach(c => { c.checked = false; });
+    }
+  } else {
+    if (allBox) allBox.checked = false;
+    const anyChecked = Array.from(document.querySelectorAll('#ado-backlog-type-dropdown input.type-cb')).some(c => c.checked);
+    if (!anyChecked && allBox) allBox.checked = true;
+  }
+  updateTypeLabel();
+  if (selectedBatch) {
+    const types = getSelectedTypes();
+    Promise.all([fetchBatchBacklog(selectedBatch.wiqlPath, types), autoPullThroughput(types)]);
+  }
+}
+
 function populateTypeSelects() {
-  // Primary type selector (setup card)
-  const backlogSel = document.getElementById('ado-backlog-type');
-  if (backlogSel) {
-    const current = backlogSel.value || getPreferredType();
-    backlogSel.innerHTML = buildTypeOptions(current);
+  // Primary multi-type selector (setup card)
+  const dropdown = document.getElementById('ado-backlog-type-dropdown');
+  if (dropdown) {
+    dropdown.querySelectorAll('.type-cb-label').forEach(el => el.remove());
+    const preferred = getPreferredType();
+    const allBox = document.getElementById('ado-type-all');
+    workItemTypes.forEach(t => {
+      const lbl = document.createElement('label');
+      lbl.className = 'multi-type-option type-cb-label';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.className = 'type-cb'; cb.value = t.name;
+      cb.checked = (t.name === preferred);
+      cb.addEventListener('change', onTypeCheckboxChange);
+      lbl.appendChild(cb);
+      lbl.appendChild(document.createTextNode(' ' + t.name));
+      dropdown.appendChild(lbl);
+    });
+    if (preferred && allBox) allBox.checked = false;
+    updateTypeLabel();
+    document.getElementById('ado-type-all').addEventListener('change', onTypeCheckboxChange);
   }
   // Secondary (historical data card manual pull)
   const mainSel = document.getElementById('ado-type-main');
   if (mainSel) {
-    const current = mainSel.value || getPreferredType();
-    mainSel.innerHTML = buildTypeOptions(current);
+    const preferred = getPreferredType();
+    const allOpt = `<option value="">All types</option>`;
+    const typeOpts = workItemTypes.map(t =>
+      `<option value="${escHtml(t.name)}" ${t.name === preferred ? 'selected' : ''}>${escHtml(t.name)}</option>`
+    ).join('');
+    mainSel.innerHTML = allOpt + typeOpts;
   }
-  // Re-render categories so their type selects pick up the new list
   renderCategories();
 }
 
@@ -2102,7 +2178,7 @@ async function loadIterations() {
   }
 }
 
-async function fetchBatchBacklog(wiqlPath, type) {
+async function fetchBatchBacklog(wiqlPath, types) {
   const status = document.getElementById('batch-load-status');
   const badge  = document.getElementById('batch-count-badge');
   const info   = document.getElementById('batch-info');
@@ -2114,17 +2190,28 @@ async function fetchBatchBacklog(wiqlPath, type) {
   badge.textContent = '…';
 
   try {
-    const params = new URLSearchParams({ iterationPath: wiqlPath });
-    if (type) params.set('type', type);
-    const data = await api(`/api/ado/backlog?${params}`);
+    const typeList = Array.isArray(types) ? types : (types ? [types] : []);
+    let count;
+    if (typeList.length <= 1) {
+      const params = new URLSearchParams({ iterationPath: wiqlPath });
+      if (typeList[0]) params.set('type', typeList[0]);
+      const data = await api(`/api/ado/backlog?${params}`);
+      count = data.count;
+    } else {
+      const results = await Promise.all(typeList.map(t => {
+        const params = new URLSearchParams({ iterationPath: wiqlPath, type: t });
+        return api(`/api/ado/backlog?${params}`);
+      }));
+      count = results.reduce((sum, d) => sum + d.count, 0);
+    }
 
-    badge.textContent = data.count + ' items';
-    document.getElementById('backlog-size').value = data.count;
+    badge.textContent = count + ' items';
+    document.getElementById('backlog-size').value = count;
     document.getElementById('backlog-size').dispatchEvent(new Event('input'));
     updateRunButton();
 
     status.classList.add('hidden');
-    return data.count;
+    return count;
   } catch (e) {
     status.textContent = 'Error: ' + e.message;
     status.className   = 'ado-status-msg error';
@@ -2162,28 +2249,40 @@ async function fetchAllCategoryProgress() {
   await Promise.all(cats.map(c => fetchCategoryProgress(c.id)));
 }
 
-async function autoPullThroughput(type) {
+async function autoPullThroughput(types) {
   const weeks  = document.getElementById('ado-weeks').value;
   const status = document.getElementById('ado-main-status');
-
-  // Sync the historical-data type select to match
-  const mainTypeSelect = document.getElementById('ado-type-main');
-  if (mainTypeSelect) mainTypeSelect.value = type || '';
+  const typeList = Array.isArray(types) ? types : (types ? [types] : []);
 
   status.textContent = 'Loading throughput…';
   status.className   = 'ado-status-msg loading';
   status.classList.remove('hidden');
 
   try {
-    const params = new URLSearchParams({ weeks });
-    if (type) params.set('type', type);
-    const data = await api(`/api/ado/throughput?${params}`);
+    let rows;
+    if (typeList.length <= 1) {
+      const params = new URLSearchParams({ weeks });
+      if (typeList[0]) params.set('type', typeList[0]);
+      const data = await api(`/api/ado/throughput?${params}`);
+      rows = data.value || [];
+    } else {
+      const results = await Promise.all(typeList.map(t => {
+        const params = new URLSearchParams({ weeks, type: t });
+        return api(`/api/ado/throughput?${params}`);
+      }));
+      // Merge daily rows across types (sum same-day counts)
+      const merged = {};
+      results.forEach(d => (d.value || []).forEach(r => {
+        merged[r.CompletedDateSK] = (merged[r.CompletedDateSK] || 0) + (r.Count || 0);
+      }));
+      rows = Object.entries(merged).map(([CompletedDateSK, Count]) => ({ CompletedDateSK: Number(CompletedDateSK), Count }));
+    }
 
-    if (!data.value?.length) {
+    if (!rows.length) {
       const hasExistingData = document.getElementById('sprint-data').value.trim().length > 0;
       if (hasExistingData) {
         status.textContent = 'No ADO throughput found — using data entered above.';
-        status.className   = 'ado-status-msg'; // neutral grey
+        status.className   = 'ado-status-msg';
       } else {
         status.textContent = 'No ADO throughput found — enter data manually or load sample data above.';
         status.className   = 'ado-status-msg error';
@@ -2191,12 +2290,14 @@ async function autoPullThroughput(type) {
       return;
     }
 
-    const weekly = aggregateWeekly(data.value);
+    const weekly = aggregateWeekly(rows);
     const textarea = document.getElementById('sprint-data');
     textarea.value = weekly.join(', ');
     textarea.dispatchEvent(new Event('input'));
 
-    const typeLabel = type || 'all types';
+    const typeLabel = typeList.length === 0 ? 'all types'
+      : typeList.length === 1 ? typeList[0]
+      : `${typeList.length} types`;
     status.textContent = `✓ ${weekly.length} periods of throughput loaded (${typeLabel})`;
     status.className   = 'ado-status-msg ok';
   } catch (e) {
@@ -2228,12 +2329,12 @@ document.getElementById('batch-select').addEventListener('change', async e => {
   document.getElementById('batch-info-text').textContent = selectedBatch.name + ':';
   document.getElementById('batch-clear-btn').classList.remove('hidden');
 
-  const type = document.getElementById('ado-backlog-type').value;
+  const types = getSelectedTypes();
 
   // Pull backlog count, throughput and category progress in parallel
   await Promise.all([
-    fetchBatchBacklog(wiqlPath, type),
-    autoPullThroughput(type),
+    fetchBatchBacklog(wiqlPath, types),
+    autoPullThroughput(types),
     fetchAllCategoryProgress()
   ]);
 });
@@ -2242,21 +2343,20 @@ document.getElementById('batch-refresh-btn').addEventListener('click', () => loa
 
 document.getElementById('batch-clear-btn').addEventListener('click', () => clearBatch());
 
-// When work item type changes and a batch is selected, refresh both count and throughput
-document.getElementById('ado-backlog-type').addEventListener('change', async () => {
-  if (!selectedBatch) return;
-  const type = document.getElementById('ado-backlog-type').value;
-  await Promise.all([
-    fetchBatchBacklog(selectedBatch.wiqlPath, type),
-    autoPullThroughput(type)
-  ]);
+// Multi-type dropdown toggle
+document.getElementById('ado-backlog-type-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  document.getElementById('ado-backlog-type-dropdown').classList.toggle('hidden');
 });
+document.addEventListener('click', () => {
+  document.getElementById('ado-backlog-type-dropdown')?.classList.add('hidden');
+});
+document.getElementById('ado-backlog-type-dropdown').addEventListener('click', e => e.stopPropagation());
 
 // When weeks changes and a batch is selected, re-pull throughput
 document.getElementById('ado-weeks').addEventListener('change', async () => {
   if (!selectedBatch) return;
-  const type = document.getElementById('ado-backlog-type').value;
-  await autoPullThroughput(type);
+  await autoPullThroughput(getSelectedTypes());
 });
 
 // Load ADO info to verify connection and enable buttons
