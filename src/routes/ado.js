@@ -8,6 +8,15 @@ function adoAuthHeader() {
   return `Basic ${encoded}`;
 }
 
+// Supports both dev.azure.com/org and org.visualstudio.com legacy URLs
+function adoBase(org) {
+  return `https://dev.azure.com/${org}`;
+}
+
+function analyticsBase(org) {
+  return `https://analytics.dev.azure.com/${org}`;
+}
+
 // GET /api/ado/throughput?org=myorg&project=myproject&weeks=12&type=Bug
 // Returns completed item counts grouped by week
 router.get('/throughput', async (req, res) => {
@@ -16,7 +25,7 @@ router.get('/throughput', async (req, res) => {
 
   try {
     const typeFilter = type ? ` and WorkItemType eq '${type}'` : '';
-    const url = `https://analytics.dev.azure.com/${org}/${project}/_odata/v3.0/WorkItemSnapshot?` +
+    const url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemSnapshot?` +
       `$apply=filter(StateCategory eq 'Completed'${typeFilter})` +
       `/groupby((CompletedDateSK),aggregate($count as Count))` +
       `&$orderby=CompletedDateSK desc&$top=${weeks * 7}`;
@@ -51,7 +60,7 @@ router.get('/backlog', async (req, res) => {
       query: `SELECT [Id] FROM WorkItems WHERE [State] NOT IN ('Closed','Done','Removed')${areaFilter}${typeFilter}`
     };
 
-    const url = `https://dev.azure.com/${org}/${project}/_apis/wit/wiql?api-version=7.1`;
+    const url = `${adoBase(org)}/${project}/_apis/wit/wiql?api-version=7.1`;
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -80,7 +89,7 @@ router.get('/projects', async (req, res) => {
   if (!org) return res.status(400).json({ error: 'org is required' });
 
   try {
-    const url = `https://dev.azure.com/${org}/_apis/projects?api-version=7.1`;
+    const url = `${adoBase(org)}/_apis/projects?api-version=7.1`;
     const response = await fetch(url, {
       headers: { Authorization: adoAuthHeader() }
     });
