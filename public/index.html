@@ -1827,7 +1827,7 @@ document.getElementById('sample-btn').addEventListener('click', () => {
   const data = dataType === 'items' ? SAMPLE_DATA_ITEMS : SAMPLE_DATA_POINTS;
   document.getElementById('sprint-data').value = data.join(', ');
   document.getElementById('sprint-data').dispatchEvent(new Event('input'));
-  document.getElementById('backlog-size').value = dataType === 'items' ? 200 : 420;
+  // backlog size is owned by the batch selection — do not override it here
   updateRunButton();
 });
 
