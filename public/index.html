@@ -41,6 +41,99 @@
       white-space: nowrap;
     }
 
+    /* ADO status chip */
+    .ado-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #0E3A2A;
+      border: 1px solid #134E35;
+      color: #34D399;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .ado-chip .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #34D399;
+      flex-shrink: 0;
+    }
+    .ado-chip.loading { color: #94A3B8; background: #1E293B; border-color: #334155; }
+    .ado-chip.loading .dot { background: #64748B; }
+    .ado-chip.error   { color: #F87171; background: #2D1515; border-color: #7F1D1D; }
+    .ado-chip.error .dot { background: #F87171; }
+
+    /* ADO import row */
+    .ado-import-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .ado-pull-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #0E3A2A;
+      border: 1.5px solid #134E35;
+      color: #34D399;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s;
+      white-space: nowrap;
+    }
+    .ado-pull-btn:hover:not(:disabled) { background: #134E35; }
+    .ado-pull-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .ado-select {
+      padding: 5px 9px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      color: #334155;
+      background: white;
+      cursor: pointer;
+      outline: none;
+    }
+    .ado-select:focus { border-color: #6366F1; }
+
+    .ado-status-msg {
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .ado-status-msg.ok    { color: #10B981; }
+    .ado-status-msg.error { color: #EF4444; }
+    .ado-status-msg.loading { color: #94A3B8; }
+
+    /* Backlog ADO button */
+    .backlog-ado-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .backlog-ado-btn {
+      background: none;
+      border: 1.5px solid #134E35;
+      color: #34D399;
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.12s;
+    }
+    .backlog-ado-btn:hover:not(:disabled) { background: #0E3A2A; }
+    .backlog-ado-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
     /* Project switcher */
     .project-switcher {
       position: relative;
@@ -602,6 +695,12 @@
     <p>Probabilistic forecasting from historical throughput data</p>
   </div>
 
+  <!-- ADO status chip -->
+  <div class="ado-chip loading" id="ado-chip">
+    <span class="dot"></span>
+    <span id="ado-chip-text">ADO connecting…</span>
+  </div>
+
   <!-- Project switcher -->
   <div class="project-switcher" id="project-switcher">
     <button class="project-btn" id="project-btn">
@@ -634,6 +733,25 @@
 
     <textarea id="sprint-data"
       placeholder="Paste throughput per period — comma or newline separated.&#10;Example:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33"></textarea>
+
+    <div class="ado-import-row" id="ado-main-import-row">
+      <button class="ado-pull-btn" id="ado-pull-main" disabled>↓ Pull from ADO</button>
+      <select class="ado-select" id="ado-weeks">
+        <option value="8">8 weeks</option>
+        <option value="12" selected>12 weeks</option>
+        <option value="16">16 weeks</option>
+        <option value="24">24 weeks</option>
+      </select>
+      <select class="ado-select" id="ado-type-main">
+        <option value="">All work types</option>
+        <option value="Bug">Bugs</option>
+        <option value="Feature">Features</option>
+        <option value="User Story">User Stories</option>
+        <option value="Task">Tasks</option>
+        <option value="Epic">Epics</option>
+      </select>
+      <span class="ado-status-msg hidden" id="ado-main-status"></span>
+    </div>
 
     <div id="data-error"   class="error-text hidden"></div>
     <div id="data-warning" class="warning-text hidden"></div>
@@ -680,7 +798,21 @@
       </div>
       <div class="field">
         <label id="backlog-label">Backlog Size (items)</label>
-        <input type="number" id="backlog-size" min="1" placeholder="e.g. 150">
+        <div class="backlog-ado-wrap">
+          <input type="number" id="backlog-size" min="1" placeholder="e.g. 150" style="flex:1">
+          <button class="backlog-ado-btn" id="ado-pull-backlog" disabled title="Pull live backlog count from ADO">↓ ADO</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+          <select class="ado-select" id="ado-backlog-type" style="font-size:0.72rem;padding:3px 7px">
+            <option value="">All types</option>
+            <option value="Bug">Bugs</option>
+            <option value="Feature">Features</option>
+            <option value="User Story">User Stories</option>
+            <option value="Task">Tasks</option>
+            <option value="Epic">Epics</option>
+          </select>
+          <span class="ado-status-msg hidden" id="ado-backlog-status"></span>
+        </div>
       </div>
       <div class="field">
         <label>Forecast Output</label>
@@ -1178,6 +1310,24 @@ function renderCategories() {
       </div>
       <div class="cat-body" style="${cat.expanded ? '' : 'display:none'}">
         <div class="cat-body-label">Historical throughput for this category (optional — inherits main data if blank)</div>
+        <div class="ado-import-row" style="margin-bottom:8px">
+          <button class="ado-pull-btn ado-pull-cat" data-cat-id="${cat.id}" ${adoReady ? '' : 'disabled'}>↓ Pull from ADO</button>
+          <select class="ado-select ado-cat-weeks" data-cat-id="${cat.id}">
+            <option value="8">8 weeks</option>
+            <option value="12" selected>12 weeks</option>
+            <option value="16">16 weeks</option>
+            <option value="24">24 weeks</option>
+          </select>
+          <select class="ado-select ado-cat-type" data-cat-id="${cat.id}">
+            <option value="">All types</option>
+            <option value="Bug">Bugs</option>
+            <option value="Feature">Features</option>
+            <option value="User Story">User Stories</option>
+            <option value="Task">Tasks</option>
+            <option value="Epic">Epics</option>
+          </select>
+          <span class="ado-status-msg hidden ado-cat-status" data-cat-id="${cat.id}"></span>
+        </div>
         <textarea class="cat-textarea" data-field="rawText" placeholder="e.g. 4, 7, 3, 6, 5, 8, 4, 6, 3, 7">${escHtml(cat.rawText)}</textarea>
         <div class="cat-stats">${statsText}</div>
         <div class="error-text cat-err hidden"></div>
@@ -1601,6 +1751,192 @@ document.getElementById('run-btn').addEventListener('click', () => {
 });
 
 // ──────────────────────────────────────────────────────
+//  ADO INTEGRATION  (read-only)
+// ──────────────────────────────────────────────────────
+let adoReady = false;
+
+// Parse YYYYMMDD integer into a JS Date
+function parseDateSK(sk) {
+  const s = String(sk);
+  return new Date(+s.slice(0,4), +s.slice(4,6)-1, +s.slice(6,8));
+}
+
+// Return an ISO year-week key like "2025-W03" for grouping
+function isoWeekKey(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+}
+
+// Aggregate OData daily rows into weekly throughput array
+function aggregateWeekly(odataValue) {
+  const weeks = {};
+  for (const row of odataValue) {
+    const key = isoWeekKey(parseDateSK(row.CompletedDateSK));
+    weeks[key] = (weeks[key] || 0) + (row.Count || 0);
+  }
+  return Object.entries(weeks)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, count]) => count);
+}
+
+// Load ADO info to verify connection and enable buttons
+async function loadAdoInfo() {
+  const chip     = document.getElementById('ado-chip');
+  const chipText = document.getElementById('ado-chip-text');
+  try {
+    const info = await api('/api/ado/info');
+    chipText.textContent = `${info.org} / ${info.project}`;
+    chip.className = 'ado-chip';
+    adoReady = true;
+    document.getElementById('ado-pull-main').disabled    = false;
+    document.getElementById('ado-pull-backlog').disabled = false;
+    // Re-render categories so their pull buttons enable
+    renderCategories();
+  } catch (e) {
+    // Running against static Python server or backend not reachable — hide gracefully
+    chip.className = 'ado-chip error';
+    chipText.textContent = 'ADO unavailable';
+  }
+}
+
+// Pull main throughput data from ADO
+document.getElementById('ado-pull-main').addEventListener('click', async () => {
+  const btn    = document.getElementById('ado-pull-main');
+  const status = document.getElementById('ado-main-status');
+  const weeks  = document.getElementById('ado-weeks').value;
+  const type   = document.getElementById('ado-type-main').value;
+
+  btn.disabled = true;
+  btn.textContent = '↓ Pulling…';
+  status.textContent = 'Fetching from ADO…';
+  status.className = 'ado-status-msg loading';
+  status.classList.remove('hidden');
+
+  try {
+    const params = new URLSearchParams({ weeks });
+    if (type) params.set('type', type);
+    const data = await api(`/api/ado/throughput?${params}`);
+
+    if (!data.value?.length) {
+      status.textContent = 'No completed items found for that period/type.';
+      status.className = 'ado-status-msg error';
+      return;
+    }
+
+    const weekly = aggregateWeekly(data.value);
+    const textarea = document.getElementById('sprint-data');
+    textarea.value = weekly.join(', ');
+    textarea.dispatchEvent(new Event('input'));
+
+    const typeLabel = type || 'all types';
+    status.textContent = `✓ ${weekly.length} weeks imported (${typeLabel})`;
+    status.className = 'ado-status-msg ok';
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'ado-status-msg error';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '↓ Pull from ADO';
+});
+
+// Pull live backlog count from ADO
+document.getElementById('ado-pull-backlog').addEventListener('click', async () => {
+  const btn    = document.getElementById('ado-pull-backlog');
+  const status = document.getElementById('ado-backlog-status');
+  const type   = document.getElementById('ado-backlog-type').value;
+
+  btn.disabled = true;
+  btn.textContent = '…';
+  status.textContent = 'Fetching…';
+  status.className = 'ado-status-msg loading';
+  status.classList.remove('hidden');
+
+  try {
+    const params = new URLSearchParams();
+    if (type) params.set('type', type);
+    const data = await api(`/api/ado/backlog?${params}`);
+
+    document.getElementById('backlog-size').value = data.count;
+    document.getElementById('backlog-size').dispatchEvent(new Event('input'));
+    updateRunButton();
+
+    const typeLabel = type ? ` ${type}` : '';
+    status.textContent = `✓ ${data.count}${typeLabel} items`;
+    status.className = 'ado-status-msg ok';
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'ado-status-msg error';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '↓ ADO';
+});
+
+// Per-category pull — delegate from the cat-list container
+document.getElementById('cat-list').addEventListener('click', async e => {
+  const btn = e.target.closest('.ado-pull-cat');
+  if (!btn) return;
+
+  const catId  = Number(btn.dataset.catId);
+  const row    = btn.closest('.cat-row');
+  const weeks  = row.querySelector('.ado-cat-weeks').value;
+  const type   = row.querySelector('.ado-cat-type').value;
+  const status = row.querySelector('.ado-cat-status');
+
+  btn.disabled = true;
+  btn.textContent = '↓ Pulling…';
+  status.textContent = 'Fetching…';
+  status.className = 'ado-status-msg loading';
+  status.classList.remove('hidden');
+
+  try {
+    const params = new URLSearchParams({ weeks });
+    if (type) params.set('type', type);
+    const data = await api(`/api/ado/throughput?${params}`);
+
+    if (!data.value?.length) {
+      status.textContent = 'No data found.';
+      status.className = 'ado-status-msg error';
+      btn.disabled = false;
+      btn.textContent = '↓ Pull from ADO';
+      return;
+    }
+
+    const weekly = aggregateWeekly(data.value);
+    const cat    = getCatById(catId);
+    if (!cat) return;
+
+    cat.rawText = weekly.join(', ');
+    cat.parsed  = weekly;
+
+    // Update the textarea in the DOM directly (category is already expanded)
+    const textarea = row.querySelector('.cat-textarea');
+    if (textarea) textarea.value = cat.rawText;
+
+    const statsEl = row.querySelector('.cat-stats');
+    if (statsEl) {
+      const avg = (weekly.reduce((a,b)=>a+b,0)/weekly.length).toFixed(1);
+      statsEl.textContent = `${weekly.length} periods · avg ${avg}`;
+    }
+
+    const typeLabel = type || 'all types';
+    status.textContent = `✓ ${weekly.length} weeks (${typeLabel})`;
+    status.className = 'ado-status-msg ok';
+    updateRunButton();
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'ado-status-msg error';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '↓ Pull from ADO';
+});
+
+// ──────────────────────────────────────────────────────
 //  INIT
 // ──────────────────────────────────────────────────────
 document.getElementById('start-date').valueAsDate = new Date();
@@ -1608,6 +1944,7 @@ addCategory('Feature Work', 100, CAT_COLORS[0]);
 applyPeriodLabel();
 updateRunButton();
 loadProjects();
+loadAdoInfo();
 </script>
 </body>
 </html>
