@@ -675,6 +675,24 @@
 
     .conf-deviation.better { background: #D1FAE5; color: #065F46; }
     .conf-deviation.worse  { background: #FEE2E2; color: #991B1B; }
+
+    /* Batch tracking card */
+    .tracking-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+    .tracking-stat {
+      background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px;
+      padding: 10px 16px; flex: 1; min-width: 120px;
+    }
+    .tracking-stat-label { font-size: 0.68rem; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .tracking-stat-value { font-size: 1.25rem; font-weight: 700; color: #1E293B; }
+    .tracking-stat-sub   { font-size: 0.72rem; color: #64748B; margin-top: 2px; }
+    .tracking-badge {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 800; border-radius: 8px;
+      padding: 10px 20px; flex: 1; min-width: 140px; letter-spacing: 0.02em;
+    }
+    .tracking-badge.on-track { background: #D1FAE5; color: #065F46; }
+    .tracking-badge.ahead    { background: #DBEAFE; color: #1E3A8A; }
+    .tracking-badge.behind   { background: #FEE2E2; color: #991B1B; }
     .conf-deviation.same   { background: #F1F5F9; color: #64748B; }
 
     /* Save forecast bar */
@@ -993,6 +1011,35 @@
     </div>
   </div>
 
+  <!-- ── BATCH TRACKING ──────────────────────────────────── -->
+  <div class="card hidden" id="batch-tracking-card">
+    <div class="card-title" style="margin-bottom:16px">BATCH TRACKING <span style="font-size:0.7rem;font-weight:400;color:#94A3B8;text-transform:none;letter-spacing:0">— actual vs baseline expected</span></div>
+    <div class="tracking-stats">
+      <div class="tracking-stat">
+        <div class="tracking-stat-label">Period</div>
+        <div class="tracking-stat-value" id="trk-period">—</div>
+        <div class="tracking-stat-sub">data points entered</div>
+      </div>
+      <div class="tracking-stat">
+        <div class="tracking-stat-label">Expected by now</div>
+        <div class="tracking-stat-value" id="trk-expected">—</div>
+        <div class="tracking-stat-sub">items (baseline)</div>
+      </div>
+      <div class="tracking-stat">
+        <div class="tracking-stat-label">Actually done</div>
+        <div class="tracking-stat-value" id="trk-actual">—</div>
+        <div class="tracking-stat-sub">items completed</div>
+      </div>
+      <div class="tracking-stat">
+        <div class="tracking-stat-label">Variance</div>
+        <div class="tracking-stat-value" id="trk-variance">—</div>
+        <div class="tracking-stat-sub" id="trk-variance-sub">items</div>
+      </div>
+      <div class="tracking-badge" id="trk-badge">—</div>
+    </div>
+    <canvas id="chart-burnup" height="160"></canvas>
+  </div>
+
   <!-- ── HISTORICAL DATA ───────────────────────────────── -->
   <div class="card">
     <div class="input-header">
@@ -1171,6 +1218,7 @@ let periodLabel  = 'Period';
 let chartThroughput = null;
 let chartDist       = null;
 let chartCum        = null;
+let chartBurnup     = null;
 
 let categories = [];
 let nextCatId  = 1;
@@ -1321,6 +1369,7 @@ async function loadHistory() {
     forecastHistory  = await api(`/api/forecasts?project_id=${activeProject.id}`);
     baselineForecast = forecastHistory.find(f => f.is_baseline) || null;
     renderHistory();
+    renderBurnup();
   } catch(e) {
     console.error('Failed to load history', e);
   }
@@ -1979,7 +2028,7 @@ document.getElementById('sprint-data').addEventListener('input', () => {
   errEl.classList.add('hidden');
   warnEl.classList.add('hidden');
 
-  if (!text.trim()) { parsedData = []; updateStats([]); updateRunButton(); return; }
+  if (!text.trim()) { parsedData = []; updateStats([]); updateRunButton(); renderBurnup(); return; }
 
   const result = parseData(text);
   if (result.error) {
@@ -1994,6 +2043,7 @@ document.getElementById('sprint-data').addEventListener('input', () => {
     updateStats(parsedData);
   }
   updateRunButton();
+  renderBurnup();
 });
 
 document.getElementById('backlog-size').addEventListener('input', updateRunButton);
@@ -2005,6 +2055,82 @@ document.getElementById('sample-btn').addEventListener('click', () => {
   // backlog size is owned by the batch selection — do not override it here
   updateRunButton();
 });
+
+// ──────────────────────────────────────────────────────
+//  BATCH TRACKING — burn-up chart vs baseline
+// ──────────────────────────────────────────────────────
+function renderBurnup() {
+  const card = document.getElementById('batch-tracking-card');
+  const totalItems = parseFloat(document.getElementById('backlog-size').value) || 0;
+  const bl = baselineForecast?.results?.overall;
+
+  if (!bl || !totalItems || !parsedData.length) {
+    card.classList.add('hidden');
+    return;
+  }
+  card.classList.remove('hidden');
+
+  const baselinePeriods = bl.p50; // median expected duration
+  const currentPeriod   = parsedData.length;
+
+  // Cumulative actual completions
+  let cum = 0;
+  const actuals = parsedData.map(v => { cum += v; return Math.min(cum, totalItems); });
+
+  const actualNow   = actuals[actuals.length - 1];
+  const expectedNow = Math.round(Math.min(totalItems, (currentPeriod / baselinePeriods) * totalItems));
+  const variance    = Math.round(actualNow - expectedNow);
+
+  // Status stats
+  document.getElementById('trk-period').textContent   = currentPeriod;
+  document.getElementById('trk-expected').textContent = expectedNow;
+  document.getElementById('trk-actual').textContent   = Math.round(actualNow);
+  document.getElementById('trk-variance').textContent = (variance >= 0 ? '+' : '') + variance;
+  document.getElementById('trk-variance-sub').textContent = variance >= 0 ? 'items ahead' : 'items behind';
+
+  const badge = document.getElementById('trk-badge');
+  if (variance > 0)       { badge.textContent = '▲ Ahead of plan';   badge.className = 'tracking-badge ahead'; }
+  else if (variance < 0)  { badge.textContent = '▼ Behind plan';      badge.className = 'tracking-badge behind'; }
+  else                    { badge.textContent = '✓ On track';          badge.className = 'tracking-badge on-track'; }
+
+  // Build chart data
+  const maxX = Math.max(baselinePeriods + 2, currentPeriod + 2);
+  const labels = Array.from({ length: maxX + 1 }, (_, i) => i);
+
+  const targetData   = labels.map(() => totalItems);
+  const baselineData = labels.map(i => Math.round(Math.min(totalItems, (i / baselinePeriods) * totalItems)));
+  const actualData   = labels.map(i => i === 0 ? 0 : i <= currentPeriod ? Math.round(actuals[i - 1]) : null);
+
+  if (chartBurnup) chartBurnup.destroy();
+  const ctx = document.getElementById('chart-burnup').getContext('2d');
+  chartBurnup = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Target', data: targetData, borderColor: '#94A3B8', borderDash: [6, 3], borderWidth: 1.5, pointRadius: 0, fill: false },
+        { label: 'Baseline expected', data: baselineData, borderColor: '#6366F1', borderWidth: 2, pointRadius: 0, fill: false },
+        { label: 'Actual', data: actualData, borderColor: '#10B981', borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#10B981', fill: false, spanGaps: false }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 20 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y ?? '—'} items`
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Period', font: { size: 11 } }, ticks: { font: { size: 11 } } },
+        y: { title: { display: true, text: 'Items completed', font: { size: 11 } }, min: 0, max: totalItems, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+}
 
 document.getElementById('run-btn').addEventListener('click', () => {
   const backlog  = parseFloat(document.getElementById('backlog-size').value);
