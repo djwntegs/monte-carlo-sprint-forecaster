@@ -693,6 +693,34 @@
     .tracking-badge.on-track { background: #D1FAE5; color: #065F46; }
     .tracking-badge.ahead    { background: #DBEAFE; color: #1E3A8A; }
     .tracking-badge.behind   { background: #FEE2E2; color: #991B1B; }
+
+    .scope-diff { margin-bottom: 14px; }
+    .scope-diff-banner {
+      font-size: 0.78rem; font-weight: 600; padding: 6px 12px;
+      border-radius: 6px 6px 0 0; display: flex; align-items: center;
+      justify-content: space-between; cursor: pointer; user-select: none;
+    }
+    .scope-diff-banner.added   { background: #FEF3C7; color: #92400E; }
+    .scope-diff-banner.removed { background: #FEE2E2; color: #991B1B; }
+    .scope-diff-banner.mixed   { background: #FEF3C7; color: #92400E; }
+    .scope-diff-list {
+      border: 1px solid #E2E8F0; border-top: none; border-radius: 0 0 6px 6px;
+      overflow: hidden; display: none;
+    }
+    .scope-diff-list.open { display: block; }
+    .scope-diff-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 12px; font-size: 0.78rem; border-bottom: 1px solid #F1F5F9;
+    }
+    .scope-diff-item:last-child { border-bottom: none; }
+    .scope-diff-item.added-item   { background: #F0FDF4; }
+    .scope-diff-item.removed-item { background: #FFF1F2; }
+    .scope-diff-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .scope-diff-dot.added   { background: #10B981; }
+    .scope-diff-dot.removed { background: #EF4444; }
+    .scope-diff-id    { font-size: 0.7rem; color: #94A3B8; white-space: nowrap; }
+    .scope-diff-title { flex: 1; color: #334155; }
+    .scope-diff-type  { font-size: 0.7rem; color: #94A3B8; white-space: nowrap; }
     .conf-deviation.same   { background: #F1F5F9; color: #64748B; }
 
     /* Save forecast bar */
@@ -1014,6 +1042,7 @@
   <!-- ── BATCH TRACKING ──────────────────────────────────── -->
   <div class="card hidden" id="batch-tracking-card">
     <div class="card-title" style="margin-bottom:16px">BATCH TRACKING <span style="font-size:0.7rem;font-weight:400;color:#94A3B8;text-transform:none;letter-spacing:0">— actual vs baseline expected</span></div>
+    <div id="scope-diff-container"></div>
     <div class="tracking-stats">
       <div class="tracking-stat">
         <div class="tracking-stat-label">Period</div>
@@ -1372,6 +1401,7 @@ async function loadHistory() {
     baselineForecast = forecastHistory.find(f => f.is_baseline) || null;
     renderHistory();
     renderBurnup();
+    fetchScopeDiff();
   } catch(e) {
     console.error('Failed to load history', e);
   }
@@ -1498,6 +1528,27 @@ document.getElementById('save-btn').addEventListener('click', async () => {
 
   try {
     const overall = lastRunResults.overall;
+
+    // Snapshot current batch items (IDs + details) so we can diff later
+    let batchItemSnapshot = null;
+    if (selectedBatch && adoReady) {
+      try {
+        const types  = getSelectedTypes();
+        const params = new URLSearchParams({ iterationPath: selectedBatch.wiqlPath });
+        if (types.length === 1) params.set('type', types[0]);
+        const items = await api(`/api/ado/batchitems?${params}`);
+        batchItemSnapshot = {
+          name:           selectedBatch.name,
+          iteration_path: selectedBatch.wiqlPath,
+          items:          backlog,
+          item_list:      items  // full [{id, title, type, state}]
+        };
+      } catch (e) {
+        console.warn('Could not snapshot batch items:', e.message);
+        batchItemSnapshot = { name: selectedBatch.name, iteration_path: selectedBatch.wiqlPath, items: backlog, item_list: [] };
+      }
+    }
+
     const payload = {
       project_id:      activeProject.id,
       backlog_size:    backlog,
@@ -1512,11 +1563,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
           p85: percentile(overall, 85),
           p95: percentile(overall, 95)
         },
-        batch_snapshot: selectedBatch ? {
-          name:           selectedBatch.name,
-          iteration_path: selectedBatch.wiqlPath,
-          items:          backlog
-        } : null
+        batch_snapshot: batchItemSnapshot
       }
     };
 
@@ -2066,6 +2113,86 @@ document.getElementById('sample-btn').addEventListener('click', () => {
 // ──────────────────────────────────────────────────────
 //  BATCH TRACKING — burn-up chart vs baseline
 // ──────────────────────────────────────────────────────
+let cachedScopeDiff = null; // { added: [...], removed: [...] }
+
+async function fetchScopeDiff() {
+  const container = document.getElementById('scope-diff-container');
+  if (!container) return;
+  container.innerHTML = '';
+  cachedScopeDiff = null;
+
+  const snapshot = baselineForecast?.results?.batch_snapshot;
+  if (!snapshot?.item_list?.length || !selectedBatch || !adoReady) return;
+
+  container.innerHTML = '<p style="font-size:0.75rem;color:#94A3B8;margin-bottom:12px">Checking scope changes…</p>';
+
+  try {
+    const types  = getSelectedTypes();
+    const params = new URLSearchParams({ iterationPath: selectedBatch.wiqlPath });
+    if (types.length === 1) params.set('type', types[0]);
+    const currentItems = await api(`/api/ado/batchitems?${params}`);
+
+    const snapshotMap = new Map(snapshot.item_list.map(i => [i.id, i]));
+    const currentMap  = new Map(currentItems.map(i => [i.id, i]));
+
+    const added   = currentItems.filter(i => !snapshotMap.has(i.id));
+    const removed = snapshot.item_list.filter(i => !currentMap.has(i.id));
+
+    cachedScopeDiff = { added, removed };
+    renderScopeDiff(container, added, removed, snapshot.items, currentItems.length);
+  } catch (e) {
+    container.innerHTML = `<p style="font-size:0.75rem;color:#EF4444;margin-bottom:12px">Could not check scope changes: ${e.message}</p>`;
+  }
+}
+
+function renderScopeDiff(container, added, removed, snapshotCount, currentCount) {
+  container.innerHTML = '';
+  if (!added.length && !removed.length) return;
+
+  const netDelta = added.length - removed.length;
+  const direction = netDelta > 0 ? 'added' : netDelta < 0 ? 'removed' : 'mixed';
+  const label = [
+    added.length   ? `+${added.length} added`      : '',
+    removed.length ? `−${removed.length} removed`   : ''
+  ].filter(Boolean).join(', ');
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'scope-diff';
+
+  const banner = document.createElement('div');
+  banner.className = `scope-diff-banner ${direction}`;
+  banner.innerHTML = `<span>⚠ Scope change since baseline: ${label} (${snapshotCount} → ${currentCount} items)</span><span id="scope-diff-toggle">▾ Show</span>`;
+
+  const list = document.createElement('div');
+  list.className = 'scope-diff-list';
+
+  const allItems = [
+    ...added.map(i   => ({ ...i, change: 'added' })),
+    ...removed.map(i => ({ ...i, change: 'removed' }))
+  ];
+
+  allItems.forEach(item => {
+    const row = document.createElement('div');
+    row.className = `scope-diff-item ${item.change}-item`;
+    row.innerHTML = `
+      <span class="scope-diff-dot ${item.change}"></span>
+      <span class="scope-diff-id">#${item.id}</span>
+      <span class="scope-diff-title">${escHtml(item.title || 'Untitled')}</span>
+      <span class="scope-diff-type">${escHtml(item.type || '')}</span>
+    `;
+    list.appendChild(row);
+  });
+
+  banner.addEventListener('click', () => {
+    const open = list.classList.toggle('open');
+    document.getElementById('scope-diff-toggle').textContent = open ? '▴ Hide' : '▾ Show';
+  });
+
+  wrapper.appendChild(banner);
+  wrapper.appendChild(list);
+  container.appendChild(wrapper);
+}
+
 function renderBurnup() {
   const card = document.getElementById('batch-tracking-card');
   const currentItems = parseFloat(document.getElementById('backlog-size').value) || 0;
@@ -2102,25 +2229,6 @@ function renderBurnup() {
   if (variance > 0)      { badge.textContent = '▲ Ahead of plan';  badge.className = 'tracking-badge ahead'; }
   else if (variance < 0) { badge.textContent = '▼ Behind plan';     badge.className = 'tracking-badge behind'; }
   else                   { badge.textContent = '✓ On track';         badge.className = 'tracking-badge on-track'; }
-
-  // Scope change banner
-  let scopeNote = document.getElementById('trk-scope-note');
-  if (!scopeNote) {
-    scopeNote = document.createElement('div');
-    scopeNote.id = 'trk-scope-note';
-    scopeNote.style.cssText = 'font-size:0.78rem;font-weight:600;padding:6px 12px;border-radius:6px;margin-bottom:14px;display:inline-block';
-    card.insertBefore(scopeNote, document.getElementById('chart-burnup'));
-  }
-  if (scopeDelta !== 0) {
-    const direction = scopeDelta > 0 ? 'added' : 'removed';
-    const abs = Math.abs(scopeDelta);
-    scopeNote.textContent = `⚠ Scope change: ${abs} item${abs !== 1 ? 's' : ''} ${direction} since baseline (${snapshotItems} → ${currentItems})`;
-    scopeNote.style.background = scopeDelta > 0 ? '#FEF3C7' : '#FEE2E2';
-    scopeNote.style.color      = scopeDelta > 0 ? '#92400E' : '#991B1B';
-    scopeNote.style.display    = 'inline-block';
-  } else {
-    scopeNote.style.display = 'none';
-  }
 
   // Build chart datasets
   const maxX       = Math.max(baselinePeriods + 2, currentPeriod + 2);
@@ -2509,11 +2617,12 @@ document.getElementById('batch-select').addEventListener('change', async e => {
 
   const types = getSelectedTypes();
 
-  // Pull backlog count, throughput and category progress in parallel
+  // Pull backlog count, throughput, category progress and scope diff in parallel
   await Promise.all([
     fetchBatchBacklog(wiqlPath, types),
     autoPullThroughput(types),
-    fetchAllCategoryProgress()
+    fetchAllCategoryProgress(),
+    fetchScopeDiff()
   ]);
 });
 

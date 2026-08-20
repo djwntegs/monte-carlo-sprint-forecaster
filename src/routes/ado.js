@@ -135,6 +135,51 @@ router.get('/batchprogress', async (req, res) => {
   }
 });
 
+// GET /api/ado/batchitems?iterationPath=Team30%5CBatch+1&type=Batch+Task
+// Returns all non-removed work items in a batch with id, title, type, state
+router.get('/batchitems', async (req, res) => {
+  const { iterationPath, type } = req.query;
+  if (!iterationPath) return res.status(400).json({ error: 'iterationPath is required' });
+
+  try {
+    const { org, project } = getAdoConfig();
+    const typeFilter = type ? ` AND [Work Item Type] = '${type}'` : '';
+    const headers    = { Authorization: adoAuthHeader(), 'Content-Type': 'application/json' };
+    const wiqlUrl    = `${adoBase(org)}/${project}/_apis/wit/wiql?api-version=7.1`;
+
+    const wiqlRes = await fetch(wiqlUrl, {
+      method: 'POST', headers,
+      body: JSON.stringify({
+        query: `SELECT [Id] FROM WorkItems WHERE [Iteration Path] UNDER '${iterationPath}' AND [State] <> 'Removed'${typeFilter}`
+      })
+    });
+    if (!wiqlRes.ok) return res.status(wiqlRes.status).json({ error: await wiqlRes.text() });
+
+    const ids = (await wiqlRes.json()).workItems.map(w => w.id);
+    if (!ids.length) return res.json([]);
+
+    // Fetch details in batches of 200 (ADO limit)
+    const items = [];
+    for (let i = 0; i < ids.length; i += 200) {
+      const batch     = ids.slice(i, i + 200);
+      const detailUrl = `${adoBase(org)}/${project}/_apis/wit/workitems?ids=${batch.join(',')}&fields=System.Id,System.Title,System.WorkItemType,System.State&api-version=7.1`;
+      const detailRes = await fetch(detailUrl, { headers: { Authorization: adoAuthHeader() } });
+      if (!detailRes.ok) return res.status(detailRes.status).json({ error: await detailRes.text() });
+      const detail = await detailRes.json();
+      items.push(...(detail.value || []).map(w => ({
+        id:    w.id,
+        title: w.fields['System.Title'],
+        type:  w.fields['System.WorkItemType'],
+        state: w.fields['System.State']
+      })));
+    }
+
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/ado/throughput?weeks=12&type=Bug&startDate=2024-01-01
 router.get('/throughput', async (req, res) => {
   const { weeks = 12, type, startDate } = req.query;
