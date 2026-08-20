@@ -2005,8 +2005,8 @@ function displayResults(overallSorted, perCatSorted, simCount, storedResults) {
       if (bVal != null) {
         const diff = s - bVal;
         if (diff === 0) { devEl.textContent = '= baseline'; devEl.className = 'conf-deviation same'; }
-        else if (diff < 0) { devEl.textContent = `↓ ${Math.abs(diff)} vs baseline`; devEl.className = 'conf-deviation better'; }
-        else { devEl.textContent = `↑ ${diff} vs baseline`; devEl.className = 'conf-deviation worse'; }
+        else if (diff < 0) { devEl.textContent = `↑ ${Math.abs(diff)} vs baseline`; devEl.className = 'conf-deviation better'; }
+        else { devEl.textContent = `↓ ${diff} vs baseline`; devEl.className = 'conf-deviation worse'; }
         devEl.classList.remove('hidden');
       } else { devEl.classList.add('hidden'); }
     } else { devEl.classList.add('hidden'); }
