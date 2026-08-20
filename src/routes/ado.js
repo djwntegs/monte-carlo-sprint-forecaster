@@ -198,15 +198,14 @@ router.get('/throughput', async (req, res) => {
       }
 
       if (detail === 'true') {
-        // Return (WorkItemId, CompletedDateSK) pairs — no final count groupby
         url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemRevisions?` +
           `$apply=filter(State eq '${doneState}'${typeFilter}${dateFilter})` +
-          `/groupby((WorkItemId),aggregate(RevisedDateSK with min as CompletedDateSK))` +
+          `/groupby((WorkItemId),aggregate(ChangedDateSK with min as CompletedDateSK))` +
           `&$orderby=CompletedDateSK asc`;
       } else {
         url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemRevisions?` +
           `$apply=filter(State eq '${doneState}'${typeFilter}${dateFilter})` +
-          `/groupby((WorkItemId),aggregate(RevisedDateSK with min as CompletedDateSK))` +
+          `/groupby((WorkItemId),aggregate(ChangedDateSK with min as CompletedDateSK))` +
           `/groupby((CompletedDateSK),aggregate($count as Count))` +
           `&$orderby=CompletedDateSK asc`;
       }
