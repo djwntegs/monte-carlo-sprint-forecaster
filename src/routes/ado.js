@@ -135,6 +135,23 @@ router.get('/batchprogress', async (req, res) => {
   }
 });
 
+// GET /api/ado/states?type=Batch+Task
+// Returns state names for a given work item type
+router.get('/states', async (req, res) => {
+  const { type } = req.query;
+  if (!type) return res.status(400).json({ error: 'type is required' });
+  try {
+    const { org, project } = getAdoConfig();
+    const url = `${adoBase(org)}/${project}/_apis/wit/workitemtypes/${encodeURIComponent(type)}/states?api-version=7.1`;
+    const response = await fetch(url, { headers: { Authorization: adoAuthHeader() } });
+    if (!response.ok) return res.status(response.status).json({ error: await response.text() });
+    const data = await response.json();
+    res.json((data.value || []).map(s => s.name));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/ado/batchitems?iterationPath=Team30%5CBatch+1&type=Batch+Task
 // Returns all non-removed work items in a batch with id, title, type, state
 router.get('/batchitems', async (req, res) => {

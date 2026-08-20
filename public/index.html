@@ -1090,8 +1090,10 @@
         <input type="date" id="ado-start-date" class="ado-select" style="padding:6px 8px;font-size:0.8rem;">
       </label>
       <label style="font-size:0.78rem;color:#64748B;white-space:nowrap;display:flex;align-items:center;gap:6px;">
-        Done State
-        <input type="text" id="done-state" value="Dev Environment" class="ado-select" style="padding:6px 8px;font-size:0.8rem;width:160px;">
+        ADO Status
+        <select id="done-state" class="ado-select" style="padding:6px 8px;font-size:0.8rem;width:180px;">
+          <option value="Dev Environment">Dev Environment</option>
+        </select>
       </label>
       <span class="ado-status-msg hidden" id="ado-main-status"></span>
     </div>
@@ -2377,6 +2379,29 @@ function updateTypeLabel() {
     : `${types.length} types selected`;
 }
 
+async function populateDoneStateSelect(types) {
+  const sel = document.getElementById('done-state');
+  if (!sel) return;
+  const current = sel.value;
+  // Use first selected type, or first available type
+  const type = (types && types.length > 0) ? types[0] : (workItemTypes[0] ? workItemTypes[0].name : null);
+  if (!type) return;
+  try {
+    const states = await api(`/api/ado/states?type=${encodeURIComponent(type)}`);
+    sel.innerHTML = '';
+    states.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      if (s === current || s === 'Dev Environment') opt.selected = (s === (current || 'Dev Environment'));
+      sel.appendChild(opt);
+    });
+    // Fallback: ensure Dev Environment is selected if present and no prior value
+    if (!current && sel.querySelector('option[value="Dev Environment"]')) {
+      sel.value = 'Dev Environment';
+    }
+  } catch (e) { /* non-critical */ }
+}
+
 function onTypeCheckboxChange(e) {
   const allBox = document.getElementById('ado-type-all');
   if (e.target === allBox) {
@@ -2389,8 +2414,9 @@ function onTypeCheckboxChange(e) {
     if (!anyChecked && allBox) allBox.checked = true;
   }
   updateTypeLabel();
+  const types = getSelectedTypes();
+  populateDoneStateSelect(types);
   if (selectedBatch) {
-    const types = getSelectedTypes();
     Promise.all([fetchBatchBacklog(selectedBatch.wiqlPath, types), autoPullThroughput(types)]);
   }
 }
@@ -2434,6 +2460,7 @@ async function loadWorkItemTypes() {
   try {
     workItemTypes = await api('/api/ado/workitemtypes');
     populateTypeSelects();
+    populateDoneStateSelect(getSelectedTypes());
   } catch (e) {
     console.warn('Could not load work item types:', e.message);
   }
