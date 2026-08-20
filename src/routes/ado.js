@@ -180,28 +180,45 @@ router.get('/batchitems', async (req, res) => {
   }
 });
 
-// GET /api/ado/throughput?weeks=12&type=Bug&startDate=2024-01-01
+// GET /api/ado/throughput?weeks=12&type=Bug&startDate=2024-01-01&doneState=Dev+Environment
 router.get('/throughput', async (req, res) => {
-  const { weeks = 12, type, startDate } = req.query;
+  const { weeks = 12, type, startDate, doneState } = req.query;
 
   try {
     const { org, project } = getAdoConfig();
     const typeFilter = type ? ` and WorkItemType eq '${type}'` : '';
 
-    let dateFilter = '';
-    let topClause  = `&$orderby=CompletedDateSK desc&$top=${weeks * 7}`;
+    let url;
 
-    if (startDate) {
-      // CompletedDateSK is an integer YYYYMMDD
-      const sk = startDate.replace(/-/g, '');
-      dateFilter = ` and CompletedDateSK ge ${sk}`;
-      topClause  = `&$orderby=CompletedDateSK asc`; // no $top when using start date
+    if (doneState) {
+      // Query by specific state name: find the first date each item entered that state
+      const stateFilter = ` and State eq '${doneState}'`;
+      let dateFilter = '';
+      if (startDate) {
+        const sk = startDate.replace(/-/g, '');
+        dateFilter = ` and DateSK ge ${sk}`;
+      }
+      // Group by WorkItemId to get first date in this state, then count by date
+      url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemSnapshot?` +
+        `$apply=filter(IsLastRevisionOfDay eq true${stateFilter}${typeFilter}${dateFilter})` +
+        `/groupby((WorkItemId),aggregate(DateSK with min as CompletedDateSK))` +
+        `/groupby((CompletedDateSK),aggregate($count as Count))` +
+        `&$orderby=CompletedDateSK asc`;
+      if (!startDate) url += `&$top=${weeks * 7}`;
+    } else {
+      // Default: use ADO's built-in StateCategory = Completed
+      let dateFilter = '';
+      let topClause  = `&$orderby=CompletedDateSK desc&$top=${weeks * 7}`;
+      if (startDate) {
+        const sk = startDate.replace(/-/g, '');
+        dateFilter = ` and CompletedDateSK ge ${sk}`;
+        topClause  = `&$orderby=CompletedDateSK asc`;
+      }
+      url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemSnapshot?` +
+        `$apply=filter(StateCategory eq 'Completed'${typeFilter}${dateFilter})` +
+        `/groupby((CompletedDateSK),aggregate($count as Count))` +
+        topClause;
     }
-
-    const url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemSnapshot?` +
-      `$apply=filter(StateCategory eq 'Completed'${typeFilter}${dateFilter})` +
-      `/groupby((CompletedDateSK),aggregate($count as Count))` +
-      topClause;
 
     const response = await fetch(url, { headers: { Authorization: adoAuthHeader() } });
     if (!response.ok) {

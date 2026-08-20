@@ -1137,6 +1137,10 @@
         <label>Simulations</label>
         <input type="number" id="sim-count" min="1000" max="100000" value="10000" step="1000">
       </div>
+      <div class="field">
+        <label>Done State <span style="font-weight:400;color:#94A3B8;font-size:0.7rem">(ADO state that counts as complete)</span></label>
+        <input type="text" id="done-state" placeholder="e.g. Dev Environment" style="width:200px">
+      </div>
     </div>
   </details>
 
@@ -2535,10 +2539,15 @@ async function fetchAllCategoryProgress() {
   await Promise.all(cats.map(c => fetchCategoryProgress(c.id)));
 }
 
+function getDoneState() {
+  return document.getElementById('done-state')?.value.trim() || '';
+}
+
 async function autoPullThroughput(types) {
-  const weeks  = document.getElementById('ado-weeks').value;
-  const status = document.getElementById('ado-main-status');
-  const typeList = Array.isArray(types) ? types : (types ? [types] : []);
+  const weeks     = document.getElementById('ado-weeks').value;
+  const status    = document.getElementById('ado-main-status');
+  const doneState = getDoneState();
+  const typeList  = Array.isArray(types) ? types : (types ? [types] : []);
 
   status.textContent = 'Loading throughput…';
   status.className   = 'ado-status-msg loading';
@@ -2549,14 +2558,15 @@ async function autoPullThroughput(types) {
     if (typeList.length <= 1) {
       const params = new URLSearchParams({ weeks });
       if (typeList[0]) params.set('type', typeList[0]);
+      if (doneState)   params.set('doneState', doneState);
       const data = await api(`/api/ado/throughput?${params}`);
       rows = data.value || [];
     } else {
       const results = await Promise.all(typeList.map(t => {
         const params = new URLSearchParams({ weeks, type: t });
+        if (doneState) params.set('doneState', doneState);
         return api(`/api/ado/throughput?${params}`);
       }));
-      // Merge daily rows across types (sum same-day counts)
       const merged = {};
       results.forEach(d => (d.value || []).forEach(r => {
         merged[r.CompletedDateSK] = (merged[r.CompletedDateSK] || 0) + (r.Count || 0);
@@ -2684,6 +2694,7 @@ document.getElementById('ado-pull-main').addEventListener('click', async () => {
   const status    = document.getElementById('ado-main-status');
   const weeks     = document.getElementById('ado-weeks').value;
   const startDate = document.getElementById('ado-start-date').value;
+  const doneState = getDoneState();
   const types     = getSelectedTypes();
 
   btn.disabled = true;
@@ -2695,6 +2706,7 @@ document.getElementById('ado-pull-main').addEventListener('click', async () => {
   try {
     const params = new URLSearchParams({ weeks });
     if (startDate) params.set('startDate', startDate);
+    if (doneState) params.set('doneState', doneState);
 
     let rows;
     if (types.length <= 1) {
