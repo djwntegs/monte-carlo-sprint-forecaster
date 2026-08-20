@@ -1082,21 +1082,23 @@
     <textarea id="sprint-data"
       placeholder="Paste throughput per period — comma or newline separated.&#10;Example:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33"></textarea>
 
-    <div class="ado-import-row" id="ado-main-import-row">
-      <button class="ado-pull-btn" id="ado-pull-main" disabled>↓ Pull from ADO</button>
-      <select class="ado-select" id="ado-type-main" style="display:none"></select>
-      <label style="font-size:0.78rem;color:#64748B;white-space:nowrap;display:flex;align-items:center;gap:6px;">
-        From
-        <input type="date" id="ado-start-date" class="ado-select" style="padding:6px 8px;font-size:0.8rem;">
-      </label>
-      <label style="font-size:0.78rem;color:#64748B;white-space:nowrap;display:flex;align-items:center;gap:6px;">
-        ADO Status
-        <select id="done-state" class="ado-select" style="padding:6px 8px;font-size:0.8rem;width:180px;">
-          <option value="Dev Environment">Dev Environment</option>
-          <option value="Done">Done</option>
-        </select>
-      </label>
-      <span class="ado-status-msg hidden" id="ado-main-status"></span>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div class="ado-import-row" id="ado-main-import-row">
+        <select class="ado-select" id="ado-type-main" style="display:none"></select>
+        <label style="font-size:0.78rem;color:#64748B;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+          From
+          <input type="date" id="ado-start-date" class="ado-select" style="padding:6px 8px;font-size:0.8rem;">
+        </label>
+        <label style="font-size:0.78rem;color:#64748B;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+          ADO Status
+          <select id="done-state" class="ado-select" style="padding:6px 8px;font-size:0.8rem;width:180px;">
+            <option value="Dev Environment">Dev Environment</option>
+            <option value="Done">Done</option>
+          </select>
+        </label>
+        <button class="ado-pull-btn" id="ado-pull-main" disabled>↓ Pull from ADO</button>
+      </div>
+      <div><span class="ado-status-msg hidden" id="ado-main-status"></span></div>
     </div>
 
     <div id="data-error"   class="error-text hidden"></div>
