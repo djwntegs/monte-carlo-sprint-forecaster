@@ -1511,7 +1511,12 @@ document.getElementById('save-btn').addEventListener('click', async () => {
           p75: percentile(overall, 75),
           p85: percentile(overall, 85),
           p95: percentile(overall, 95)
-        }
+        },
+        batch_snapshot: selectedBatch ? {
+          name:           selectedBatch.name,
+          iteration_path: selectedBatch.wiqlPath,
+          items:          backlog
+        } : null
       }
     };
 
@@ -2063,24 +2068,27 @@ document.getElementById('sample-btn').addEventListener('click', () => {
 // ──────────────────────────────────────────────────────
 function renderBurnup() {
   const card = document.getElementById('batch-tracking-card');
-  const totalItems = parseFloat(document.getElementById('backlog-size').value) || 0;
+  const currentItems = parseFloat(document.getElementById('backlog-size').value) || 0;
   const bl = baselineForecast?.results?.overall;
 
-  if (!bl || !totalItems || !parsedData.length) {
+  if (!bl || !currentItems || !parsedData.length) {
     card.classList.add('hidden');
     return;
   }
   card.classList.remove('hidden');
 
-  const baselinePeriods = bl.p50; // median expected duration
+  // Scope snapshot from when baseline was saved
+  const snapshotItems   = baselineForecast.results.batch_snapshot?.items || baselineForecast.backlog_size || currentItems;
+  const scopeDelta      = Math.round(currentItems - snapshotItems);
+  const baselinePeriods = bl.p50;
   const currentPeriod   = parsedData.length;
 
-  // Cumulative actual completions
+  // Cumulative actual completions (capped at current scope)
   let cum = 0;
-  const actuals = parsedData.map(v => { cum += v; return Math.min(cum, totalItems); });
+  const actuals = parsedData.map(v => { cum += v; return Math.min(cum, currentItems); });
 
   const actualNow   = actuals[actuals.length - 1];
-  const expectedNow = Math.round(Math.min(totalItems, (currentPeriod / baselinePeriods) * totalItems));
+  const expectedNow = Math.round(Math.min(snapshotItems, (currentPeriod / baselinePeriods) * snapshotItems));
   const variance    = Math.round(actualNow - expectedNow);
 
   // Status stats
@@ -2091,44 +2099,69 @@ function renderBurnup() {
   document.getElementById('trk-variance-sub').textContent = variance >= 0 ? 'items ahead' : 'items behind';
 
   const badge = document.getElementById('trk-badge');
-  if (variance > 0)       { badge.textContent = '▲ Ahead of plan';   badge.className = 'tracking-badge ahead'; }
-  else if (variance < 0)  { badge.textContent = '▼ Behind plan';      badge.className = 'tracking-badge behind'; }
-  else                    { badge.textContent = '✓ On track';          badge.className = 'tracking-badge on-track'; }
+  if (variance > 0)      { badge.textContent = '▲ Ahead of plan';  badge.className = 'tracking-badge ahead'; }
+  else if (variance < 0) { badge.textContent = '▼ Behind plan';     badge.className = 'tracking-badge behind'; }
+  else                   { badge.textContent = '✓ On track';         badge.className = 'tracking-badge on-track'; }
 
-  // Build chart data
-  const maxX = Math.max(baselinePeriods + 2, currentPeriod + 2);
-  const labels = Array.from({ length: maxX + 1 }, (_, i) => i);
+  // Scope change banner
+  let scopeNote = document.getElementById('trk-scope-note');
+  if (!scopeNote) {
+    scopeNote = document.createElement('div');
+    scopeNote.id = 'trk-scope-note';
+    scopeNote.style.cssText = 'font-size:0.78rem;font-weight:600;padding:6px 12px;border-radius:6px;margin-bottom:14px;display:inline-block';
+    card.insertBefore(scopeNote, document.getElementById('chart-burnup'));
+  }
+  if (scopeDelta !== 0) {
+    const direction = scopeDelta > 0 ? 'added' : 'removed';
+    const abs = Math.abs(scopeDelta);
+    scopeNote.textContent = `⚠ Scope change: ${abs} item${abs !== 1 ? 's' : ''} ${direction} since baseline (${snapshotItems} → ${currentItems})`;
+    scopeNote.style.background = scopeDelta > 0 ? '#FEF3C7' : '#FEE2E2';
+    scopeNote.style.color      = scopeDelta > 0 ? '#92400E' : '#991B1B';
+    scopeNote.style.display    = 'inline-block';
+  } else {
+    scopeNote.style.display = 'none';
+  }
 
-  const targetData   = labels.map(() => totalItems);
-  const baselineData = labels.map(i => Math.round(Math.min(totalItems, (i / baselinePeriods) * totalItems)));
-  const actualData   = labels.map(i => i === 0 ? 0 : i <= currentPeriod ? Math.round(actuals[i - 1]) : null);
+  // Build chart datasets
+  const maxX       = Math.max(baselinePeriods + 2, currentPeriod + 2);
+  const labels     = Array.from({ length: maxX + 1 }, (_, i) => i);
+  const actualData = labels.map(i => i === 0 ? 0 : i <= currentPeriod ? Math.round(actuals[i - 1]) : null);
+  const baselineExpected = labels.map(i => Math.round(Math.min(snapshotItems, (i / baselinePeriods) * snapshotItems)));
+
+  const datasets = [
+    { label: `Baseline scope (${snapshotItems})`, data: labels.map(() => snapshotItems), borderColor: '#94A3B8', borderDash: [6, 3], borderWidth: 1.5, pointRadius: 0, fill: false },
+    { label: 'Baseline expected', data: baselineExpected, borderColor: '#6366F1', borderWidth: 2, pointRadius: 0, fill: false },
+    { label: 'Actual', data: actualData, borderColor: '#10B981', borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#10B981', fill: false, spanGaps: false }
+  ];
+
+  // If scope changed, add current scope line
+  if (scopeDelta !== 0) {
+    datasets.splice(1, 0, {
+      label: `Current scope (${currentItems})`,
+      data: labels.map(() => currentItems),
+      borderColor: scopeDelta > 0 ? '#F59E0B' : '#EF4444',
+      borderDash: [4, 2],
+      borderWidth: 1.5,
+      pointRadius: 0,
+      fill: false
+    });
+  }
 
   if (chartBurnup) chartBurnup.destroy();
   const ctx = document.getElementById('chart-burnup').getContext('2d');
   chartBurnup = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels,
-      datasets: [
-        { label: 'Target', data: targetData, borderColor: '#94A3B8', borderDash: [6, 3], borderWidth: 1.5, pointRadius: 0, fill: false },
-        { label: 'Baseline expected', data: baselineData, borderColor: '#6366F1', borderWidth: 2, pointRadius: 0, fill: false },
-        { label: 'Actual', data: actualData, borderColor: '#10B981', borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#10B981', fill: false, spanGaps: false }
-      ]
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 20 } },
-        tooltip: {
-          callbacks: {
-            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y ?? '—'} items`
-          }
-        }
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y ?? '—'} items` } }
       },
       scales: {
         x: { title: { display: true, text: 'Period', font: { size: 11 } }, ticks: { font: { size: 11 } } },
-        y: { title: { display: true, text: 'Items completed', font: { size: 11 } }, min: 0, max: totalItems, ticks: { font: { size: 11 } } }
+        y: { title: { display: true, text: 'Items completed', font: { size: 11 } }, min: 0, max: Math.max(snapshotItems, currentItems), ticks: { font: { size: 11 } } }
       }
     }
   });
