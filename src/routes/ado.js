@@ -180,9 +180,9 @@ router.get('/batchitems', async (req, res) => {
   }
 });
 
-// GET /api/ado/throughput?weeks=12&type=Bug&startDate=2024-01-01&doneState=Dev+Environment
+// GET /api/ado/throughput?weeks=12&type=Bug&startDate=2024-01-01&doneState=Dev+Environment&detail=true
 router.get('/throughput', async (req, res) => {
-  const { weeks = 12, type, startDate, doneState } = req.query;
+  const { weeks = 12, type, startDate, doneState, detail } = req.query;
 
   try {
     const { org, project } = getAdoConfig();
@@ -191,18 +191,25 @@ router.get('/throughput', async (req, res) => {
     let url;
 
     if (doneState) {
-      // Use WorkItemRevisions: find the first revision date each item entered the done state
-      // then count how many items per day. No IsLastRevisionOfDay needed.
       let dateFilter = '';
       if (startDate) {
         const sk = startDate.replace(/-/g, '');
         dateFilter = ` and RevisedDateSK ge ${sk}`;
       }
-      url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemRevisions?` +
-        `$apply=filter(State eq '${doneState}'${typeFilter}${dateFilter})` +
-        `/groupby((WorkItemId),aggregate(RevisedDateSK with min as CompletedDateSK))` +
-        `/groupby((CompletedDateSK),aggregate($count as Count))` +
-        `&$orderby=CompletedDateSK asc`;
+
+      if (detail === 'true') {
+        // Return (WorkItemId, CompletedDateSK) pairs — no final count groupby
+        url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemRevisions?` +
+          `$apply=filter(State eq '${doneState}'${typeFilter}${dateFilter})` +
+          `/groupby((WorkItemId),aggregate(RevisedDateSK with min as CompletedDateSK))` +
+          `&$orderby=CompletedDateSK asc`;
+      } else {
+        url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemRevisions?` +
+          `$apply=filter(State eq '${doneState}'${typeFilter}${dateFilter})` +
+          `/groupby((WorkItemId),aggregate(RevisedDateSK with min as CompletedDateSK))` +
+          `/groupby((CompletedDateSK),aggregate($count as Count))` +
+          `&$orderby=CompletedDateSK asc`;
+      }
     } else {
       // Default: use ADO's built-in StateCategory = Completed
       let dateFilter = '';

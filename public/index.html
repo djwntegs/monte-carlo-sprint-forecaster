@@ -1099,6 +1099,15 @@
     <div id="data-error"   class="error-text hidden"></div>
     <div id="data-warning" class="warning-text hidden"></div>
 
+    <!-- Throughput item detail breakdown -->
+    <div id="throughput-detail" class="hidden" style="margin-top:12px;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;font-size:0.78rem;">
+      <div style="background:#F8FAFC;padding:8px 14px;font-weight:700;color:#475569;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;display:flex;justify-content:space-between;align-items:center;">
+        <span>Completed Items by Date</span>
+        <span id="throughput-detail-total" style="font-weight:500;color:#94A3B8"></span>
+      </div>
+      <div id="throughput-detail-body" style="max-height:280px;overflow-y:auto;"></div>
+    </div>
+
     <div id="data-stats" class="stats-bar hidden">
       <div class="stat-item"><span class="stat-lbl" id="stat-count-lbl">Periods</span><span class="stat-val" id="stat-count">-</span></div>
       <div class="stat-item"><span class="stat-lbl">Avg</span><span class="stat-val" id="stat-avg">-</span></div>
@@ -2596,9 +2605,69 @@ async function autoPullThroughput(types) {
       : `${typeList.length} types`;
     status.textContent = `✓ ${weekly.length} periods of throughput loaded (${typeLabel})`;
     status.className   = 'ado-status-msg ok';
+    const startDate = document.getElementById('ado-start-date')?.value || '';
+    fetchAndRenderThroughputDetail(typeList, doneState, startDate);
   } catch (e) {
     status.textContent = 'Throughput error: ' + e.message;
     status.className   = 'ado-status-msg error';
+  }
+}
+
+function skToDate(sk) {
+  const s = String(sk);
+  return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
+}
+
+async function fetchAndRenderThroughputDetail(types, doneState, startDate) {
+  if (!doneState) { document.getElementById('throughput-detail').classList.add('hidden'); return; }
+  const typeList = Array.isArray(types) ? types : (types ? [types] : []);
+  try {
+    let pairs = [];
+    if (typeList.length <= 1) {
+      const params = new URLSearchParams({ detail: 'true', doneState });
+      if (typeList[0]) params.set('type', typeList[0]);
+      if (startDate)   params.set('startDate', startDate);
+      const data = await api(`/api/ado/throughput?${params}`);
+      pairs = data.value || [];
+    } else {
+      const results = await Promise.all(typeList.map(t => {
+        const params = new URLSearchParams({ detail: 'true', doneState, type: t });
+        if (startDate) params.set('startDate', startDate);
+        return api(`/api/ado/throughput?${params}`);
+      }));
+      results.forEach(d => pairs.push(...(d.value || [])));
+    }
+
+    if (!pairs.length) { document.getElementById('throughput-detail').classList.add('hidden'); return; }
+
+    // Group by date
+    const byDate = {};
+    pairs.forEach(({ WorkItemId, CompletedDateSK }) => {
+      const d = skToDate(CompletedDateSK);
+      if (!byDate[d]) byDate[d] = [];
+      byDate[d].push(WorkItemId);
+    });
+
+    const dates = Object.keys(byDate).sort();
+    const body  = document.getElementById('throughput-detail-body');
+    body.innerHTML = '';
+    dates.forEach((date, i) => {
+      const ids = byDate[date];
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex;align-items:flex-start;gap:10px;padding:7px 14px;border-top:${i===0?'none':'1px solid #F1F5F9'};`;
+      row.innerHTML = `
+        <span style="min-width:90px;color:#475569;font-weight:600;">${date}</span>
+        <span style="min-width:28px;text-align:right;color:#6366F1;font-weight:700;">${ids.length}</span>
+        <span style="color:#64748B;word-break:break-all;">${ids.map(id =>
+          `<a href="https://dev.azure.com/${window._adoOrg || ''}/_workitems/edit/${id}" target="_blank" style="color:#6366F1;text-decoration:none;margin-right:4px">#${id}</a>`
+        ).join('')}</span>`;
+      body.appendChild(row);
+    });
+
+    document.getElementById('throughput-detail-total').textContent = `${pairs.length} items across ${dates.length} days`;
+    document.getElementById('throughput-detail').classList.remove('hidden');
+  } catch (e) {
+    // Non-critical — don't surface detail errors over the main success message
   }
 }
 
@@ -2672,6 +2741,7 @@ async function loadAdoInfo() {
   try {
     const info = await api('/api/ado/info');
     clearTimeout(wakeTimer);
+    window._adoOrg = info.org;
     chipText.textContent = `${info.org} / ${info.project}`;
     chip.className = 'ado-chip';
     adoReady = true;
@@ -2737,9 +2807,10 @@ document.getElementById('ado-pull-main').addEventListener('click', async () => {
     textarea.value = weekly.join(', ');
     textarea.dispatchEvent(new Event('input'));
 
-    const typeLabel = type || 'all types';
+    const typeLabel = types.length === 0 ? 'all types' : types.length === 1 ? types[0] : `${types.length} types`;
     status.textContent = `✓ ${weekly.length} weeks imported (${typeLabel})`;
     status.className = 'ado-status-msg ok';
+    fetchAndRenderThroughputDetail(types, doneState, startDate);
   } catch (e) {
     status.textContent = 'Error: ' + e.message;
     status.className = 'ado-status-msg error';
