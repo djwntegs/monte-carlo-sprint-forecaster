@@ -2609,8 +2609,6 @@ async function autoPullThroughput(types) {
       : `${typeList.length} types`;
     status.textContent = `✓ ${weekly.length} periods of throughput loaded (${typeLabel})`;
     status.className   = 'ado-status-msg ok';
-    const startDate = document.getElementById('ado-start-date')?.value || '';
-    fetchAndRenderThroughputDetail(typeList, doneState, startDate);
   } catch (e) {
     status.textContent = 'Throughput error: ' + e.message;
     status.className   = 'ado-status-msg error';
