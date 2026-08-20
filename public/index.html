@@ -1,0 +1,2908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BatchCast</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #F1F5F9;
+      color: #1E293B;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ───────────────────────────────────────── */
+    header {
+      background: #0F172A;
+      color: white;
+      padding: 14px 40px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid #1E293B;
+      flex-wrap: wrap;
+    }
+
+    header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
+    header p  { font-size: 0.75rem; color: #64748B; white-space: nowrap; }
+
+    .header-badge {
+      background: #6366F1;
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    /* ADO status chip */
+    .ado-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #0E3A2A;
+      border: 1px solid #134E35;
+      color: #34D399;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .ado-chip .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #34D399;
+      flex-shrink: 0;
+    }
+    .ado-chip.loading { color: #94A3B8; background: #1E293B; border-color: #334155; }
+    .ado-chip.loading .dot { background: #64748B; }
+    .ado-chip.error   { color: #F87171; background: #2D1515; border-color: #7F1D1D; }
+    .ado-chip.error .dot { background: #F87171; }
+
+    /* ADO import row */
+    .ado-import-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .ado-pull-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #0E3A2A;
+      border: 1.5px solid #134E35;
+      color: #34D399;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s;
+      white-space: nowrap;
+    }
+    .ado-pull-btn:hover:not(:disabled) { background: #134E35; }
+    .ado-pull-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .ado-select {
+      padding: 5px 9px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      color: #334155;
+      background: white;
+      cursor: pointer;
+      outline: none;
+    }
+    .ado-select:focus { border-color: #6366F1; }
+
+    .ado-status-msg {
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .ado-status-msg.ok    { color: #10B981; }
+    .ado-status-msg.error { color: #EF4444; }
+    .ado-status-msg.loading { color: #94A3B8; }
+
+    /* Batch selector */
+    .batch-field {
+      background: #F0FDF4;
+      border: 1.5px solid #BBF7D0;
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .batch-field label { font-size: 0.78rem; font-weight: 600; color: #166534; }
+
+    .batch-select-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .batch-select {
+      flex: 1;
+      min-width: 160px;
+      padding: 7px 10px;
+      border: 1.5px solid #BBF7D0;
+      border-radius: 7px;
+      font-size: 0.82rem;
+      color: #166534;
+      background: white;
+      cursor: pointer;
+      outline: none;
+    }
+    .batch-select:focus { border-color: #10B981; }
+    .batch-select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .batch-refresh-btn {
+      background: none;
+      border: 1.5px solid #BBF7D0;
+      color: #10B981;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .batch-refresh-btn:hover:not(:disabled) { background: #DCFCE7; }
+    .batch-refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .batch-clear-btn {
+      background: none;
+      border: 1.5px solid #FCA5A5;
+      color: #EF4444;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .batch-clear-btn:hover { background: #FEF2F2; }
+
+    .batch-info {
+      font-size: 0.75rem;
+      color: #166534;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .batch-count-badge {
+      background: #10B981;
+      color: white;
+      font-weight: 700;
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* Backlog ADO button */
+    .backlog-ado-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .backlog-ado-btn {
+      background: none;
+      border: 1.5px solid #134E35;
+      color: #34D399;
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.12s;
+    }
+    .backlog-ado-btn:hover:not(:disabled) { background: #0E3A2A; }
+    .backlog-ado-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Project switcher */
+    .project-switcher {
+      position: relative;
+      margin-left: auto;
+    }
+
+    .project-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #1E293B;
+      border: 1px solid #334155;
+      color: white;
+      padding: 7px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 500;
+      transition: background 0.12s;
+      white-space: nowrap;
+      max-width: 220px;
+    }
+
+    .project-btn:hover { background: #273549; }
+
+    .project-btn-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .project-btn-arrow { color: #64748B; font-size: 0.7rem; flex-shrink: 0; }
+
+    .project-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      width: 280px;
+      background: white;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      z-index: 100;
+      overflow: hidden;
+    }
+
+    .project-dropdown-list { max-height: 220px; overflow-y: auto; }
+
+    .project-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 14px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      color: #334155;
+      transition: background 0.1s;
+      gap: 8px;
+    }
+
+    .project-item:hover { background: #F8FAFC; }
+    .project-item.active { background: #EEF2FF; color: #4F46E5; font-weight: 600; }
+
+    .project-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .project-delete-btn {
+      background: none;
+      border: none;
+      color: #CBD5E1;
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 2px 4px;
+      border-radius: 3px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .project-delete-btn:hover { color: #EF4444; }
+
+    .project-empty {
+      padding: 18px 14px;
+      font-size: 0.8rem;
+      color: #94A3B8;
+      text-align: center;
+    }
+
+    .project-dropdown-footer {
+      padding: 10px 12px;
+      border-top: 1px solid #F1F5F9;
+      display: flex;
+      gap: 6px;
+    }
+
+    .project-dropdown-footer input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      outline: none;
+    }
+
+    .project-dropdown-footer input:focus { border-color: #6366F1; }
+
+    .project-create-btn {
+      background: #6366F1;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .project-create-btn:hover { background: #4F46E5; }
+
+    /* ── LAYOUT ───────────────────────────────────────── */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      border: 1px solid #E2E8F0;
+    }
+
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #94A3B8;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 18px;
+    }
+
+    /* Toggles */
+    .toggle-group {
+      display: inline-flex;
+      background: #F1F5F9;
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .toggle-group button {
+      padding: 5px 14px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #64748B;
+      cursor: pointer;
+      transition: all 0.12s;
+      white-space: nowrap;
+    }
+
+    .toggle-group button.active {
+      background: white;
+      color: #1E293B;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
+
+    /* Input section */
+    .input-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .input-header .card-title { margin-bottom: 0; }
+
+    textarea {
+      width: 100%;
+      min-height: 90px;
+      padding: 11px 13px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      color: #334155;
+      resize: vertical;
+      transition: border-color 0.15s;
+      line-height: 1.7;
+    }
+
+    textarea:focus { outline: none; border-color: #6366F1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    textarea::placeholder { color: #CBD5E1; font-family: inherit; }
+
+    .sample-btn {
+      margin-left: auto;
+      background: none;
+      border: 1px solid #E2E8F0;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      color: #64748B;
+      cursor: pointer;
+      transition: all 0.12s;
+      white-space: nowrap;
+    }
+
+    .sample-btn:hover { background: #F8FAFC; border-color: #6366F1; color: #6366F1; }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 20px;
+      padding: 9px 13px;
+      background: #F8FAFC;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-size: 0.78rem;
+    }
+
+    .stat-item { display: flex; gap: 4px; align-items: baseline; }
+    .stat-item .stat-lbl { color: #94A3B8; }
+    .stat-item .stat-val { font-weight: 600; color: #334155; }
+
+    .warning-text { color: #D97706; font-size: 0.78rem; margin-top: 6px; }
+    .error-text   { color: #EF4444; font-size: 0.78rem; margin-top: 6px; }
+
+    .mini-chart-wrap { margin-top: 14px; position: relative; height: 110px; }
+
+    /* Settings */
+    .settings-row { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+
+    .field { display: flex; flex-direction: column; gap: 5px; min-width: 130px; }
+    .field label { font-size: 0.78rem; font-weight: 500; color: #64748B; }
+
+    input[type="number"], input[type="date"], input[type="text"] {
+      padding: 7px 11px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: #1E293B;
+      transition: border-color 0.15s;
+      width: 100%;
+      background: white;
+    }
+
+    input:focus { outline: none; border-color: #6366F1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+    .run-btn {
+      padding: 9px 26px;
+      background: #6366F1;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      height: 36px;
+    }
+
+    .run-btn:hover:not(:disabled) { background: #4F46E5; transform: translateY(-1px); }
+    .run-btn:active:not(:disabled) { transform: translateY(0); }
+    .run-btn:disabled { background: #CBD5E1; cursor: not-allowed; transform: none; }
+
+    /* ── ALLOCATION CARD ──────────────────────────────── */
+    .allocation-hint { font-size: 0.8rem; color: #64748B; margin-bottom: 16px; line-height: 1.5; }
+    .cat-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .cat-row { border: 1.5px solid #E2E8F0; border-radius: 10px; overflow: hidden; transition: border-color 0.15s; }
+    .cat-row:focus-within { border-color: #6366F1; }
+
+    .cat-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #F8FAFC; }
+
+    .cat-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+    .cat-name { flex: 1; border: none; background: transparent; font-size: 0.875rem; font-weight: 600; color: #1E293B; outline: none; min-width: 80px; }
+    .cat-name::placeholder { color: #CBD5E1; font-weight: 400; }
+
+    .cat-type-select {
+      padding: 4px 8px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      color: #334155;
+      background: white;
+      cursor: pointer;
+      outline: none;
+      min-width: 130px;
+    }
+    .cat-type-select:focus { border-color: #6366F1; }
+
+    /* Multi-type dropdown */
+    .multi-type-wrapper { position: relative; }
+    .multi-type-btn {
+      width: 100%; background: #1E293B; border: 1px solid #334155; color: #CBD5E1;
+      padding: 8px 12px; border-radius: 8px; cursor: pointer; text-align: left;
+      font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;
+      white-space: nowrap; overflow: hidden;
+    }
+    .multi-type-btn:hover { border-color: #6366F1; }
+    .multi-type-dropdown {
+      position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: 300px;
+      background: #1E293B; border: 1px solid #334155; border-radius: 8px;
+      z-index: 200; max-height: 260px; overflow-y: auto; padding: 4px 0; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .multi-type-dropdown.hidden { display: none; }
+    .multi-type-option {
+      display: flex; align-items: center; gap: 8px; padding: 7px 14px;
+      cursor: pointer; font-size: 0.82rem; color: #CBD5E1; user-select: none;
+    }
+    .multi-type-option:hover { background: #273549; color: white; }
+    .multi-type-option input[type=checkbox] { accent-color: #6366F1; cursor: pointer; flex-shrink: 0; }
+    .multi-type-divider { border: none; border-top: 1px solid #334155; margin: 4px 0; }
+
+    .cat-progress {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .cat-prog-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+    }
+    .cat-prog-val  { font-weight: 700; font-size: 0.85rem; color: #1E293B; }
+    .cat-prog-lbl  { font-size: 0.65rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    .cat-prog-bar-wrap {
+      width: 60px;
+      height: 6px;
+      background: #E2E8F0;
+      border-radius: 3px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .cat-prog-bar {
+      height: 100%;
+      background: #10B981;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    .cat-prog-pct {
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: #10B981;
+      min-width: 34px;
+      text-align: right;
+    }
+
+    .cat-fetch-btn {
+      background: none;
+      border: 1.5px solid #BBF7D0;
+      color: #10B981;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.12s;
+      flex-shrink: 0;
+    }
+    .cat-fetch-btn:hover:not(:disabled) { background: #DCFCE7; }
+    .cat-fetch-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .cat-data-btn { display: flex; align-items: center; gap: 5px; background: none; border: 1.5px solid #E2E8F0; border-radius: 6px; padding: 3px 9px; font-size: 0.72rem; font-weight: 500; color: #64748B; cursor: pointer; white-space: nowrap; transition: all 0.12s; }
+    .cat-data-btn:hover { border-color: #6366F1; color: #6366F1; }
+    .cat-data-btn.active { background: #EEF2FF; border-color: #6366F1; color: #4F46E5; }
+    .cat-data-btn .dot { width: 6px; height: 6px; border-radius: 50%; background: #CBD5E1; flex-shrink: 0; }
+    .cat-data-btn.active .dot { background: #6366F1; }
+
+    .cat-remove { background: none; border: none; color: #CBD5E1; cursor: pointer; font-size: 1rem; line-height: 1; padding: 2px 4px; border-radius: 4px; transition: color 0.12s; }
+    .cat-remove:hover { color: #EF4444; }
+
+    .cat-body { padding: 12px 14px; border-top: 1px solid #E2E8F0; background: white; }
+    .cat-body-label { font-size: 0.72rem; color: #94A3B8; margin-bottom: 6px; font-weight: 500; }
+    .cat-body textarea { min-height: 64px; font-size: 0.8rem; border-color: #E2E8F0; }
+    .cat-body .cat-stats { margin-top: 6px; font-size: 0.72rem; color: #64748B; }
+    .cat-body .cat-err { margin-top: 4px; }
+
+    .allocation-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; flex-wrap: wrap; gap: 8px; }
+
+    .add-cat-btn { background: none; border: 1.5px dashed #CBD5E1; border-radius: 8px; padding: 6px 14px; font-size: 0.8rem; font-weight: 500; color: #64748B; cursor: pointer; transition: all 0.12s; }
+    .add-cat-btn:hover { border-color: #6366F1; color: #6366F1; background: #F5F3FF; }
+
+    .pct-total-wrap { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; }
+    .pct-total-label { color: #94A3B8; }
+    .pct-total-val { font-weight: 700; font-size: 0.9rem; transition: color 0.15s; }
+    .pct-total-val.ok    { color: #10B981; }
+    .pct-total-val.error { color: #EF4444; }
+    .pct-total-msg { font-size: 0.72rem; color: #EF4444; font-weight: 500; }
+
+    /* ── RESULTS ──────────────────────────────────────── */
+    .confidence-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+
+    .conf-card { border-radius: 10px; padding: 18px 16px; text-align: center; border-top: 3px solid transparent; position: relative; }
+
+    .conf-50 { background: #FFFBEB; border-top-color: #F59E0B; }
+    .conf-75 { background: #ECFDF5; border-top-color: #10B981; }
+    .conf-85 { background: #EFF6FF; border-top-color: #3B82F6; }
+    .conf-95 { background: #F5F3FF; border-top-color: #8B5CF6; }
+
+    .conf-pct { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+    .conf-50 .conf-pct { color: #B45309; }
+    .conf-75 .conf-pct { color: #065F46; }
+    .conf-85 .conf-pct { color: #1E40AF; }
+    .conf-95 .conf-pct { color: #5B21B6; }
+
+    .conf-sprints { font-size: 1.6rem; font-weight: 800; line-height: 1; margin-bottom: 2px; }
+    .conf-50 .conf-sprints { color: #D97706; }
+    .conf-75 .conf-sprints { color: #059669; }
+    .conf-85 .conf-sprints { color: #2563EB; }
+    .conf-95 .conf-sprints { color: #7C3AED; }
+
+    .conf-unit  { font-size: 0.72rem; color: #94A3B8; margin-bottom: 6px; }
+
+    .conf-date { font-size: 0.78rem; font-weight: 600; padding: 3px 8px; border-radius: 5px; display: inline-block; }
+    .conf-50 .conf-date { background: #FEF3C7; color: #92400E; }
+    .conf-75 .conf-date { background: #D1FAE5; color: #064E3B; }
+    .conf-85 .conf-date { background: #DBEAFE; color: #1E3A8A; }
+    .conf-95 .conf-date { background: #EDE9FE; color: #4C1D95; }
+
+    .baseline-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #F0FDF4;
+      border: 1.5px solid #BBF7D0;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #166534;
+      margin-bottom: 16px;
+    }
+
+    /* Baseline deviation badge */
+    .conf-deviation {
+      font-size: 0.68rem;
+      font-weight: 700;
+      margin-top: 6px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .conf-deviation.better { background: #D1FAE5; color: #065F46; }
+    .conf-deviation.worse  { background: #FEE2E2; color: #991B1B; }
+
+    /* Batch tracking card */
+    .tracking-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+    .tracking-stat {
+      background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px;
+      padding: 10px 16px; flex: 1; min-width: 120px;
+    }
+    .tracking-stat-label { font-size: 0.68rem; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .tracking-stat-value { font-size: 1.25rem; font-weight: 700; color: #1E293B; }
+    .tracking-stat-sub   { font-size: 0.72rem; color: #64748B; margin-top: 2px; }
+    .tracking-badge {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 800; border-radius: 8px;
+      padding: 10px 20px; flex: 1; min-width: 140px; letter-spacing: 0.02em;
+    }
+    .tracking-badge.on-track { background: #D1FAE5; color: #065F46; }
+    .tracking-badge.ahead    { background: #DBEAFE; color: #1E3A8A; }
+    .tracking-badge.behind   { background: #FEE2E2; color: #991B1B; }
+
+    .scope-diff { margin-bottom: 14px; }
+    .scope-diff-banner {
+      font-size: 0.78rem; font-weight: 600; padding: 6px 12px;
+      border-radius: 6px 6px 0 0; display: flex; align-items: center;
+      justify-content: space-between; cursor: pointer; user-select: none;
+    }
+    .scope-diff-banner.added   { background: #FEF3C7; color: #92400E; }
+    .scope-diff-banner.removed { background: #FEE2E2; color: #991B1B; }
+    .scope-diff-banner.mixed   { background: #FEF3C7; color: #92400E; }
+    .scope-diff-list {
+      border: 1px solid #E2E8F0; border-top: none; border-radius: 0 0 6px 6px;
+      overflow: hidden; display: none;
+    }
+    .scope-diff-list.open { display: block; }
+    .scope-diff-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 12px; font-size: 0.78rem; border-bottom: 1px solid #F1F5F9;
+    }
+    .scope-diff-item:last-child { border-bottom: none; }
+    .scope-diff-item.added-item   { background: #F0FDF4; }
+    .scope-diff-item.removed-item { background: #FFF1F2; }
+    .scope-diff-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .scope-diff-dot.added   { background: #10B981; }
+    .scope-diff-dot.removed { background: #EF4444; }
+    .scope-diff-id    { font-size: 0.7rem; color: #94A3B8; white-space: nowrap; }
+    .scope-diff-title { flex: 1; color: #334155; }
+    .scope-diff-type  { font-size: 0.7rem; color: #94A3B8; white-space: nowrap; }
+    .conf-deviation.same   { background: #F1F5F9; color: #64748B; }
+
+    /* Save forecast bar */
+    .save-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 18px;
+      padding: 12px 16px;
+      background: #F8FAFC;
+      border-radius: 8px;
+      border: 1px solid #E2E8F0;
+      flex-wrap: wrap;
+    }
+
+    .save-bar-label { font-size: 0.78rem; color: #64748B; font-weight: 500; white-space: nowrap; }
+
+    .save-bar input {
+      flex: 1;
+      min-width: 160px;
+      padding: 6px 10px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 6px;
+      font-size: 0.82rem;
+    }
+
+    .save-btn {
+      background: #0F172A;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.12s;
+      white-space: nowrap;
+    }
+
+    .save-btn:hover:not(:disabled) { background: #1E293B; }
+    .save-btn:disabled { background: #CBD5E1; cursor: not-allowed; }
+
+    .save-status { font-size: 0.75rem; color: #10B981; font-weight: 500; }
+    .save-status.error { color: #EF4444; }
+
+    /* Charts */
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .chart-box { background: #F8FAFC; border-radius: 10px; padding: 18px; border: 1px solid #E2E8F0; }
+    .chart-box h3 { font-size: 0.78rem; font-weight: 600; color: #475569; margin-bottom: 12px; }
+    .chart-container { position: relative; height: 240px; }
+
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 10px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.7rem; color: #64748B; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+
+    /* Category breakdown */
+    .breakdown-title { font-size: 0.7rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.08em; margin: 24px 0 14px; }
+
+    .breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .breakdown-table th { text-align: left; padding: 7px 12px; font-size: 0.7rem; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1.5px solid #E2E8F0; }
+    .breakdown-table th:not(:first-child) { text-align: center; }
+    .breakdown-table td { padding: 9px 12px; border-bottom: 1px solid #F1F5F9; vertical-align: middle; }
+    .breakdown-table td:not(:first-child) { text-align: center; }
+    .breakdown-table tr:last-child td { border-bottom: none; }
+    .breakdown-table tr.overall-row td { font-weight: 700; background: #F8FAFC; border-top: 1.5px solid #E2E8F0; }
+    .breakdown-table .cat-name-cell { display: flex; align-items: center; gap: 8px; }
+    .breakdown-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+    .breakdown-pct-badge { font-size: 0.68rem; color: #94A3B8; background: #F1F5F9; padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+    .breakdown-data-note { font-size: 0.68rem; color: #94A3B8; margin-left: 4px; }
+
+    .conf-chip { display: inline-block; padding: 2px 8px; border-radius: 5px; font-weight: 600; }
+    .chip-50 { background: #FEF3C7; color: #92400E; }
+    .chip-75 { background: #D1FAE5; color: #064E3B; }
+    .chip-85 { background: #DBEAFE; color: #1E3A8A; }
+    .chip-95 { background: #EDE9FE; color: #4C1D95; }
+
+    .sim-meta { font-size: 0.72rem; color: #94A3B8; text-align: right; margin-top: 10px; }
+
+    /* ── FORECAST HISTORY ─────────────────────────────── */
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .history-header .card-title { margin-bottom: 0; }
+
+    .history-project-tag {
+      font-size: 0.72rem;
+      color: #6366F1;
+      background: #EEF2FF;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .history-empty { font-size: 0.82rem; color: #94A3B8; text-align: center; padding: 24px 0; }
+
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .history-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.12s;
+      flex-wrap: wrap;
+    }
+
+    .history-row:hover { border-color: #6366F1; background: #FAFBFF; }
+    .history-row.is-baseline { border-color: #10B981; background: #F0FDF4; }
+
+    .history-date { font-size: 0.75rem; color: #64748B; white-space: nowrap; min-width: 110px; }
+
+    .history-backlog { font-size: 0.78rem; color: #334155; font-weight: 600; white-space: nowrap; }
+
+    .history-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+
+    .history-chip {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    .hchip-50 { background: #FEF3C7; color: #92400E; }
+    .hchip-85 { background: #DBEAFE; color: #1E3A8A; }
+    .hchip-95 { background: #EDE9FE; color: #4C1D95; }
+
+    .history-notes { font-size: 0.75rem; color: #64748B; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .history-badges { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+
+    .baseline-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      background: #10B981;
+      color: white;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .history-actions { display: flex; gap: 5px; flex-shrink: 0; }
+
+    .hist-action-btn {
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 5px;
+      border: 1px solid #E2E8F0;
+      background: white;
+      color: #64748B;
+      cursor: pointer;
+      transition: all 0.1s;
+      white-space: nowrap;
+    }
+
+    .hist-action-btn:hover { border-color: #6366F1; color: #6366F1; }
+    .hist-action-btn.pin-btn { border-color: #10B981; color: #10B981; }
+    .hist-action-btn.pin-btn:hover { background: #10B981; color: white; }
+    .hist-action-btn.del-btn:hover { border-color: #EF4444; color: #EF4444; }
+
+    details.card summary { user-select: none; }
+    details.card summary span:first-child { transition: transform 0.15s; display: inline-block; }
+    details.card[open] summary span:first-child { transform: rotate(90deg); }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 860px) {
+      .confidence-grid { grid-template-columns: repeat(2, 1fr); }
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 12px 16px; }
+      main   { padding: 16px 12px; }
+      .card  { padding: 18px 16px; }
+      .settings-row { gap: 14px; }
+      .field { min-width: 100px; }
+      header p { display: none; }
+      .breakdown-table { font-size: 0.75rem; }
+      .project-btn { max-width: 160px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <!-- BatchCast logo -->
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <!-- Stack of batch bars -->
+      <rect x="4" y="22" width="8" height="10" rx="1.5" fill="#6366F1"/>
+      <rect x="14" y="15" width="8" height="17" rx="1.5" fill="#818CF8"/>
+      <rect x="24" y="9" width="8" height="23" rx="1.5" fill="#A5B4FC"/>
+      <!-- Forecast curve -->
+      <path d="M4 20 Q12 8 32 4" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      <!-- Dot at end of curve -->
+      <circle cx="32" cy="4" r="2.5" fill="#10B981"/>
+    </svg>
+    <div>
+      <h1 style="font-size:1.25rem;font-weight:800;letter-spacing:-0.02em;">Batch<span style="color:#818CF8;">Cast</span></h1>
+      <p>Probabilistic batch forecasting</p>
+    </div>
+  </div>
+
+  <!-- ADO status chip -->
+  <div class="ado-chip loading" id="ado-chip">
+    <span class="dot"></span>
+    <span id="ado-chip-text">ADO connecting…</span>
+  </div>
+
+  <!-- Project switcher -->
+  <div class="project-switcher" id="project-switcher">
+    <button class="project-btn" id="project-btn">
+      <span class="project-btn-name" id="active-project-name">My Forecasts ▾</span>
+    </button>
+    <div class="project-dropdown hidden" id="project-dropdown">
+      <div class="project-dropdown-list" id="project-list"></div>
+      <div class="project-dropdown-footer">
+        <input type="text" id="new-project-input" placeholder="New forecast name…" maxlength="60">
+        <button class="project-create-btn" id="create-project-btn">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <span class="header-badge">10,000 SIMULATIONS</span>
+</header>
+
+<main>
+
+  <!-- ── FORECAST SETUP ────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">Forecast Setup</div>
+
+    <!-- Batch selector — shown when ADO is connected -->
+    <div class="batch-field" id="batch-field" style="display:none">
+      <label>Select Batch</label>
+      <div class="batch-select-row">
+        <select class="batch-select" id="batch-select" disabled>
+          <option value="">— Select a Batch —</option>
+        </select>
+        <button class="batch-refresh-btn" id="batch-refresh-btn" title="Reload batches from ADO" disabled>⟳</button>
+        <button class="batch-clear-btn hidden" id="batch-clear-btn">✕ Clear</button>
+      </div>
+      <div class="batch-info hidden" id="batch-info">
+        <span id="batch-info-text"></span>
+        <span class="batch-count-badge" id="batch-count-badge"></span>
+        <span class="ado-status-msg hidden" id="batch-load-status"></span>
+      </div>
+    </div>
+
+    <div class="settings-row" style="margin-top:16px">
+      <!-- Work type -->
+      <div class="field" id="batch-type-field">
+        <label>Work Item Type</label>
+        <div class="multi-type-wrapper">
+          <button type="button" class="multi-type-btn" id="ado-backlog-type-btn">
+            <span id="ado-backlog-type-label">All types</span><span>▾</span>
+          </button>
+          <div class="multi-type-dropdown hidden" id="ado-backlog-type-dropdown">
+            <label class="multi-type-option">
+              <input type="checkbox" id="ado-type-all" checked> All types
+            </label>
+            <hr class="multi-type-divider">
+          </div>
+        </div>
+        <span class="ado-status-msg hidden" id="ado-backlog-status" style="margin-top:4px"></span>
+      </div>
+
+      <!-- Backlog size — hidden, populated by batch selection -->
+      <input type="number" id="backlog-size" style="display:none" min="1">
+
+      <!-- Throughput weeks -->
+      <div class="field" id="throughput-weeks-field">
+        <label>Throughput Data</label>
+        <select class="ado-select" id="ado-weeks" style="width:100%">
+          <option value="8">Last 8 periods</option>
+          <option value="12" selected>Last 12 periods</option>
+          <option value="16">Last 16 periods</option>
+          <option value="24">Last 24 periods</option>
+        </select>
+      </div>
+
+      <!-- Forecast output -->
+      <div class="field">
+        <label>Forecast Output</label>
+        <div class="toggle-group" id="forecast-type-toggle">
+          <button class="toggle active" data-forecast="sprints" id="forecast-sprints-btn">Periods</button>
+          <button class="toggle" data-forecast="date">Date</button>
+          <button class="toggle" data-forecast="both">Both</button>
+        </div>
+      </div>
+      <div class="field hidden" id="sprint-length-field">
+        <label id="sprint-length-label">Period Length (days)</label>
+        <input type="number" id="sprint-length" min="1" value="14">
+      </div>
+      <div class="field hidden" id="start-date-field">
+        <label>Start Date</label>
+        <input type="date" id="start-date">
+      </div>
+
+      <!-- Run -->
+      <div class="field" style="justify-content:flex-end; flex:1; align-items:flex-end">
+        <button class="run-btn" id="run-btn" disabled>Run Simulation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BATCH TRACKING ──────────────────────────────────── -->
+  <div class="card hidden" id="batch-tracking-card">
+    <div class="card-title" style="margin-bottom:16px">BATCH TRACKING <span style="font-size:0.7rem;font-weight:400;color:#94A3B8;text-transform:none;letter-spacing:0">— actual vs baseline expected</span></div>
+    <div id="scope-diff-container"></div>
+    <div class="tracking-stats">
+      <div class="tracking-stat">
+        <div class="tracking-stat-label">Period</div>
+        <div class="tracking-stat-value" id="trk-period">—</div>
+        <div class="tracking-stat-sub">data points entered</div>
+      </div>
+      <div class="tracking-stat">
+        <div class="tracking-stat-label">Expected by now</div>
+        <div class="tracking-stat-value" id="trk-expected">—</div>
+        <div class="tracking-stat-sub">items (baseline)</div>
+      </div>
+      <div class="tracking-stat">
+        <div class="tracking-stat-label">Actually done</div>
+        <div class="tracking-stat-value" id="trk-actual">—</div>
+        <div class="tracking-stat-sub">items completed</div>
+      </div>
+      <div class="tracking-stat">
+        <div class="tracking-stat-label">Variance</div>
+        <div class="tracking-stat-value" id="trk-variance">—</div>
+        <div class="tracking-stat-sub" id="trk-variance-sub">items</div>
+      </div>
+      <div class="tracking-badge" id="trk-badge">—</div>
+    </div>
+    <canvas id="chart-burnup" height="160"></canvas>
+  </div>
+
+  <!-- ── HISTORICAL DATA ───────────────────────────────── -->
+  <div class="card">
+    <div class="input-header">
+      <span class="card-title" style="margin-bottom:0" id="hist-data-title">Historical Period Data</span>
+      <div class="toggle-group" id="data-type-toggle" style="display:none">
+        <button class="toggle active" data-type="items">Work Items</button>
+      </div>
+      <button class="sample-btn" id="sample-btn">Load Sample Data</button>
+    </div>
+
+    <textarea id="sprint-data"
+      placeholder="Paste throughput per period — comma or newline separated.&#10;Example:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33"></textarea>
+
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div class="ado-import-row" id="ado-main-import-row">
+        <select class="ado-select" id="ado-type-main" style="display:none"></select>
+        <label style="font-size:0.78rem;color:#64748B;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+          From
+          <input type="date" id="ado-start-date" class="ado-select" style="padding:6px 8px;font-size:0.8rem;">
+        </label>
+        <label style="font-size:0.78rem;color:#64748B;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+          ADO Status
+          <select id="done-state" class="ado-select" style="padding:6px 8px;font-size:0.8rem;width:180px;">
+            <option value="Dev Environment">Dev Environment</option>
+            <option value="Done">Done</option>
+          </select>
+        </label>
+        <button class="ado-pull-btn" id="ado-pull-main" disabled>↓ Pull from ADO</button>
+      </div>
+      <div><span class="ado-status-msg hidden" id="ado-main-status"></span></div>
+    </div>
+
+    <div id="data-error"   class="error-text hidden"></div>
+    <div id="data-warning" class="warning-text hidden"></div>
+
+    <!-- Throughput item detail breakdown -->
+    <div id="throughput-detail" class="hidden" style="margin-top:12px;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;font-size:0.78rem;">
+      <div style="background:#F8FAFC;padding:8px 14px;font-weight:700;color:#475569;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;display:flex;justify-content:space-between;align-items:center;">
+        <span>Completed Items by Date</span>
+        <span id="throughput-detail-total" style="font-weight:500;color:#94A3B8"></span>
+      </div>
+      <div id="throughput-detail-body" style="max-height:280px;overflow-y:auto;"></div>
+    </div>
+
+    <div id="data-stats" class="stats-bar hidden">
+      <div class="stat-item"><span class="stat-lbl" id="stat-count-lbl">Periods</span><span class="stat-val" id="stat-count">-</span></div>
+      <div class="stat-item"><span class="stat-lbl">Avg</span><span class="stat-val" id="stat-avg">-</span></div>
+      <div class="stat-item"><span class="stat-lbl">Median</span><span class="stat-val" id="stat-median">-</span></div>
+      <div class="stat-item"><span class="stat-lbl">Min</span><span class="stat-val" id="stat-min">-</span></div>
+      <div class="stat-item"><span class="stat-lbl">Max</span><span class="stat-val" id="stat-max">-</span></div>
+      <div class="stat-item"><span class="stat-lbl">Std Dev</span><span class="stat-val" id="stat-std">-</span></div>
+    </div>
+
+    <div id="mini-chart-wrap" class="mini-chart-wrap hidden">
+      <canvas id="throughput-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- ── BATCH BREAKDOWN ──────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">Batch Breakdown <span style="font-size:0.65rem;color:#CBD5E1;font-weight:400;text-transform:none;letter-spacing:0">— optional: split batch by work type to track progress</span></div>
+    <div class="cat-list" id="cat-list"></div>
+    <div class="allocation-footer">
+      <button class="add-cat-btn" id="add-cat-btn">+ Add Category</button>
+      <div class="pct-total-wrap">
+        <span class="pct-total-label">Total:</span>
+        <span class="pct-total-val" id="pct-total-val">100%</span>
+        <span class="pct-total-msg hidden" id="pct-total-msg">must equal 100%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ADVANCED SETTINGS ─────────────────────────────── -->
+  <details class="card" style="cursor:default">
+    <summary style="cursor:pointer;font-size:0.7rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.08em;list-style:none;display:flex;align-items:center;gap:6px">
+      <span>▶</span> Advanced Settings
+    </summary>
+    <div class="settings-row" style="margin-top:16px">
+      <div class="field">
+        <label>Period Name</label>
+        <input type="text" id="period-label" value="Period" placeholder="e.g. Week" style="width:120px">
+      </div>
+      <div class="field">
+        <label>Simulations</label>
+        <input type="number" id="sim-count" min="1000" max="100000" value="10000" step="1000">
+      </div>
+    </div>
+  </details>
+
+  <!-- ── RESULTS ────────────────────────────────────────── -->
+  <div class="card hidden" id="results-section">
+    <div class="card-title">Forecast Results <span id="results-subtitle" style="font-size:0.65rem;color:#CBD5E1;font-weight:500;text-transform:none;letter-spacing:0">— overall completion</span></div>
+
+    <!-- Baseline comparison banner -->
+    <div class="baseline-banner hidden" id="baseline-banner">
+      <span>📍</span>
+      <span id="baseline-banner-text"></span>
+    </div>
+
+    <div class="confidence-grid">
+      <div class="conf-card conf-50">
+        <div class="conf-pct">50% Confidence</div>
+        <div class="conf-sprints" id="v50-sprints">—</div>
+        <div class="conf-unit" id="v50-unit">sprints</div>
+        <span class="conf-date hidden" id="v50-date"></span>
+        <div class="conf-deviation hidden" id="v50-dev"></div>
+      </div>
+      <div class="conf-card conf-75">
+        <div class="conf-pct">75% Confidence</div>
+        <div class="conf-sprints" id="v75-sprints">—</div>
+        <div class="conf-unit" id="v75-unit">sprints</div>
+        <span class="conf-date hidden" id="v75-date"></span>
+        <div class="conf-deviation hidden" id="v75-dev"></div>
+      </div>
+      <div class="conf-card conf-85">
+        <div class="conf-pct">85% Confidence</div>
+        <div class="conf-sprints" id="v85-sprints">—</div>
+        <div class="conf-unit" id="v85-unit">sprints</div>
+        <span class="conf-date hidden" id="v85-date"></span>
+        <div class="conf-deviation hidden" id="v85-dev"></div>
+      </div>
+      <div class="conf-card conf-95">
+        <div class="conf-pct">95% Confidence</div>
+        <div class="conf-sprints" id="v95-sprints">—</div>
+        <div class="conf-unit" id="v95-unit">sprints</div>
+        <span class="conf-date hidden" id="v95-date"></span>
+        <div class="conf-deviation hidden" id="v95-dev"></div>
+      </div>
+    </div>
+
+    <!-- Category breakdown -->
+    <div id="breakdown-section" class="hidden">
+      <div class="breakdown-title">Category Breakdown</div>
+      <table class="breakdown-table">
+        <thead>
+          <tr><th>Category</th><th>50%</th><th>75%</th><th>85%</th><th>95%</th></tr>
+        </thead>
+        <tbody id="breakdown-body"></tbody>
+      </table>
+    </div>
+
+    <div class="charts-grid" style="margin-top:24px">
+      <div class="chart-box">
+        <h3>Forecast Distribution</h3>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#F59E0B"></div>≤ 50th %ile</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#10B981"></div>50–75th</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div>75–85th</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#8B5CF6"></div>85–95th</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#CBD5E1"></div>&gt; 95th</div>
+        </div>
+        <div class="chart-container"><canvas id="dist-chart"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h3>Cumulative Probability</h3>
+        <div class="chart-container"><canvas id="cum-chart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="sim-meta" id="sim-meta"></div>
+
+    <!-- Save forecast bar -->
+    <div class="save-bar hidden" id="save-bar">
+      <span class="save-bar-label">Save to project:</span>
+      <input type="text" id="forecast-notes" placeholder="Add notes (optional)…" style="flex:1;min-width:140px">
+      <button class="save-btn" id="save-btn">Save Forecast</button>
+      <span class="save-status hidden" id="save-status"></span>
+    </div>
+  </div>
+
+  <!-- ── FORECAST HISTORY ───────────────────────────────── -->
+  <div class="card hidden" id="history-card">
+    <div class="history-header">
+      <span class="card-title" style="margin-bottom:0">Forecast History</span>
+      <span class="history-project-tag" id="history-project-tag"></span>
+    </div>
+    <div id="history-list"></div>
+  </div>
+
+</main>
+
+<script>
+// ──────────────────────────────────────────────────────
+//  CONSTANTS & STATE
+// ──────────────────────────────────────────────────────
+const CAT_COLORS  = ['#6366F1','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6'];
+const CONF_LEVELS = [50, 75, 85, 95];
+const SAMPLE_DATA_ITEMS  = [4,7,3,6,5,8,4,6,3,7,5,4,6,8,3,5,7,4,6,5];
+const SAMPLE_DATA_POINTS = [5,8,4,7,6,9,5,7,4,8,6,5,7,9,4,6,8,5,7,6];
+
+let dataType     = 'items';
+let forecastType = 'sprints';
+let parsedData   = [];
+let periodLabel  = 'Period';
+
+let chartThroughput = null;
+let chartDist       = null;
+let chartCum        = null;
+let chartBurnup     = null;
+
+let categories = [];
+let nextCatId  = 1;
+
+// Project & history state
+let projects       = [];
+let activeProject  = null;
+let forecastHistory = [];
+let baselineForecast = null;
+let lastRunResults = null; // { overall, perCategory }
+
+// ──────────────────────────────────────────────────────
+//  API HELPERS
+// ──────────────────────────────────────────────────────
+async function api(path, opts = {}, timeoutMs = 90000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts,
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+      signal: controller.signal
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || res.statusText);
+    }
+    return res.status === 204 ? null : res.json();
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('Server took too long to respond');
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ──────────────────────────────────────────────────────
+//  PROJECT SWITCHER
+// ──────────────────────────────────────────────────────
+async function loadProjects() {
+  try {
+    projects = await api('/api/projects');
+    renderProjectList();
+    const savedId = localStorage.getItem('activeProjectId');
+    if (savedId) {
+      const found = projects.find(p => p.id === savedId);
+      if (found) await selectProject(found);
+    }
+  } catch(e) {
+    console.error('Failed to load projects', e);
+  }
+}
+
+function renderProjectList() {
+  const list = document.getElementById('project-list');
+  if (!projects.length) {
+    list.innerHTML = '<div class="project-empty">No forecasts yet — create one below</div>';
+    return;
+  }
+  list.innerHTML = projects.map(p => `
+    <div class="project-item ${activeProject?.id === p.id ? 'active' : ''}" data-id="${p.id}">
+      <span class="project-item-name">${escHtml(p.name)}</span>
+      <button class="project-delete-btn" data-delete="${p.id}" title="Delete project">×</button>
+    </div>
+  `).join('');
+}
+
+async function selectProject(project, reload = true) {
+  activeProject = project;
+  localStorage.setItem('activeProjectId', project.id);
+  document.getElementById('active-project-name').textContent = project.name + ' ▾';
+  document.getElementById('project-dropdown').classList.add('hidden');
+  renderProjectList();
+  if (reload) await loadHistory();
+  updateSaveBar();
+}
+
+async function createProject(name) {
+  try {
+    const project = await api('/api/projects', { method: 'POST', body: { name } });
+    projects.unshift(project);
+    renderProjectList();
+    await selectProject(project);
+    document.getElementById('new-project-input').value = '';
+  } catch(e) {
+    alert('Failed to create project: ' + e.message);
+  }
+}
+
+async function deleteProject(id) {
+  if (!confirm('Delete this project and all its forecasts?')) return;
+  try {
+    await api(`/api/projects/${id}`, { method: 'DELETE' });
+    projects = projects.filter(p => p.id !== id);
+    if (activeProject?.id === id) {
+      activeProject = null;
+      localStorage.removeItem('activeProjectId');
+      document.getElementById('active-project-name').textContent = 'My Forecasts ▾';
+      forecastHistory = [];
+      baselineForecast = null;
+      renderHistory();
+      updateSaveBar();
+    }
+    renderProjectList();
+  } catch(e) {
+    alert('Failed to delete project: ' + e.message);
+  }
+}
+
+// Toggle dropdown
+document.getElementById('project-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  document.getElementById('project-dropdown').classList.toggle('hidden');
+});
+
+document.addEventListener('click', e => {
+  if (!document.getElementById('project-switcher').contains(e.target)) {
+    document.getElementById('project-dropdown').classList.add('hidden');
+  }
+});
+
+document.getElementById('project-list').addEventListener('click', async e => {
+  const deleteId = e.target.dataset.delete;
+  if (deleteId) { e.stopPropagation(); await deleteProject(deleteId); return; }
+  const item = e.target.closest('.project-item');
+  if (item) await selectProject(projects.find(p => p.id === item.dataset.id));
+});
+
+document.getElementById('create-project-btn').addEventListener('click', async () => {
+  const name = document.getElementById('new-project-input').value.trim();
+  if (name) await createProject(name);
+});
+
+document.getElementById('new-project-input').addEventListener('keydown', async e => {
+  if (e.key === 'Enter') {
+    const name = e.target.value.trim();
+    if (name) await createProject(name);
+  }
+});
+
+// ──────────────────────────────────────────────────────
+//  FORECAST HISTORY
+// ──────────────────────────────────────────────────────
+async function loadHistory() {
+  if (!activeProject) return;
+  try {
+    forecastHistory  = await api(`/api/forecasts?project_id=${activeProject.id}`);
+    baselineForecast = forecastHistory.find(f => f.is_baseline) || null;
+    renderHistory();
+    renderBurnup();
+    fetchScopeDiff();
+  } catch(e) {
+    console.error('Failed to load history', e);
+  }
+}
+
+function renderHistory() {
+  const card = document.getElementById('history-card');
+  const list = document.getElementById('history-list');
+  const tag  = document.getElementById('history-project-tag');
+
+  if (!activeProject) { card.classList.add('hidden'); return; }
+
+  card.classList.remove('hidden');
+  tag.textContent = activeProject.name;
+
+  if (!forecastHistory.length) {
+    list.innerHTML = '<div class="history-empty">No forecasts saved yet for this project.</div>';
+    return;
+  }
+
+  list.innerHTML = forecastHistory.map(f => {
+    const r   = f.results?.overall || {};
+    const dt  = new Date(f.run_date).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    return `
+      <div class="history-row ${f.is_baseline ? 'is-baseline' : ''}" data-id="${f.id}">
+        <span class="history-date">${dt}</span>
+        <span class="history-backlog">${f.backlog_size ? f.backlog_size + ' items' : '—'}</span>
+        <div class="history-chips">
+          <span class="history-chip hchip-50">50%: ${r.p50 ?? '—'}</span>
+          <span class="history-chip hchip-85">85%: ${r.p85 ?? '—'}</span>
+          <span class="history-chip hchip-95">95%: ${r.p95 ?? '—'}</span>
+        </div>
+        <span class="history-notes">${escHtml(f.notes || '')}</span>
+        <div class="history-badges">
+          ${f.is_baseline ? '<span class="baseline-badge">Baseline</span>' : ''}
+        </div>
+        <div class="history-actions">
+          <button class="hist-action-btn" data-action="load" data-id="${f.id}">Load</button>
+          ${!f.is_baseline ? `<button class="hist-action-btn pin-btn" data-action="baseline" data-id="${f.id}">Set Baseline</button>` : ''}
+          <button class="hist-action-btn del-btn" data-action="delete" data-id="${f.id}">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+document.getElementById('history-list').addEventListener('click', async e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  const action = btn.dataset.action;
+
+  if (action === 'load') {
+    const f = forecastHistory.find(x => x.id === id);
+    if (f) loadForecastFromHistory(f);
+  } else if (action === 'baseline') {
+    try {
+      await api(`/api/forecasts/${id}/baseline`, { method: 'PUT' });
+      await loadHistory();
+    } catch(e) { alert('Failed to set baseline: ' + e.message); }
+  } else if (action === 'delete') {
+    if (!confirm('Delete this forecast?')) return;
+    try {
+      await api(`/api/forecasts/${id}`, { method: 'DELETE' });
+      await loadHistory();
+    } catch(e) { alert('Failed to delete: ' + e.message); }
+  }
+});
+
+function loadForecastFromHistory(f) {
+  // Restore throughput data
+  if (f.throughput_data?.length) {
+    document.getElementById('sprint-data').value = f.throughput_data.join(', ');
+    document.getElementById('sprint-data').dispatchEvent(new Event('input'));
+  }
+  // Restore backlog size
+  if (f.backlog_size) {
+    document.getElementById('backlog-size').value = f.backlog_size;
+    updateRunButton();
+  }
+  // Scroll to results and show them
+  if (f.results) {
+    const overall = f.results.overall;
+    const sorted  = buildSortedFromPercentiles(overall);
+    displayResults(sorted, [], parseInt(f.sim_count), f.results);
+  }
+  document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function buildSortedFromPercentiles(r) {
+  // Reconstruct a minimal sorted array from stored percentiles for chart rendering
+  if (!r) return [];
+  const { p50 = 1, p75 = 1, p85 = 1, p95 = 1 } = r;
+  const arr = [];
+  const n = 10000;
+  for (let i = 0; i < n * 0.50; i++) arr.push(p50);
+  for (let i = 0; i < n * 0.25; i++) arr.push(p75);
+  for (let i = 0; i < n * 0.10; i++) arr.push(p85);
+  for (let i = 0; i < n * 0.10; i++) arr.push(p95);
+  for (let i = 0; i < n * 0.05; i++) arr.push(p95 + 1);
+  return arr.sort((a, b) => a - b);
+}
+
+// ──────────────────────────────────────────────────────
+//  SAVE FORECAST
+// ──────────────────────────────────────────────────────
+function updateSaveBar() {
+  const bar = document.getElementById('save-bar');
+  const resultsVisible = !document.getElementById('results-section').classList.contains('hidden');
+  bar.classList.toggle('hidden', !activeProject || !resultsVisible);
+}
+
+document.getElementById('save-btn').addEventListener('click', async () => {
+  if (!activeProject || !lastRunResults) return;
+
+  const btn    = document.getElementById('save-btn');
+  const status = document.getElementById('save-status');
+  const notes  = document.getElementById('forecast-notes').value.trim();
+  const backlog = parseFloat(document.getElementById('backlog-size').value) || null;
+
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  status.classList.add('hidden');
+
+  try {
+    const overall = lastRunResults.overall;
+
+    // Snapshot current batch items (IDs + details) so we can diff later
+    let batchItemSnapshot = null;
+    if (selectedBatch && adoReady) {
+      try {
+        const types  = getSelectedTypes();
+        const params = new URLSearchParams({ iterationPath: selectedBatch.wiqlPath });
+        if (types.length === 1) params.set('type', types[0]);
+        const items = await api(`/api/ado/batchitems?${params}`);
+        batchItemSnapshot = {
+          name:           selectedBatch.name,
+          iteration_path: selectedBatch.wiqlPath,
+          items:          backlog,
+          item_list:      items  // full [{id, title, type, state}]
+        };
+      } catch (e) {
+        console.warn('Could not snapshot batch items:', e.message);
+        batchItemSnapshot = { name: selectedBatch.name, iteration_path: selectedBatch.wiqlPath, items: backlog, item_list: [] };
+      }
+    }
+
+    const payload = {
+      project_id:      activeProject.id,
+      backlog_size:    backlog,
+      period_label:    periodLabel,
+      sim_count:       parseInt(document.getElementById('sim-count').value) || 10000,
+      throughput_data: parsedData,
+      notes,
+      results: {
+        overall: {
+          p50: percentile(overall, 50),
+          p75: percentile(overall, 75),
+          p85: percentile(overall, 85),
+          p95: percentile(overall, 95)
+        },
+        batch_snapshot: batchItemSnapshot
+      }
+    };
+
+    await api('/api/forecasts', { method: 'POST', body: payload });
+    await loadHistory();
+
+    status.textContent = '✓ Saved';
+    status.className = 'save-status';
+    status.classList.remove('hidden');
+    document.getElementById('forecast-notes').value = '';
+    setTimeout(() => status.classList.add('hidden'), 3000);
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'save-status error';
+    status.classList.remove('hidden');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Save Forecast';
+});
+
+// ──────────────────────────────────────────────────────
+//  PERIOD LABEL
+// ──────────────────────────────────────────────────────
+function getPeriod(n) { return n === 1 ? periodLabel : periodLabel + 's'; }
+
+function applyPeriodLabel() {
+  const p = periodLabel;
+  document.getElementById('hist-data-title').textContent        = `Historical ${p} Data`;
+  document.getElementById('stat-count-lbl').textContent         = `${p}s`;
+  document.getElementById('sprint-length-label').textContent    = `${p} Length (days)`;
+  document.getElementById('forecast-sprints-btn').textContent   = `${p}s`;
+  document.getElementById('sprint-data').placeholder =
+    `Paste throughput per ${p.toLowerCase()} — comma or newline separated.\nExample:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33`;
+}
+
+document.getElementById('period-label').addEventListener('input', e => {
+  periodLabel = e.target.value.trim() || 'Period';
+  applyPeriodLabel();
+});
+
+// ──────────────────────────────────────────────────────
+//  CATEGORY STATE
+// ──────────────────────────────────────────────────────
+function addCategory(name, color, type = '') {
+  const id = nextCatId++;
+  categories.push({ id, name, color, type, remaining: null, completed: null, progressPct: null, rawText: '', parsed: [], expanded: false });
+  renderCategories();
+  updateRunButton();
+}
+
+function removeCategory(id) {
+  if (categories.length <= 1) return;
+  categories = categories.filter(c => c.id !== id);
+  renderCategories();
+  updateRunButton();
+}
+
+function getCatById(id) { return categories.find(c => c.id === id); }
+
+function renderCategories() {
+  const list = document.getElementById('cat-list');
+  list.innerHTML = '';
+  categories.forEach(cat => {
+    const row = document.createElement('div');
+    row.className = 'cat-row';
+    row.dataset.id = cat.id;
+
+    const hasProgress = cat.remaining !== null && cat.completed !== null;
+    const progPct     = cat.progressPct !== null ? cat.progressPct : 0;
+    const progBar     = hasProgress ? `<div class="cat-prog-bar" style="width:${progPct}%"></div>` : '';
+    const statsText   = cat.parsed.length
+      ? (() => { const avg = (cat.parsed.reduce((a,b)=>a+b,0)/cat.parsed.length).toFixed(1); return `${cat.parsed.length} periods · avg ${avg}`; })()
+      : '';
+
+    row.innerHTML = `
+      <div class="cat-header">
+        <div class="cat-swatch" style="background:${cat.color}"></div>
+        <input class="cat-name" type="text" value="${escHtml(cat.name)}" placeholder="Category name" data-field="name">
+
+        <select class="cat-type-select" data-field="type">
+          ${buildTypeOptions(cat.type)}
+        </select>
+
+        <button class="cat-fetch-btn" data-action="fetch-progress" ${adoReady && selectedBatch ? '' : 'disabled'} title="Fetch progress from ADO">↓ Fetch</button>
+
+        <div class="cat-progress">
+          ${hasProgress ? `
+            <div class="cat-prog-stat"><span class="cat-prog-val">${cat.remaining}</span><span class="cat-prog-lbl">Remaining</span></div>
+            <div class="cat-prog-stat"><span class="cat-prog-val">${cat.completed}</span><span class="cat-prog-lbl">Done</span></div>
+            <div class="cat-prog-bar-wrap">${progBar}</div>
+            <span class="cat-prog-pct">${progPct}%</span>
+          ` : `<span style="font-size:0.72rem;color:#CBD5E1">${adoReady && selectedBatch ? 'click ↓ Fetch' : 'select a batch'}</span>`}
+        </div>
+
+        <button class="cat-data-btn ${cat.expanded ? 'active' : ''}" data-action="toggle-data">
+          <span class="dot"></span>${cat.expanded ? 'Throughput ▲' : 'Throughput ▼'}
+        </button>
+        <button class="cat-remove" data-action="remove" title="Remove">×</button>
+      </div>
+      <div class="cat-body" style="${cat.expanded ? '' : 'display:none'}">
+        <div class="cat-body-label">Historical throughput for this category (optional — inherits main data if blank)</div>
+        <div class="ado-import-row" style="margin-bottom:8px">
+          <button class="ado-pull-btn ado-pull-cat" data-cat-id="${cat.id}" ${adoReady ? '' : 'disabled'}>↓ Pull from ADO</button>
+          <select class="ado-select ado-cat-weeks" data-cat-id="${cat.id}">
+            <option value="8">8 weeks</option>
+            <option value="12" selected>12 weeks</option>
+            <option value="16">16 weeks</option>
+            <option value="24">24 weeks</option>
+          </select>
+          <select class="ado-select ado-cat-type" data-cat-id="${cat.id}">
+            ${buildTypeOptions(cat.type)}
+          </select>
+          <span class="ado-status-msg hidden ado-cat-status" data-cat-id="${cat.id}"></span>
+        </div>
+        <textarea class="cat-textarea" data-field="rawText" placeholder="e.g. 4, 7, 3, 6, 5, 8, 4, 6, 3, 7">${escHtml(cat.rawText)}</textarea>
+        <div class="cat-stats">${statsText}</div>
+        <div class="error-text cat-err hidden"></div>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.getElementById('cat-list').addEventListener('input', e => {
+  const row  = e.target.closest('.cat-row');
+  if (!row) return;
+  const id   = Number(row.dataset.id);
+  const cat  = getCatById(id);
+  const field = e.target.dataset.field;
+  if (!cat || !field) return;
+
+  if (field === 'name') {
+    cat.name = e.target.value;
+  } else if (field === 'type') {
+    cat.type = e.target.value;
+    cat.remaining = null; cat.completed = null; cat.progressPct = null;
+    renderCategories();
+    updateRunButton();
+  } else if (field === 'rawText') {
+    cat.rawText = e.target.value;
+    const errEl   = row.querySelector('.cat-err');
+    const statsEl = row.querySelector('.cat-stats');
+    if (!e.target.value.trim()) {
+      cat.parsed = []; errEl.classList.add('hidden'); statsEl.textContent = '';
+    } else {
+      const result = parseData(e.target.value);
+      if (result.error) {
+        errEl.textContent = result.error; errEl.classList.remove('hidden');
+        cat.parsed = []; statsEl.textContent = '';
+      } else {
+        cat.parsed = result.values; errEl.classList.add('hidden');
+        const avg = (cat.parsed.reduce((a,b)=>a+b,0)/cat.parsed.length).toFixed(1);
+        statsEl.textContent = `${cat.parsed.length} periods · avg ${avg}`;
+      }
+    }
+    updateRunButton();
+  }
+});
+
+document.getElementById('cat-list').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const row = btn.closest('.cat-row');
+  const id  = Number(row.dataset.id);
+  const cat = getCatById(id);
+  if (btn.dataset.action === 'remove') removeCategory(id);
+  else if (btn.dataset.action === 'toggle-data') { cat.expanded = !cat.expanded; renderCategories(); }
+  else if (btn.dataset.action === 'fetch-progress') { fetchCategoryProgress(id); }
+});
+
+document.getElementById('add-cat-btn').addEventListener('click', () => {
+  addCategory('New Category', CAT_COLORS[categories.length % CAT_COLORS.length]);
+});
+
+function updatePctTotal() {
+  const withData  = categories.filter(c => c.remaining !== null);
+  const totalRem  = withData.reduce((s, c) => s + c.remaining, 0);
+  const valEl = document.getElementById('pct-total-val');
+  const msgEl = document.getElementById('pct-total-msg');
+  if (withData.length > 0) {
+    valEl.textContent = totalRem + ' items';
+    valEl.className   = 'pct-total-val ok';
+    msgEl.classList.add('hidden');
+  } else {
+    valEl.textContent = categories.length + ' categor' + (categories.length === 1 ? 'y' : 'ies');
+    valEl.className   = 'pct-total-val';
+    msgEl.classList.add('hidden');
+  }
+}
+
+function allocationValid() {
+  return true; // categories are now type-bound, no percentage validation needed
+}
+
+// ──────────────────────────────────────────────────────
+//  PARSING & STATS
+// ──────────────────────────────────────────────────────
+function parseData(text) {
+  const values = text.split(/[\n,;\t]+/).map(s => s.trim()).filter(Boolean).map(Number);
+  if (values.some(isNaN))      return { error: 'Some values could not be parsed.' };
+  if (values.some(v => v < 0)) return { error: 'Values cannot be negative.' };
+  return { values };
+}
+
+function calcStats(arr) {
+  const n = arr.length;
+  const avg = arr.reduce((a, b) => a + b, 0) / n;
+  const sorted = [...arr].sort((a, b) => a - b);
+  const median = n % 2 === 0 ? (sorted[n/2-1]+sorted[n/2])/2 : sorted[Math.floor(n/2)];
+  const std = Math.sqrt(arr.reduce((a,b) => a+(b-avg)**2, 0) / n);
+  return { n, avg, median, min: sorted[0], max: sorted[n-1], std };
+}
+
+// ──────────────────────────────────────────────────────
+//  MONTE CARLO
+// ──────────────────────────────────────────────────────
+function simulateAllocations(cats, backlog, simCount) {
+  const nCats = cats.length;
+  const catBuf = cats.map(() => new Array(simCount));
+  const overallBuf = new Array(simCount);
+
+  for (let i = 0; i < simCount; i++) {
+    let maxSprints = 0;
+    for (let ci = 0; ci < nCats; ci++) {
+      const cat = cats[ci];
+      const tp  = cat.parsed.length > 0 ? cat.parsed : parsedData;
+      const n   = tp.length;
+      // Use live remaining count from ADO when available; fall back to even split
+      const subBacklog = cat.remaining !== null
+        ? cat.remaining
+        : Math.round(backlog / nCats);
+      let total = 0, sprints = 0;
+      while (total < subBacklog) {
+        total += tp[Math.floor(Math.random() * n)];
+        if (++sprints > 5000) break;
+      }
+      catBuf[ci][i] = sprints;
+      if (sprints > maxSprints) maxSprints = sprints;
+    }
+    overallBuf[i] = maxSprints;
+  }
+
+  return {
+    perCategory: catBuf.map(r => r.slice().sort((a, b) => a - b)),
+    overall: overallBuf.slice().sort((a, b) => a - b)
+  };
+}
+
+function percentile(sorted, p) {
+  const idx = Math.ceil((p / 100) * sorted.length) - 1;
+  return sorted[Math.max(0, idx)];
+}
+
+// ──────────────────────────────────────────────────────
+//  HISTOGRAM / CUMULATIVE
+// ──────────────────────────────────────────────────────
+function buildHistogram(sorted) {
+  const min = Math.max(1, sorted[0] - 2);
+  const max = sorted[sorted.length-1] + 2;
+  const range = max - min + 1;
+  const binSize = range > 60 ? Math.ceil(range / 40) : 1;
+  const counts = {};
+  for (const v of sorted) { const b = Math.floor((v - min) / binSize) * binSize + min; counts[b] = (counts[b] || 0) + 1; }
+  const labels = [], data = [], binStarts = [];
+  for (let i = min; i <= max; i += binSize) {
+    binStarts.push(i);
+    labels.push(binSize === 1 ? String(i) : `${i}–${Math.min(i+binSize-1, max)}`);
+    data.push(((counts[i] || 0) / sorted.length) * 100);
+  }
+  return { labels, data, binStarts };
+}
+
+function buildCumulative(sorted) {
+  const min = Math.max(1, sorted[0] - 2);
+  const max = sorted[sorted.length-1] + 2;
+  const counts = {};
+  for (const v of sorted) counts[v] = (counts[v] || 0) + 1;
+  const points = []; let cum = 0;
+  for (let i = min; i <= max; i++) { cum += counts[i] || 0; points.push({ x: i, y: (cum / sorted.length) * 100 }); }
+  return points;
+}
+
+// ──────────────────────────────────────────────────────
+//  DATE HELPERS
+// ──────────────────────────────────────────────────────
+function sprintsToDate(sprints, lengthDays, startStr) {
+  const d = new Date(startStr);
+  d.setDate(d.getDate() + sprints * lengthDays);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// ──────────────────────────────────────────────────────
+//  CHARTS
+// ──────────────────────────────────────────────────────
+function renderThroughputChart(data) {
+  const ctx = document.getElementById('throughput-chart').getContext('2d');
+  if (chartThroughput) chartThroughput.destroy();
+  const avg  = data.reduce((a,b)=>a+b,0) / data.length;
+  const unit = dataType === 'items' ? 'items' : 'pts';
+  chartThroughput = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map((_, i) => `${periodLabel.slice(0,1)}${i+1}`),
+      datasets: [
+        { label: 'Throughput', data, backgroundColor: data.map(v => v >= avg ? 'rgba(99,102,241,0.7)' : 'rgba(99,102,241,0.3)'), borderRadius: 3, borderSkipped: false },
+        { type: 'line', label: 'Avg', data: data.map(() => avg), borderColor: '#F43F5E', borderWidth: 1.5, borderDash: [4,4], pointRadius: 0, tension: 0 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { title: items => items[0].dataset.label === 'Avg' ? `Average: ${avg.toFixed(1)} ${unit}` : `${periodLabel} ${items[0].dataIndex + 1}`, label: ctx => ctx.dataset.label === 'Avg' ? null : `${ctx.raw} ${unit}` }, filter: item => item.dataset.label !== 'Avg' }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#94A3B8' } },
+        y: { beginAtZero: true, grid: { color: '#F1F5F9' }, ticks: { font: { size: 10 }, color: '#94A3B8' } }
+      }
+    }
+  });
+}
+
+function renderDistChart(sorted, percs) {
+  const ctx = document.getElementById('dist-chart').getContext('2d');
+  if (chartDist) chartDist.destroy();
+  const { labels, data, binStarts } = buildHistogram(sorted);
+  const colors = binStarts.map(b => {
+    if (b <= percs[50]) return 'rgba(245,158,11,0.85)';
+    if (b <= percs[75]) return 'rgba(16,185,129,0.85)';
+    if (b <= percs[85]) return 'rgba(59,130,246,0.85)';
+    if (b <= percs[95]) return 'rgba(139,92,246,0.85)';
+    return 'rgba(203,213,225,0.7)';
+  });
+  chartDist = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 4, borderSkipped: false }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: { duration: 500 },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { title: items => `${items[0].label} ${getPeriod(2)}`, label: ctx => `${ctx.raw.toFixed(1)}% of simulations` } } },
+      scales: {
+        x: { title: { display: true, text: `${getPeriod(2)} to Complete`, font: { size: 10 }, color: '#94A3B8' }, grid: { display: false }, ticks: { font: { size: 10 }, color: '#94A3B8' } },
+        y: { title: { display: true, text: '% of Simulations', font: { size: 10 }, color: '#94A3B8' }, grid: { color: '#F1F5F9' }, ticks: { font: { size: 10 }, color: '#94A3B8', callback: v => v + '%' } }
+      }
+    }
+  });
+}
+
+function renderCumChart(sorted, percs) {
+  const ctx = document.getElementById('cum-chart').getContext('2d');
+  if (chartCum) chartCum.destroy();
+  const points = buildCumulative(sorted);
+  const min = sorted[0], max = sorted[sorted.length-1];
+  const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+  gradient.addColorStop(0, 'rgba(99,102,241,0.25)');
+  gradient.addColorStop(1, 'rgba(99,102,241,0)');
+  const refDatasets = [];
+  [[50,'#F59E0B'],[75,'#10B981'],[85,'#3B82F6'],[95,'#8B5CF6']].forEach(([p, color]) => {
+    const sprint = percs[p];
+    refDatasets.push({ data: [{x:min,y:p},{x:max,y:p}], borderColor: color, borderWidth: 1, borderDash: [5,4], pointRadius: 0, fill: false, tension: 0, label: `${p}%` });
+    refDatasets.push({ data: [{x:sprint,y:0},{x:sprint,y:p}], borderColor: color, borderWidth: 1, borderDash: [5,4], pointRadius: 0, fill: false, tension: 0, label: `_v${p}` });
+  });
+  chartCum = new Chart(ctx, {
+    type: 'line',
+    data: { datasets: [{ data: points, borderColor: '#6366F1', borderWidth: 2.5, backgroundColor: gradient, fill: true, pointRadius: 0, tension: 0.4, label: 'Probability' }, ...refDatasets] },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: { duration: 500 },
+      plugins: { legend: { display: false }, tooltip: { filter: item => item.dataset.label === 'Probability', callbacks: { title: items => `${periodLabel} ${items[0].parsed.x}`, label: ctx => `${ctx.parsed.y.toFixed(1)}% probability of completion` } } },
+      scales: {
+        x: { type: 'linear', title: { display: true, text: `${getPeriod(2)} to Complete`, font: { size: 10 }, color: '#94A3B8' }, grid: { color: '#F1F5F9' }, ticks: { font: { size: 10 }, color: '#94A3B8', stepSize: 1 } },
+        y: { min: 0, max: 100, title: { display: true, text: 'Probability (%)', font: { size: 10 }, color: '#94A3B8' }, grid: { color: '#F1F5F9' }, ticks: { font: { size: 10 }, color: '#94A3B8', callback: v => v + '%' } }
+      }
+    }
+  });
+}
+
+// ──────────────────────────────────────────────────────
+//  DISPLAY RESULTS
+// ──────────────────────────────────────────────────────
+function displayResults(overallSorted, perCatSorted, simCount, storedResults) {
+  const percs = {};
+  CONF_LEVELS.forEach(p => { percs[p] = percentile(overallSorted, p); });
+
+  const showDate    = forecastType === 'date'    || forecastType === 'both';
+  const showSprints = forecastType === 'sprints' || forecastType === 'both';
+  const sprintLen   = parseInt(document.getElementById('sprint-length').value) || 14;
+  const startDate   = document.getElementById('start-date').value;
+
+  CONF_LEVELS.forEach(p => {
+    const s = percs[p];
+    document.getElementById(`v${p}-sprints`).textContent = s;
+    document.getElementById(`v${p}-unit`).textContent    = getPeriod(s);
+    document.getElementById(`v${p}-sprints`).style.display = showSprints ? '' : 'none';
+    document.getElementById(`v${p}-unit`).style.display    = showSprints ? '' : 'none';
+
+    const dateEl = document.getElementById(`v${p}-date`);
+    if (showDate && startDate) { dateEl.textContent = sprintsToDate(s, sprintLen, startDate); dateEl.classList.remove('hidden'); }
+    else { dateEl.classList.add('hidden'); }
+
+    // Baseline banner
+    const banner     = document.getElementById('baseline-banner');
+    const bannerText = document.getElementById('baseline-banner-text');
+    if (baselineForecast) {
+      const d     = new Date(baselineForecast.run_date);
+      const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      const note  = baselineForecast.notes ? ` — "${baselineForecast.notes}"` : '';
+      bannerText.textContent = `Comparing to baseline from ${dateStr}${note}`;
+      banner.classList.remove('hidden');
+    } else {
+      banner.classList.add('hidden');
+    }
+
+    // Baseline deviation
+    const devEl = document.getElementById(`v${p}-dev`);
+    if (baselineForecast?.results?.overall) {
+      const bVal = baselineForecast.results.overall[`p${p}`];
+      if (bVal != null) {
+        const diff = s - bVal;
+        if (diff === 0) { devEl.textContent = '= baseline'; devEl.className = 'conf-deviation same'; }
+        else if (diff < 0) { devEl.textContent = `↑ ${Math.abs(diff)} vs baseline`; devEl.className = 'conf-deviation better'; }
+        else { devEl.textContent = `↓ ${diff} vs baseline`; devEl.className = 'conf-deviation worse'; }
+        devEl.classList.remove('hidden');
+      } else { devEl.classList.add('hidden'); }
+    } else { devEl.classList.add('hidden'); }
+  });
+
+  // Category breakdown
+  const multiCat = perCatSorted.length > 1;
+  document.getElementById('breakdown-section').classList.toggle('hidden', !multiCat);
+  if (multiCat) {
+    const tbody = document.getElementById('breakdown-body');
+    tbody.innerHTML = '';
+    categories.forEach((cat, ci) => {
+      const sorted = perCatSorted[ci];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><div class="cat-name-cell"><div class="breakdown-swatch" style="background:${cat.color}"></div><span>${escHtml(cat.name)}</span>${cat.remaining !== null ? `<span class="breakdown-pct-badge">${cat.remaining} rem · ${cat.progressPct}% done</span>` : ''}${!cat.parsed.length ? '<span class="breakdown-data-note">↑ main data</span>' : ''}</div></td>
+        ${CONF_LEVELS.map(p => `<td><span class="conf-chip chip-${p}">${percentile(sorted, p)}</span></td>`).join('')}
+      `;
+      tbody.appendChild(tr);
+    });
+    const tr = document.createElement('tr');
+    tr.className = 'overall-row';
+    tr.innerHTML = `<td><div class="cat-name-cell"><span>Overall</span></div></td>${CONF_LEVELS.map(p => `<td><span class="conf-chip chip-${p}">${percs[p]}</span></td>`).join('')}`;
+    tbody.appendChild(tr);
+  }
+
+  renderDistChart(overallSorted, percs);
+  renderCumChart(overallSorted, percs);
+
+  const elapsed = ((Date.now() - window._runStart) / 1000).toFixed(2);
+  document.getElementById('sim-meta').textContent = `${simCount.toLocaleString()} simulations · ${elapsed}s`;
+
+  document.getElementById('results-section').classList.remove('hidden');
+  updateSaveBar();
+  document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ──────────────────────────────────────────────────────
+//  UI HELPERS
+// ──────────────────────────────────────────────────────
+function updateStats(data) {
+  if (!data.length) {
+    document.getElementById('data-stats').classList.add('hidden');
+    document.getElementById('mini-chart-wrap').classList.add('hidden');
+    return;
+  }
+  const s = calcStats(data);
+  document.getElementById('stat-count').textContent  = s.n;
+  document.getElementById('stat-avg').textContent    = s.avg.toFixed(1);
+  document.getElementById('stat-median').textContent = s.median;
+  document.getElementById('stat-min').textContent    = s.min;
+  document.getElementById('stat-max').textContent    = s.max;
+  document.getElementById('stat-std').textContent    = s.std.toFixed(1);
+  document.getElementById('data-stats').classList.remove('hidden');
+  document.getElementById('mini-chart-wrap').classList.remove('hidden');
+  renderThroughputChart(data);
+}
+
+function updateRunButton() {
+  const backlog = parseFloat(document.getElementById('backlog-size').value);
+  const ok = parsedData.length >= 1 && !isNaN(backlog) && backlog > 0 && allocationValid();
+  document.getElementById('run-btn').disabled = !ok;
+}
+
+// ──────────────────────────────────────────────────────
+//  EVENT HANDLERS
+// ──────────────────────────────────────────────────────
+document.getElementById('data-type-toggle').addEventListener('click', e => {
+  const btn = e.target.closest('[data-type]');
+  if (!btn) return;
+  dataType = btn.dataset.type;
+  document.querySelectorAll('#data-type-toggle .toggle').forEach(b => b.classList.toggle('active', b === btn));
+  document.getElementById('backlog-label').textContent = dataType === 'items' ? 'Backlog Size (items)' : 'Backlog Size (points)';
+  applyPeriodLabel();
+});
+
+document.getElementById('forecast-type-toggle').addEventListener('click', e => {
+  const btn = e.target.closest('[data-forecast]');
+  if (!btn) return;
+  forecastType = btn.dataset.forecast;
+  document.querySelectorAll('#forecast-type-toggle .toggle').forEach(b => b.classList.toggle('active', b === btn));
+  const needDate = forecastType === 'date' || forecastType === 'both';
+  document.getElementById('sprint-length-field').classList.toggle('hidden', !needDate);
+  document.getElementById('start-date-field').classList.toggle('hidden', !needDate);
+});
+
+document.getElementById('sprint-data').addEventListener('input', () => {
+  const text   = document.getElementById('sprint-data').value;
+  const errEl  = document.getElementById('data-error');
+  const warnEl = document.getElementById('data-warning');
+  errEl.classList.add('hidden');
+  warnEl.classList.add('hidden');
+
+  if (!text.trim()) { parsedData = []; updateStats([]); updateRunButton(); renderBurnup(); return; }
+
+  const result = parseData(text);
+  if (result.error) {
+    errEl.textContent = result.error; errEl.classList.remove('hidden');
+    parsedData = []; updateStats([]);
+  } else {
+    parsedData = result.values;
+    if (parsedData.length < 5) {
+      warnEl.textContent = `Only ${parsedData.length} ${getPeriod(parsedData.length)} — more data (5+) gives more reliable forecasts.`;
+      warnEl.classList.remove('hidden');
+    }
+    updateStats(parsedData);
+  }
+  updateRunButton();
+  renderBurnup();
+});
+
+document.getElementById('backlog-size').addEventListener('input', updateRunButton);
+
+document.getElementById('sample-btn').addEventListener('click', () => {
+  const data = dataType === 'items' ? SAMPLE_DATA_ITEMS : SAMPLE_DATA_POINTS;
+  document.getElementById('sprint-data').value = data.join(', ');
+  document.getElementById('sprint-data').dispatchEvent(new Event('input'));
+  // backlog size is owned by the batch selection — do not override it here
+  updateRunButton();
+});
+
+// ──────────────────────────────────────────────────────
+//  BATCH TRACKING — burn-up chart vs baseline
+// ──────────────────────────────────────────────────────
+let cachedScopeDiff = null; // { added: [...], removed: [...] }
+
+async function fetchScopeDiff() {
+  const container = document.getElementById('scope-diff-container');
+  if (!container) return;
+  container.innerHTML = '';
+  cachedScopeDiff = null;
+
+  const snapshot = baselineForecast?.results?.batch_snapshot;
+  if (!snapshot?.item_list?.length || !selectedBatch || !adoReady) return;
+
+  container.innerHTML = '<p style="font-size:0.75rem;color:#94A3B8;margin-bottom:12px">Checking scope changes…</p>';
+
+  try {
+    const types  = getSelectedTypes();
+    const params = new URLSearchParams({ iterationPath: selectedBatch.wiqlPath });
+    if (types.length === 1) params.set('type', types[0]);
+    const currentItems = await api(`/api/ado/batchitems?${params}`);
+
+    const snapshotMap = new Map(snapshot.item_list.map(i => [i.id, i]));
+    const currentMap  = new Map(currentItems.map(i => [i.id, i]));
+
+    const added   = currentItems.filter(i => !snapshotMap.has(i.id));
+    const removed = snapshot.item_list.filter(i => !currentMap.has(i.id));
+
+    cachedScopeDiff = { added, removed };
+    renderScopeDiff(container, added, removed, snapshot.items, currentItems.length);
+  } catch (e) {
+    container.innerHTML = `<p style="font-size:0.75rem;color:#EF4444;margin-bottom:12px">Could not check scope changes: ${e.message}</p>`;
+  }
+}
+
+function renderScopeDiff(container, added, removed, snapshotCount, currentCount) {
+  container.innerHTML = '';
+  if (!added.length && !removed.length) return;
+
+  const netDelta = added.length - removed.length;
+  const direction = netDelta > 0 ? 'added' : netDelta < 0 ? 'removed' : 'mixed';
+  const label = [
+    added.length   ? `+${added.length} added`      : '',
+    removed.length ? `−${removed.length} removed`   : ''
+  ].filter(Boolean).join(', ');
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'scope-diff';
+
+  const banner = document.createElement('div');
+  banner.className = `scope-diff-banner ${direction}`;
+  banner.innerHTML = `<span>⚠ Scope change since baseline: ${label} (${snapshotCount} → ${currentCount} items)</span><span id="scope-diff-toggle">▾ Show</span>`;
+
+  const list = document.createElement('div');
+  list.className = 'scope-diff-list';
+
+  const allItems = [
+    ...added.map(i   => ({ ...i, change: 'added' })),
+    ...removed.map(i => ({ ...i, change: 'removed' }))
+  ];
+
+  allItems.forEach(item => {
+    const row = document.createElement('div');
+    row.className = `scope-diff-item ${item.change}-item`;
+    row.innerHTML = `
+      <span class="scope-diff-dot ${item.change}"></span>
+      <span class="scope-diff-id">#${item.id}</span>
+      <span class="scope-diff-title">${escHtml(item.title || 'Untitled')}</span>
+      <span class="scope-diff-type">${escHtml(item.type || '')}</span>
+    `;
+    list.appendChild(row);
+  });
+
+  banner.addEventListener('click', () => {
+    const open = list.classList.toggle('open');
+    document.getElementById('scope-diff-toggle').textContent = open ? '▴ Hide' : '▾ Show';
+  });
+
+  wrapper.appendChild(banner);
+  wrapper.appendChild(list);
+  container.appendChild(wrapper);
+}
+
+function renderBurnup() {
+  const card = document.getElementById('batch-tracking-card');
+  const currentItems = parseFloat(document.getElementById('backlog-size').value) || 0;
+  const bl = baselineForecast?.results?.overall;
+
+  if (!bl || !currentItems || !parsedData.length) {
+    card.classList.add('hidden');
+    return;
+  }
+  card.classList.remove('hidden');
+
+  // Scope snapshot from when baseline was saved
+  const snapshotItems   = baselineForecast.results.batch_snapshot?.items || baselineForecast.backlog_size || currentItems;
+  const scopeDelta      = Math.round(currentItems - snapshotItems);
+  const baselinePeriods = bl.p50;
+  const currentPeriod   = parsedData.length;
+
+  // Cumulative actual completions (capped at current scope)
+  let cum = 0;
+  const actuals = parsedData.map(v => { cum += v; return Math.min(cum, currentItems); });
+
+  const actualNow   = actuals[actuals.length - 1];
+  const expectedNow = Math.round(Math.min(snapshotItems, (currentPeriod / baselinePeriods) * snapshotItems));
+  const variance    = Math.round(actualNow - expectedNow);
+
+  // Status stats
+  document.getElementById('trk-period').textContent   = currentPeriod;
+  document.getElementById('trk-expected').textContent = expectedNow;
+  document.getElementById('trk-actual').textContent   = Math.round(actualNow);
+  document.getElementById('trk-variance').textContent = (variance >= 0 ? '+' : '') + variance;
+  document.getElementById('trk-variance-sub').textContent = variance >= 0 ? 'items ahead' : 'items behind';
+
+  const badge = document.getElementById('trk-badge');
+  if (variance > 0)      { badge.textContent = '▲ Ahead of plan';  badge.className = 'tracking-badge ahead'; }
+  else if (variance < 0) { badge.textContent = '▼ Behind plan';     badge.className = 'tracking-badge behind'; }
+  else                   { badge.textContent = '✓ On track';         badge.className = 'tracking-badge on-track'; }
+
+  // Build chart datasets
+  const maxX       = Math.max(baselinePeriods + 2, currentPeriod + 2);
+  const labels     = Array.from({ length: maxX + 1 }, (_, i) => i);
+  const actualData = labels.map(i => i === 0 ? 0 : i <= currentPeriod ? Math.round(actuals[i - 1]) : null);
+  const baselineExpected = labels.map(i => Math.round(Math.min(snapshotItems, (i / baselinePeriods) * snapshotItems)));
+
+  const datasets = [
+    { label: `Baseline scope (${snapshotItems})`, data: labels.map(() => snapshotItems), borderColor: '#94A3B8', borderDash: [6, 3], borderWidth: 1.5, pointRadius: 0, fill: false },
+    { label: 'Baseline expected', data: baselineExpected, borderColor: '#6366F1', borderWidth: 2, pointRadius: 0, fill: false },
+    { label: 'Actual', data: actualData, borderColor: '#10B981', borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#10B981', fill: false, spanGaps: false }
+  ];
+
+  // If scope changed, add current scope line
+  if (scopeDelta !== 0) {
+    datasets.splice(1, 0, {
+      label: `Current scope (${currentItems})`,
+      data: labels.map(() => currentItems),
+      borderColor: scopeDelta > 0 ? '#F59E0B' : '#EF4444',
+      borderDash: [4, 2],
+      borderWidth: 1.5,
+      pointRadius: 0,
+      fill: false
+    });
+  }
+
+  if (chartBurnup) { chartBurnup.destroy(); chartBurnup = null; }
+
+  const buildChart = () => {
+    const canvas = document.getElementById('chart-burnup');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    chartBurnup = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 20 } },
+          tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y ?? '—'} items` } }
+        },
+        scales: {
+          x: { title: { display: true, text: 'Period', font: { size: 11 } }, ticks: { font: { size: 11 } } },
+          y: { title: { display: true, text: 'Items completed', font: { size: 11 } }, min: 0, max: Math.max(snapshotItems, currentItems), ticks: { font: { size: 11 } } }
+        }
+      }
+    });
+  };
+
+  // Defer so the browser paints the card as visible before Chart.js measures the canvas
+  requestAnimationFrame(() => setTimeout(buildChart, 0));
+}
+
+document.getElementById('run-btn').addEventListener('click', () => {
+  const backlog  = parseFloat(document.getElementById('backlog-size').value);
+  const simCount = Math.max(1000, Math.min(100000, parseInt(document.getElementById('sim-count').value) || 10000));
+  if (!parsedData.length || isNaN(backlog) || backlog <= 0 || !allocationValid()) return;
+
+  const btn = document.getElementById('run-btn');
+  btn.textContent = 'Simulating…'; btn.disabled = true;
+  window._runStart = Date.now();
+
+  setTimeout(() => {
+    const results = simulateAllocations(categories, backlog, simCount);
+    lastRunResults = results;
+    displayResults(results.overall, results.perCategory, simCount);
+    btn.textContent = 'Run Simulation'; btn.disabled = false;
+  }, 16);
+});
+
+// ──────────────────────────────────────────────────────
+//  ADO INTEGRATION  (read-only)
+// ──────────────────────────────────────────────────────
+let adoReady = false;
+
+// Parse YYYYMMDD integer into a JS Date
+function parseDateSK(sk) {
+  const s = String(sk);
+  return new Date(+s.slice(0,4), +s.slice(4,6)-1, +s.slice(6,8));
+}
+
+// Return an ISO year-week key like "2025-W03" for grouping
+function isoWeekKey(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+}
+
+// Aggregate OData daily rows into weekly throughput array
+function aggregateWeekly(odataValue) {
+  const weeks = {};
+  for (const row of odataValue) {
+    const key = isoWeekKey(parseDateSK(row.CompletedDateSK));
+    weeks[key] = (weeks[key] || 0) + (row.Count || 0);
+  }
+  return Object.entries(weeks)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, count]) => count);
+}
+
+// ──────────────────────────────────────────────────────
+//  WORK ITEM TYPES (dynamic from ADO)
+// ──────────────────────────────────────────────────────
+let workItemTypes = []; // [{ name: 'Batch Task' }, ...]
+
+function buildTypeOptions(selectedValue = '') {
+  const allOpt = `<option value="">All types</option>`;
+  const typeOpts = workItemTypes.map(t =>
+    `<option value="${escHtml(t.name)}" ${t.name === selectedValue ? 'selected' : ''}>${escHtml(t.name)}</option>`
+  ).join('');
+  return allOpt + typeOpts;
+}
+
+// Preferred type names for auto-defaulting (checked in order)
+const BATCH_TYPE_PREFERENCES = ['Batch Task', 'Task', 'User Story'];
+
+function getPreferredType() {
+  for (const pref of BATCH_TYPE_PREFERENCES) {
+    if (workItemTypes.some(t => t.name === pref)) return pref;
+  }
+  return '';
+}
+
+// Returns array of selected type strings; empty array means "All types"
+function getSelectedTypes() {
+  const allBox = document.getElementById('ado-type-all');
+  if (!allBox || allBox.checked) return [];
+  const checks = document.querySelectorAll('#ado-backlog-type-dropdown input[type=checkbox].type-cb');
+  return Array.from(checks).filter(c => c.checked).map(c => c.value);
+}
+
+function updateTypeLabel() {
+  const types = getSelectedTypes();
+  const label = document.getElementById('ado-backlog-type-label');
+  if (!label) return;
+  label.textContent = types.length === 0 ? 'All types'
+    : types.length === 1 ? types[0]
+    : `${types.length} types selected`;
+}
+
+
+function onTypeCheckboxChange(e) {
+  const allBox = document.getElementById('ado-type-all');
+  if (e.target === allBox) {
+    if (allBox.checked) {
+      document.querySelectorAll('#ado-backlog-type-dropdown input.type-cb').forEach(c => { c.checked = false; });
+    }
+  } else {
+    if (allBox) allBox.checked = false;
+    const anyChecked = Array.from(document.querySelectorAll('#ado-backlog-type-dropdown input.type-cb')).some(c => c.checked);
+    if (!anyChecked && allBox) allBox.checked = true;
+  }
+  updateTypeLabel();
+  const types = getSelectedTypes();
+  if (selectedBatch) {
+    Promise.all([fetchBatchBacklog(selectedBatch.wiqlPath, types), autoPullThroughput(types)]);
+  }
+}
+
+function populateTypeSelects() {
+  // Primary multi-type selector (setup card)
+  const dropdown = document.getElementById('ado-backlog-type-dropdown');
+  if (dropdown) {
+    dropdown.querySelectorAll('.type-cb-label').forEach(el => el.remove());
+    const preferred = getPreferredType();
+    const allBox = document.getElementById('ado-type-all');
+    workItemTypes.forEach(t => {
+      const lbl = document.createElement('label');
+      lbl.className = 'multi-type-option type-cb-label';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.className = 'type-cb'; cb.value = t.name;
+      cb.checked = (t.name === preferred);
+      cb.addEventListener('change', onTypeCheckboxChange);
+      lbl.appendChild(cb);
+      lbl.appendChild(document.createTextNode(' ' + t.name));
+      dropdown.appendChild(lbl);
+    });
+    if (preferred && allBox) allBox.checked = false;
+    updateTypeLabel();
+    document.getElementById('ado-type-all').addEventListener('change', onTypeCheckboxChange);
+  }
+  // Secondary (historical data card manual pull)
+  const mainSel = document.getElementById('ado-type-main');
+  if (mainSel) {
+    const preferred = getPreferredType();
+    const allOpt = `<option value="">All types</option>`;
+    const typeOpts = workItemTypes.map(t =>
+      `<option value="${escHtml(t.name)}" ${t.name === preferred ? 'selected' : ''}>${escHtml(t.name)}</option>`
+    ).join('');
+    mainSel.innerHTML = allOpt + typeOpts;
+  }
+  renderCategories();
+}
+
+async function loadWorkItemTypes() {
+  try {
+    workItemTypes = await api('/api/ado/workitemtypes');
+    populateTypeSelects();
+  } catch (e) {
+    console.warn('Could not load work item types:', e.message);
+  }
+}
+
+// ──────────────────────────────────────────────────────
+//  BATCH (ITERATION) SELECTOR
+// ──────────────────────────────────────────────────────
+let selectedBatch = null; // { name, wiqlPath }
+let iterationsList = [];
+
+async function loadIterations() {
+  const select  = document.getElementById('batch-select');
+  const refresh = document.getElementById('batch-refresh-btn');
+  refresh.disabled = true;
+  select.disabled  = true;
+
+  try {
+    iterationsList = await api('/api/ado/iterations');
+
+    select.innerHTML = '<option value="">— Select a Batch —</option>';
+    iterationsList.forEach(it => {
+      const opt = document.createElement('option');
+      opt.value       = it.wiqlPath;
+      opt.textContent = it.name;
+      opt.title       = it.wiqlPath;
+      select.appendChild(opt);
+    });
+
+    select.disabled  = false;
+    refresh.disabled = false;
+
+    // Re-select previously selected batch if it still exists
+    if (selectedBatch) {
+      const found = iterationsList.find(it => it.wiqlPath === selectedBatch.wiqlPath);
+      if (found) select.value = found.wiqlPath;
+      else clearBatch();
+    }
+  } catch (e) {
+    select.innerHTML = '<option value="">Failed to load batches</option>';
+  }
+}
+
+async function fetchBatchBacklog(wiqlPath, types) {
+  const status = document.getElementById('batch-load-status');
+  const badge  = document.getElementById('batch-count-badge');
+  const info   = document.getElementById('batch-info');
+
+  status.textContent = 'Loading…';
+  status.className   = 'ado-status-msg loading';
+  status.classList.remove('hidden');
+  info.classList.remove('hidden');
+  badge.textContent = '…';
+
+  try {
+    const typeList = Array.isArray(types) ? types : (types ? [types] : []);
+    let count;
+    if (typeList.length <= 1) {
+      const params = new URLSearchParams({ iterationPath: wiqlPath });
+      if (typeList[0]) params.set('type', typeList[0]);
+      const data = await api(`/api/ado/backlog?${params}`);
+      count = data.count;
+    } else {
+      const results = await Promise.all(typeList.map(t => {
+        const params = new URLSearchParams({ iterationPath: wiqlPath, type: t });
+        return api(`/api/ado/backlog?${params}`);
+      }));
+      count = results.reduce((sum, d) => sum + d.count, 0);
+    }
+
+    badge.textContent = count + ' items';
+    document.getElementById('backlog-size').value = count;
+    document.getElementById('backlog-size').dispatchEvent(new Event('input'));
+    updateRunButton();
+
+    status.classList.add('hidden');
+    return count;
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className   = 'ado-status-msg error';
+    badge.textContent  = '—';
+    return null;
+  }
+}
+
+async function fetchCategoryProgress(catId) {
+  if (!selectedBatch) return;
+  const cat = getCatById(catId);
+  if (!cat || !cat.type) return;
+
+  const row     = document.querySelector(`.cat-row[data-id="${catId}"]`);
+  const fetchBtn = row?.querySelector('[data-action="fetch-progress"]');
+  if (fetchBtn) { fetchBtn.disabled = true; fetchBtn.textContent = '…'; }
+
+  try {
+    const params = new URLSearchParams({ iterationPath: selectedBatch.wiqlPath, type: cat.type });
+    const data   = await api(`/api/ado/batchprogress?${params}`);
+    cat.remaining    = data.remaining;
+    cat.completed    = data.completed;
+    cat.progressPct  = data.pct;
+    renderCategories();
+    updatePctTotal();
+    updateRunButton();
+  } catch (e) {
+    if (fetchBtn) { fetchBtn.disabled = false; fetchBtn.textContent = '↓ Fetch'; }
+  }
+}
+
+async function fetchAllCategoryProgress() {
+  if (!selectedBatch) return;
+  const cats = categories.filter(c => c.type);
+  await Promise.all(cats.map(c => fetchCategoryProgress(c.id)));
+}
+
+function getDoneState() {
+  return document.getElementById('done-state')?.value.trim() || '';
+}
+
+async function autoPullThroughput(types) {
+  const weeks     = document.getElementById('ado-weeks').value;
+  const status    = document.getElementById('ado-main-status');
+  const doneState = getDoneState();
+  const typeList  = Array.isArray(types) ? types : (types ? [types] : []);
+
+  status.textContent = 'Loading throughput…';
+  status.className   = 'ado-status-msg loading';
+  status.classList.remove('hidden');
+
+  try {
+    let rows;
+    if (typeList.length <= 1) {
+      const params = new URLSearchParams({ weeks });
+      if (typeList[0]) params.set('type', typeList[0]);
+      if (doneState)   params.set('doneState', doneState);
+      const data = await api(`/api/ado/throughput?${params}`);
+      rows = data.value || [];
+    } else {
+      const results = await Promise.all(typeList.map(t => {
+        const params = new URLSearchParams({ weeks, type: t });
+        if (doneState) params.set('doneState', doneState);
+        return api(`/api/ado/throughput?${params}`);
+      }));
+      const merged = {};
+      results.forEach(d => (d.value || []).forEach(r => {
+        merged[r.CompletedDateSK] = (merged[r.CompletedDateSK] || 0) + (r.Count || 0);
+      }));
+      rows = Object.entries(merged).map(([CompletedDateSK, Count]) => ({ CompletedDateSK: Number(CompletedDateSK), Count }));
+    }
+
+    if (!rows.length) {
+      const hasExistingData = document.getElementById('sprint-data').value.trim().length > 0;
+      if (hasExistingData) {
+        status.textContent = 'No ADO throughput found — using data entered above.';
+        status.className   = 'ado-status-msg';
+      } else {
+        status.textContent = 'No ADO throughput found — enter data manually or load sample data above.';
+        status.className   = 'ado-status-msg error';
+      }
+      return;
+    }
+
+    const weekly = aggregateWeekly(rows);
+    const textarea = document.getElementById('sprint-data');
+    textarea.value = weekly.join(', ');
+    textarea.dispatchEvent(new Event('input'));
+
+    const typeLabel = typeList.length === 0 ? 'all types'
+      : typeList.length === 1 ? typeList[0]
+      : `${typeList.length} types`;
+    status.textContent = `✓ ${weekly.length} periods of throughput loaded (${typeLabel})`;
+    status.className   = 'ado-status-msg ok';
+  } catch (e) {
+    status.textContent = 'Throughput error: ' + e.message;
+    status.className   = 'ado-status-msg error';
+  }
+}
+
+function skToDate(sk) {
+  const s = String(sk);
+  return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
+}
+
+async function fetchAndRenderThroughputDetail(types, doneState, startDate) {
+  if (!doneState) { document.getElementById('throughput-detail').classList.add('hidden'); return; }
+  const typeList = Array.isArray(types) ? types : (types ? [types] : []);
+  try {
+    let pairs = [];
+    if (typeList.length <= 1) {
+      const params = new URLSearchParams({ detail: 'true', doneState });
+      if (typeList[0]) params.set('type', typeList[0]);
+      if (startDate)   params.set('startDate', startDate);
+      const data = await api(`/api/ado/throughput?${params}`);
+      pairs = data.value || [];
+    } else {
+      const results = await Promise.all(typeList.map(t => {
+        const params = new URLSearchParams({ detail: 'true', doneState, type: t });
+        if (startDate) params.set('startDate', startDate);
+        return api(`/api/ado/throughput?${params}`);
+      }));
+      results.forEach(d => pairs.push(...(d.value || [])));
+    }
+
+    if (!pairs.length) { document.getElementById('throughput-detail').classList.add('hidden'); return; }
+
+    // Group by date
+    const byDate = {};
+    pairs.forEach(({ WorkItemId, CompletedDateSK }) => {
+      const d = skToDate(CompletedDateSK);
+      if (!byDate[d]) byDate[d] = [];
+      byDate[d].push(WorkItemId);
+    });
+
+    const dates = Object.keys(byDate).sort();
+    const body  = document.getElementById('throughput-detail-body');
+    body.innerHTML = '';
+    dates.forEach((date, i) => {
+      const ids = byDate[date];
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex;align-items:flex-start;gap:10px;padding:7px 14px;border-top:${i===0?'none':'1px solid #F1F5F9'};`;
+      row.innerHTML = `
+        <span style="min-width:90px;color:#475569;font-weight:600;">${date}</span>
+        <span style="min-width:28px;text-align:right;color:#6366F1;font-weight:700;">${ids.length}</span>
+        <span style="color:#64748B;word-break:break-all;">${ids.map(id =>
+          `<a href="https://dev.azure.com/${window._adoOrg || ''}/_workitems/edit/${id}" target="_blank" style="color:#6366F1;text-decoration:none;margin-right:4px">#${id}</a>`
+        ).join('')}</span>`;
+      body.appendChild(row);
+    });
+
+    document.getElementById('throughput-detail-total').textContent = `${pairs.length} items across ${dates.length} days`;
+    document.getElementById('throughput-detail').classList.remove('hidden');
+  } catch (e) {
+    // Non-critical — don't surface detail errors over the main success message
+  }
+}
+
+function clearBatch() {
+  selectedBatch = null;
+  document.getElementById('batch-select').value = '';
+  document.getElementById('batch-info').classList.add('hidden');
+  document.getElementById('batch-clear-btn').classList.add('hidden');
+  document.getElementById('batch-info-text').textContent = '';
+  document.getElementById('batch-count-badge').textContent = '';
+  // Clear category progress
+  categories.forEach(c => { c.remaining = null; c.completed = null; c.progressPct = null; });
+  renderCategories();
+  updatePctTotal();
+}
+
+document.getElementById('batch-select').addEventListener('change', async e => {
+  const wiqlPath = e.target.value;
+  if (!wiqlPath) { clearBatch(); return; }
+
+  const it = iterationsList.find(x => x.wiqlPath === wiqlPath);
+  selectedBatch = it || { name: wiqlPath, wiqlPath };
+
+  document.getElementById('batch-info-text').textContent = selectedBatch.name + ':';
+  document.getElementById('batch-clear-btn').classList.remove('hidden');
+
+  const types = getSelectedTypes();
+
+  // Pull backlog count, throughput, category progress and scope diff in parallel
+  await Promise.all([
+    fetchBatchBacklog(wiqlPath, types),
+    autoPullThroughput(types),
+    fetchAllCategoryProgress(),
+    fetchScopeDiff()
+  ]);
+});
+
+document.getElementById('batch-refresh-btn').addEventListener('click', () => loadIterations());
+
+document.getElementById('batch-clear-btn').addEventListener('click', () => clearBatch());
+
+// Multi-type dropdown toggle
+document.getElementById('ado-backlog-type-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  document.getElementById('ado-backlog-type-dropdown').classList.toggle('hidden');
+});
+document.addEventListener('click', () => {
+  document.getElementById('ado-backlog-type-dropdown')?.classList.add('hidden');
+});
+document.getElementById('ado-backlog-type-dropdown').addEventListener('click', e => e.stopPropagation());
+
+// When weeks changes and a batch is selected, re-pull throughput
+document.getElementById('ado-weeks').addEventListener('change', async () => {
+  if (!selectedBatch) return;
+  await autoPullThroughput(getSelectedTypes());
+});
+
+// Load ADO info to verify connection and enable buttons
+async function loadAdoInfo() {
+  const chip     = document.getElementById('ado-chip');
+  const chipText = document.getElementById('ado-chip-text');
+  chip.className = 'ado-chip loading';
+  chipText.textContent = 'ADO connecting…';
+
+  // Warn after 10s that the server may be waking up
+  const wakeTimer = setTimeout(() => {
+    if (chipText.textContent === 'ADO connecting…')
+      chipText.textContent = 'Server waking up — please wait…';
+  }, 10000);
+
+  try {
+    const info = await api('/api/ado/info');
+    clearTimeout(wakeTimer);
+    window._adoOrg = info.org;
+    chipText.textContent = `${info.org} / ${info.project}`;
+    chip.className = 'ado-chip';
+    adoReady = true;
+    document.getElementById('ado-pull-main').disabled     = false;
+    document.getElementById('batch-refresh-btn').disabled = false;
+    document.getElementById('batch-field').style.display  = '';
+    renderCategories();
+    loadWorkItemTypes();
+    loadIterations();
+  } catch (e) {
+    clearTimeout(wakeTimer);
+    chip.className = 'ado-chip error';
+    chipText.innerHTML = 'ADO unavailable — <span style="cursor:pointer;text-decoration:underline" onclick="loadAdoInfo()">retry</span>';
+  }
+}
+
+// Pull main throughput data from ADO
+document.getElementById('ado-pull-main').addEventListener('click', async () => {
+  const btn       = document.getElementById('ado-pull-main');
+  const status    = document.getElementById('ado-main-status');
+  const weeks     = document.getElementById('ado-weeks').value;
+  const startDate = document.getElementById('ado-start-date').value;
+  const doneState = getDoneState();
+  const types     = getSelectedTypes();
+
+  btn.disabled = true;
+  btn.textContent = '↓ Pulling…';
+  status.textContent = 'Fetching from ADO…';
+  status.className = 'ado-status-msg loading';
+  status.classList.remove('hidden');
+
+  try {
+    const params = new URLSearchParams({ weeks });
+    if (startDate) params.set('startDate', startDate);
+    if (doneState) params.set('doneState', doneState);
+
+    let rows;
+    if (types.length <= 1) {
+      if (types[0]) params.set('type', types[0]);
+      const data = await api(`/api/ado/throughput?${params}`);
+      rows = data.value || [];
+    } else {
+      const results = await Promise.all(types.map(t => {
+        const p = new URLSearchParams(params);
+        p.set('type', t);
+        return api(`/api/ado/throughput?${p}`);
+      }));
+      const merged = {};
+      results.forEach(d => (d.value || []).forEach(r => {
+        merged[r.CompletedDateSK] = (merged[r.CompletedDateSK] || 0) + (r.Count || 0);
+      }));
+      rows = Object.entries(merged).map(([sk, Count]) => ({ CompletedDateSK: Number(sk), Count }));
+    }
+
+    if (!rows.length) {
+      status.textContent = 'No completed items found for that period/type.';
+      status.className = 'ado-status-msg error';
+      return;
+    }
+
+    const weekly = aggregateWeekly(rows);
+    const textarea = document.getElementById('sprint-data');
+    textarea.value = weekly.join(', ');
+    textarea.dispatchEvent(new Event('input'));
+
+    const typeLabel = types.length === 0 ? 'all types' : types.length === 1 ? types[0] : `${types.length} types`;
+    status.textContent = `✓ ${weekly.length} weeks imported (${typeLabel})`;
+    status.className = 'ado-status-msg ok';
+    fetchAndRenderThroughputDetail(types, doneState, startDate);
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'ado-status-msg error';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '↓ Pull from ADO';
+});
+
+
+// Per-category pull — delegate from the cat-list container
+document.getElementById('cat-list').addEventListener('click', async e => {
+  const btn = e.target.closest('.ado-pull-cat');
+  if (!btn) return;
+
+  const catId  = Number(btn.dataset.catId);
+  const row    = btn.closest('.cat-row');
+  const weeks  = row.querySelector('.ado-cat-weeks').value;
+  const type   = row.querySelector('.ado-cat-type').value;
+  const status = row.querySelector('.ado-cat-status');
+
+  btn.disabled = true;
+  btn.textContent = '↓ Pulling…';
+  status.textContent = 'Fetching…';
+  status.className = 'ado-status-msg loading';
+  status.classList.remove('hidden');
+
+  try {
+    const params = new URLSearchParams({ weeks });
+    if (type) params.set('type', type);
+    const data = await api(`/api/ado/throughput?${params}`);
+
+    if (!data.value?.length) {
+      status.textContent = 'No data found.';
+      status.className = 'ado-status-msg error';
+      btn.disabled = false;
+      btn.textContent = '↓ Pull from ADO';
+      return;
+    }
+
+    const weekly = aggregateWeekly(data.value);
+    const cat    = getCatById(catId);
+    if (!cat) return;
+
+    cat.rawText = weekly.join(', ');
+    cat.parsed  = weekly;
+
+    // Update the textarea in the DOM directly (category is already expanded)
+    const textarea = row.querySelector('.cat-textarea');
+    if (textarea) textarea.value = cat.rawText;
+
+    const statsEl = row.querySelector('.cat-stats');
+    if (statsEl) {
+      const avg = (weekly.reduce((a,b)=>a+b,0)/weekly.length).toFixed(1);
+      statsEl.textContent = `${weekly.length} periods · avg ${avg}`;
+    }
+
+    const typeLabel = type || 'all types';
+    status.textContent = `✓ ${weekly.length} weeks (${typeLabel})`;
+    status.className = 'ado-status-msg ok';
+    updateRunButton();
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+    status.className = 'ado-status-msg error';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '↓ Pull from ADO';
+});
+
+// ──────────────────────────────────────────────────────
+//  INIT
+// ──────────────────────────────────────────────────────
+document.getElementById('start-date').valueAsDate = new Date();
+addCategory('Feature Work', CAT_COLORS[0]);
+applyPeriodLabel();
+updateRunButton();
+loadProjects();
+loadAdoInfo();
+</script>
+</body>
+</html>
