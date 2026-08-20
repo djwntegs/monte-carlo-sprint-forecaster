@@ -191,20 +191,18 @@ router.get('/throughput', async (req, res) => {
     let url;
 
     if (doneState) {
-      // Query by specific state name: find the first date each item entered that state
-      const stateFilter = ` and State eq '${doneState}'`;
+      // Use WorkItemRevisions: find the first revision date each item entered the done state
+      // then count how many items per day. No IsLastRevisionOfDay needed.
       let dateFilter = '';
       if (startDate) {
         const sk = startDate.replace(/-/g, '');
-        dateFilter = ` and DateSK ge ${sk}`;
+        dateFilter = ` and RevisedDateSK ge ${sk}`;
       }
-      // Group by WorkItemId to get first date in this state, then count by date
-      url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemSnapshot?` +
-        `$apply=filter(IsLastRevisionOfDay eq true${stateFilter}${typeFilter}${dateFilter})` +
-        `/groupby((WorkItemId),aggregate(DateSK with min as CompletedDateSK))` +
+      url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemRevisions?` +
+        `$apply=filter(State eq '${doneState}'${typeFilter}${dateFilter})` +
+        `/groupby((WorkItemId),aggregate(RevisedDateSK with min as CompletedDateSK))` +
         `/groupby((CompletedDateSK),aggregate($count as Count))` +
         `&$orderby=CompletedDateSK asc`;
-      if (!startDate) url += `&$top=${weeks * 7}`;
     } else {
       // Default: use ADO's built-in StateCategory = Completed
       let dateFilter = '';
