@@ -1264,7 +1264,7 @@ const SAMPLE_DATA_POINTS = [5,8,4,7,6,9,5,7,4,8,6,5,7,9,4,6,8,5,7,6];
 let dataType     = 'items';
 let forecastType = 'sprints';
 let parsedData   = [];
-let periodLabel  = 'Period';
+let periodLabel  = 'Day';
 
 let chartThroughput = null;
 let chartDist       = null;
@@ -1621,7 +1621,7 @@ function applyPeriodLabel() {
 }
 
 document.getElementById('period-label').addEventListener('input', e => {
-  periodLabel = e.target.value.trim() || 'Period';
+  periodLabel = e.target.value.trim() || 'Day';
   applyPeriodLabel();
 });
 
