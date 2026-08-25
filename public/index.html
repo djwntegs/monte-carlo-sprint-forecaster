@@ -1007,10 +1007,10 @@
       <div class="field" id="throughput-weeks-field">
         <label>Throughput Data</label>
         <select class="ado-select" id="ado-weeks" style="width:100%">
-          <option value="8">Last 8 periods</option>
-          <option value="12" selected>Last 12 periods</option>
-          <option value="16">Last 16 periods</option>
-          <option value="24">Last 24 periods</option>
+          <option value="8">Last 56 days</option>
+          <option value="12" selected>Last 84 days</option>
+          <option value="16">Last 112 days</option>
+          <option value="24">Last 168 days</option>
         </select>
       </div>
 
@@ -1151,7 +1151,7 @@
     <div class="settings-row" style="margin-top:16px">
       <div class="field">
         <label>Period Name</label>
-        <input type="text" id="period-label" value="Period" placeholder="e.g. Week" style="width:120px">
+        <input type="text" id="period-label" value="Day" placeholder="e.g. Day" style="width:120px">
       </div>
       <div class="field">
         <label>Simulations</label>
@@ -1656,7 +1656,7 @@ function renderCategories() {
     const progPct     = cat.progressPct !== null ? cat.progressPct : 0;
     const progBar     = hasProgress ? `<div class="cat-prog-bar" style="width:${progPct}%"></div>` : '';
     const statsText   = cat.parsed.length
-      ? (() => { const avg = (cat.parsed.reduce((a,b)=>a+b,0)/cat.parsed.length).toFixed(1); return `${cat.parsed.length} periods · avg ${avg}`; })()
+      ? (() => { const avg = (cat.parsed.reduce((a,b)=>a+b,0)/cat.parsed.length).toFixed(1); return `${cat.parsed.length} days · avg ${avg}`; })()
       : '';
 
     row.innerHTML = `
@@ -1689,10 +1689,10 @@ function renderCategories() {
         <div class="ado-import-row" style="margin-bottom:8px">
           <button class="ado-pull-btn ado-pull-cat" data-cat-id="${cat.id}" ${adoReady ? '' : 'disabled'}>↓ Pull from ADO</button>
           <select class="ado-select ado-cat-weeks" data-cat-id="${cat.id}">
-            <option value="8">8 weeks</option>
-            <option value="12" selected>12 weeks</option>
-            <option value="16">16 weeks</option>
-            <option value="24">24 weeks</option>
+            <option value="8">56 days</option>
+            <option value="12" selected>84 days</option>
+            <option value="16">112 days</option>
+            <option value="24">168 days</option>
           </select>
           <select class="ado-select ado-cat-type" data-cat-id="${cat.id}">
             ${buildTypeOptions(cat.type)}
@@ -1741,7 +1741,7 @@ document.getElementById('cat-list').addEventListener('input', e => {
       } else {
         cat.parsed = result.values; errEl.classList.add('hidden');
         const avg = (cat.parsed.reduce((a,b)=>a+b,0)/cat.parsed.length).toFixed(1);
-        statsEl.textContent = `${cat.parsed.length} periods · avg ${avg}`;
+        statsEl.textContent = `${cat.parsed.length} days · avg ${avg}`;
       }
     }
     updateRunButton();
@@ -2341,14 +2341,14 @@ function isoWeekKey(date) {
   return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
 }
 
-// Aggregate OData daily rows into weekly throughput array
-function aggregateWeekly(odataValue) {
-  const weeks = {};
+// Return daily throughput as an ordered array of counts
+function aggregateDaily(odataValue) {
+  const days = {};
   for (const row of odataValue) {
-    const key = isoWeekKey(parseDateSK(row.CompletedDateSK));
-    weeks[key] = (weeks[key] || 0) + (row.Count || 0);
+    const key = String(row.CompletedDateSK);
+    days[key] = (days[key] || 0) + (row.Count || 0);
   }
-  return Object.entries(weeks)
+  return Object.entries(days)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([, count]) => count);
 }
@@ -2612,7 +2612,7 @@ async function autoPullThroughput(types) {
       return;
     }
 
-    const weekly = aggregateWeekly(rows);
+    const weekly = aggregateDaily(rows);
     const textarea = document.getElementById('sprint-data');
     textarea.value = weekly.join(', ');
     textarea.dispatchEvent(new Event('input'));
@@ -2620,7 +2620,7 @@ async function autoPullThroughput(types) {
     const typeLabel = typeList.length === 0 ? 'all types'
       : typeList.length === 1 ? typeList[0]
       : `${typeList.length} types`;
-    status.textContent = `✓ ${weekly.length} periods of throughput loaded (${typeLabel})`;
+    status.textContent = `✓ ${weekly.length} days of throughput loaded (${typeLabel})`;
     status.className   = 'ado-status-msg ok';
   } catch (e) {
     status.textContent = 'Throughput error: ' + e.message;
@@ -2817,13 +2817,13 @@ document.getElementById('ado-pull-main').addEventListener('click', async () => {
       return;
     }
 
-    const weekly = aggregateWeekly(rows);
+    const weekly = aggregateDaily(rows);
     const textarea = document.getElementById('sprint-data');
     textarea.value = weekly.join(', ');
     textarea.dispatchEvent(new Event('input'));
 
     const typeLabel = types.length === 0 ? 'all types' : types.length === 1 ? types[0] : `${types.length} types`;
-    status.textContent = `✓ ${weekly.length} weeks imported (${typeLabel})`;
+    status.textContent = `✓ ${weekly.length} days imported (${typeLabel})`;
     status.className = 'ado-status-msg ok';
     fetchAndRenderThroughputDetail(types, doneState, startDate);
   } catch (e) {
@@ -2866,7 +2866,7 @@ document.getElementById('cat-list').addEventListener('click', async e => {
       return;
     }
 
-    const weekly = aggregateWeekly(data.value);
+    const weekly = aggregateDaily(data.value);
     const cat    = getCatById(catId);
     if (!cat) return;
 
@@ -2884,7 +2884,7 @@ document.getElementById('cat-list').addEventListener('click', async e => {
     }
 
     const typeLabel = type || 'all types';
-    status.textContent = `✓ ${weekly.length} weeks (${typeLabel})`;
+    status.textContent = `✓ ${weekly.length} days (${typeLabel})`;
     status.className = 'ado-status-msg ok';
     updateRunButton();
   } catch (e) {
