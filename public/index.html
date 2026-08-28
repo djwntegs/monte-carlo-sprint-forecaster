@@ -1149,21 +1149,8 @@
   </div>
 
   <!-- ── ADVANCED SETTINGS ─────────────────────────────── -->
-  <details class="card" style="cursor:default">
-    <summary style="cursor:pointer;font-size:0.7rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.08em;list-style:none;display:flex;align-items:center;gap:6px">
-      <span>▶</span> Advanced Settings
-    </summary>
-    <div class="settings-row" style="margin-top:16px">
-      <div class="field">
-        <label>Period Name</label>
-        <input type="text" id="period-label" value="Day" placeholder="e.g. Day" style="width:120px">
-      </div>
-      <div class="field">
-        <label>Simulations</label>
-        <input type="number" id="sim-count" min="1000" max="100000" value="10000" step="1000">
-      </div>
-    </div>
-  </details>
+  <input type="hidden" id="period-label" value="Day">
+  <input type="hidden" id="sim-count" value="10000">
 
   <!-- ── RESULTS ────────────────────────────────────────── -->
   <div class="card hidden" id="results-section">
