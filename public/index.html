@@ -1206,6 +1206,22 @@
       </div>
     </div>
 
+    <!-- Landing zone -->
+    <div id="landing-zone" class="hidden" style="margin:16px 0;padding:14px 18px;background:linear-gradient(135deg,#EEF2FF,#F0FDF4);border:1px solid #C7D2FE;border-radius:10px;">
+      <div style="font-size:0.7rem;font-weight:700;color:#6366F1;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">📅 Forecast Landing Zone</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div style="font-size:0.82rem;color:#475569;">Based on batch start <strong id="lz-start-date">—</strong></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="background:#6366F1;color:#fff;border-radius:6px;padding:4px 10px;font-size:0.82rem;font-weight:600;" id="lz-75-date">—</span>
+          <span style="font-size:0.78rem;color:#94A3B8;">75% confidence</span>
+          <span style="color:#94A3B8;font-size:1rem;">→</span>
+          <span style="background:#10B981;color:#fff;border-radius:6px;padding:4px 10px;font-size:0.82rem;font-weight:600;" id="lz-85-date">—</span>
+          <span style="font-size:0.78rem;color:#94A3B8;">85% confidence</span>
+        </div>
+      </div>
+      <div style="font-size:0.72rem;color:#94A3B8;margin-top:6px;">Excludes weekends and UK bank holidays</div>
+    </div>
+
     <!-- Category breakdown -->
     <div id="breakdown-section" class="hidden">
       <div class="breakdown-title">Category Breakdown</div>
@@ -2046,6 +2062,18 @@ function displayResults(overallSorted, perCatSorted, simCount, storedResults) {
   const elapsed = ((Date.now() - window._runStart) / 1000).toFixed(2);
   document.getElementById('sim-meta').textContent = `${simCount.toLocaleString()} simulations · ${elapsed}s`;
 
+  // Landing zone — requires batch with a startDate from ADO
+  const lzEl = document.getElementById('landing-zone');
+  const batchStart = selectedBatch?.startDate?.slice(0, 10);
+  if (batchStart && percs[75] && percs[85]) {
+    document.getElementById('lz-start-date').textContent = new Date(batchStart + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+    document.getElementById('lz-75-date').textContent = addWorkingDays(batchStart, percs[75]);
+    document.getElementById('lz-85-date').textContent = addWorkingDays(batchStart, percs[85]);
+    lzEl.classList.remove('hidden');
+  } else {
+    lzEl.classList.add('hidden');
+  }
+
   document.getElementById('results-section').classList.remove('hidden');
   updateSaveBar();
   document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -2347,6 +2375,30 @@ function isoWeekKey(date) {
 }
 
 // Return daily throughput as an ordered array of counts
+// UK bank holidays (England & Wales) 2025–2027
+const UK_BANK_HOLIDAYS = new Set([
+  '2025-01-01','2025-04-18','2025-04-21','2025-05-05','2025-05-26','2025-08-25','2025-12-25','2025-12-26',
+  '2026-01-01','2026-04-03','2026-04-06','2026-05-04','2026-05-25','2026-08-31','2026-12-25','2026-12-28',
+  '2027-01-01','2027-03-26','2027-03-29','2027-05-03','2027-05-31','2027-08-30','2027-12-27','2027-12-28'
+]);
+
+function isWorkingDay(date) {
+  const day = date.getUTCDay();
+  if (day === 0 || day === 6) return false;
+  const iso = date.toISOString().slice(0, 10);
+  return !UK_BANK_HOLIDAYS.has(iso);
+}
+
+function addWorkingDays(startISO, days) {
+  const d = new Date(startISO + 'T00:00:00Z');
+  let added = 0;
+  while (added < days) {
+    d.setUTCDate(d.getUTCDate() + 1);
+    if (isWorkingDay(d)) added++;
+  }
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
 function aggregateDaily(odataValue) {
   const days = {};
   for (const row of odataValue) {

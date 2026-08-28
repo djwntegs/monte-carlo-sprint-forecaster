@@ -35,7 +35,9 @@ function flattenIterations(node, depth, results) {
       name:        node.name,
       path:        node.path,
       wiqlPath:    toWiqlIterationPath(node.path),
-      hasChildren: !!(node.children && node.children.length)
+      hasChildren: !!(node.children && node.children.length),
+      startDate:   node.attributes?.startDate   || null,
+      finishDate:  node.attributes?.finishDate  || null
     });
   }
   if (node.children) {
