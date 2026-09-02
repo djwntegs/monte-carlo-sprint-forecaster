@@ -2,6 +2,13 @@ const express   = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const router    = express.Router();
 
+const SUPABASE_CONFIGURED = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY);
+
+router.use((req, res, next) => {
+  if (!SUPABASE_CONFIGURED) return res.status(503).json({ error: 'Supabase not configured — set SUPABASE_URL and SUPABASE_SERVICE_KEY in .env' });
+  next();
+});
+
 function db() {
   return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 }
