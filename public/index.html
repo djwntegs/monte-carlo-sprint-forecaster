@@ -2564,16 +2564,19 @@ async function fetchBatchBacklog(wiqlPath, types) {
   badge.textContent = '…';
 
   try {
-    const typeList = Array.isArray(types) ? types : (types ? [types] : []);
+    const typeList   = Array.isArray(types) ? types : (types ? [types] : []);
+    const doneStates = getDoneStates(); // exclude team's done state (e.g. "Dev Environment")
     let count;
     if (typeList.length <= 1) {
       const params = new URLSearchParams({ iterationPath: wiqlPath });
-      if (typeList[0]) params.set('type', typeList[0]);
+      if (typeList[0])       params.set('type', typeList[0]);
+      if (doneStates.length) params.set('doneStates', doneStates.join(','));
       const data = await api(`/api/ado/backlog?${params}`);
       count = data.count;
     } else {
       const results = await Promise.all(typeList.map(t => {
         const params = new URLSearchParams({ iterationPath: wiqlPath, type: t });
+        if (doneStates.length) params.set('doneStates', doneStates.join(','));
         return api(`/api/ado/backlog?${params}`);
       }));
       count = results.reduce((sum, d) => sum + d.count, 0);

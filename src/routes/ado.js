@@ -258,16 +258,22 @@ router.get('/throughput', async (req, res) => {
 // GET /api/ado/backlog?type=Bug&iterationPath=Team30%5CBatch+2
 // Returns count of open work items, optionally scoped to an iteration (Batch)
 router.get('/backlog', async (req, res) => {
-  const { areaPath, type, iterationPath } = req.query;
+  const { areaPath, type, iterationPath, doneStates } = req.query;
 
   try {
     const { org, project } = getAdoConfig();
-    const areaFilter      = areaPath      ? ` AND [Area Path] UNDER '${areaPath}'`             : '';
-    const typeFilter      = type          ? ` AND [Work Item Type] = '${type}'`                 : '';
-    const iterationFilter = iterationPath ? ` AND [Iteration Path] UNDER '${iterationPath}'`    : '';
+    const areaFilter      = areaPath      ? ` AND [Area Path] UNDER '${areaPath}'`          : '';
+    const typeFilter      = type          ? ` AND [Work Item Type] = '${type}'`              : '';
+    const iterationFilter = iterationPath ? ` AND [Iteration Path] UNDER '${iterationPath}'` : '';
+
+    // Always exclude ADO built-in closed states plus any team-specific done states
+    const builtIn   = ['Closed', 'Done', 'Removed'];
+    const custom    = doneStates ? doneStates.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const allClosed = [...new Set([...builtIn, ...custom])];
+    const stateList = allClosed.map(s => `'${s.replace(/'/g, '')}'`).join(',');
 
     const wiql = {
-      query: `SELECT [Id] FROM WorkItems WHERE [State] NOT IN ('Closed','Done','Removed')${iterationFilter}${areaFilter}${typeFilter}`
+      query: `SELECT [Id] FROM WorkItems WHERE [State] NOT IN (${stateList})${iterationFilter}${areaFilter}${typeFilter}`
     };
 
     const url = `${adoBase(org)}/${project}/_apis/wit/wiql?api-version=7.1`;
