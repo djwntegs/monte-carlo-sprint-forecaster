@@ -2430,9 +2430,8 @@ function renderBurnup() {
     });
   }
 
-  if (chartBurnup) { chartBurnup.destroy(); chartBurnup = null; }
-
   const buildChart = () => {
+    if (chartBurnup) { chartBurnup.destroy(); chartBurnup = null; }
     const canvas = document.getElementById('chart-burnup');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
