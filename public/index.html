@@ -2270,7 +2270,7 @@ async function fetchScopeDiff() {
     const removed = snapshot.item_list.filter(i => !currentMap.has(i.id));
 
     cachedScopeDiff = { added, removed };
-    renderScopeDiff(container, added, removed, snapshot.items, currentItems.length);
+    renderScopeDiff(container, added, removed, baselineForecast.backlog_size || snapshot.items, currentItems.length);
     renderBurnup(); // re-evaluate badge now we know whether this is a fresh batch
   } catch (e) {
     container.innerHTML = `<p style="font-size:0.75rem;color:#EF4444;margin-bottom:12px">Could not check scope changes: ${e.message}</p>`;
@@ -2336,8 +2336,9 @@ function renderBurnup() {
   }
   card.classList.remove('hidden');
 
-  // Scope snapshot from when baseline was saved
-  const snapshotItems   = baselineForecast.results.batch_snapshot?.items || baselineForecast.backlog_size || currentItems;
+  // Scope snapshot from when baseline was saved — prefer backlog_size (always consistent
+  // with what the history card displays) over batch_snapshot.items which can mismatch.
+  const snapshotItems   = baselineForecast.backlog_size || baselineForecast.results.batch_snapshot?.items || currentItems;
   const scopeDelta      = Math.round(currentItems - snapshotItems);
   const baselinePeriods = bl.p50;
   const currentPeriod   = parsedData.length;
@@ -2353,8 +2354,11 @@ function renderBurnup() {
   // Fresh-batch detection: all baseline items replaced means the parsedData
   // loaded for forecasting is from a previous batch, not actual new-batch
   // progress. Treat the chart as day-0 until real progress is entered.
+  // Use item_list.length as the threshold — it's the actual count that was
+  // compared against ADO and is independent of snapshotItems rounding.
+  const snapshotListSize = baselineForecast.results.batch_snapshot?.item_list?.length || snapshotItems;
   const isNewBatch = cachedScopeDiff &&
-    cachedScopeDiff.removed.length >= snapshotItems &&
+    cachedScopeDiff.removed.length >= snapshotListSize &&
     cachedScopeDiff.added.length > 0;
 
   // Status stats
