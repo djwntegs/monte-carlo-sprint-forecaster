@@ -2351,15 +2351,22 @@ function renderBurnup() {
   const expectedNow = Math.round(Math.min(snapshotItems, (currentPeriod / baselinePeriods) * snapshotItems));
   const variance    = Math.round(actualNow - expectedNow);
 
-  // Fresh-batch detection: all baseline items replaced means the parsedData
-  // loaded for forecasting is from a previous batch, not actual new-batch
-  // progress. Treat the chart as day-0 until real progress is entered.
-  // Use item_list.length as the threshold — it's the actual count that was
-  // compared against ADO and is independent of snapshotItems rounding.
+  // Fresh-batch detection — two cases both mean "no real batch progress yet":
+  // Case 1: all baseline items were replaced by different items (previous batch scope).
   const snapshotListSize = baselineForecast.results.batch_snapshot?.item_list?.length || snapshotItems;
-  const isNewBatch = cachedScopeDiff &&
+  const allItemsReplaced = cachedScopeDiff &&
     cachedScopeDiff.removed.length >= snapshotListSize &&
     cachedScopeDiff.added.length > 0;
+
+  // Case 2: throughput data is unchanged from what was used to save the baseline —
+  // the user hasn't entered actual batch completions yet; the loaded data is still
+  // the historical simulation input, not real in-flight progress.
+  const baselineThroughput = baselineForecast.throughput_data || [];
+  const throughputUnchanged = parsedData.length > 0 &&
+    parsedData.length === baselineThroughput.length &&
+    parsedData.every((v, i) => v === baselineThroughput[i]);
+
+  const isNewBatch = allItemsReplaced || throughputUnchanged;
 
   // Status stats
   document.getElementById('trk-period').textContent   = isNewBatch ? 0 : currentPeriod;
