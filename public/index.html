@@ -647,12 +647,6 @@
 
     .conf-unit  { font-size: 0.72rem; color: #94A3B8; margin-bottom: 6px; }
 
-    .conf-date { font-size: 0.78rem; font-weight: 600; padding: 3px 8px; border-radius: 5px; display: inline-block; }
-    .conf-50 .conf-date { background: #FEF3C7; color: #92400E; }
-    .conf-75 .conf-date { background: #D1FAE5; color: #064E3B; }
-    .conf-85 .conf-date { background: #DBEAFE; color: #1E3A8A; }
-    .conf-95 .conf-date { background: #EDE9FE; color: #4C1D95; }
-
     .baseline-banner {
       display: flex;
       align-items: center;
@@ -1022,24 +1016,6 @@
         </select>
       </div>
 
-      <!-- Forecast output -->
-      <div class="field">
-        <label>Forecast Output</label>
-        <div class="toggle-group" id="forecast-type-toggle">
-          <button class="toggle active" data-forecast="sprints" id="forecast-sprints-btn">Periods</button>
-          <button class="toggle" data-forecast="date">Date</button>
-          <button class="toggle" data-forecast="both">Both</button>
-        </div>
-      </div>
-      <div class="field hidden" id="sprint-length-field">
-        <label id="sprint-length-label">Period Length (days)</label>
-        <input type="number" id="sprint-length" min="1" value="14">
-      </div>
-      <div class="field hidden" id="start-date-field">
-        <label>Start Date</label>
-        <input type="date" id="start-date">
-      </div>
-
       <!-- Run -->
       <div class="field" style="justify-content:flex-end; flex:1; align-items:flex-end">
         <button class="run-btn" id="run-btn" disabled>Run Simulation</button>
@@ -1212,28 +1188,24 @@
         <div class="conf-pct">50% Confidence</div>
         <div class="conf-sprints" id="v50-sprints">—</div>
         <div class="conf-unit" id="v50-unit">sprints</div>
-        <span class="conf-date hidden" id="v50-date"></span>
         <div class="conf-deviation hidden" id="v50-dev"></div>
       </div>
       <div class="conf-card conf-75">
         <div class="conf-pct">75% Confidence</div>
         <div class="conf-sprints" id="v75-sprints">—</div>
         <div class="conf-unit" id="v75-unit">sprints</div>
-        <span class="conf-date hidden" id="v75-date"></span>
         <div class="conf-deviation hidden" id="v75-dev"></div>
       </div>
       <div class="conf-card conf-85">
         <div class="conf-pct">85% Confidence</div>
         <div class="conf-sprints" id="v85-sprints">—</div>
         <div class="conf-unit" id="v85-unit">sprints</div>
-        <span class="conf-date hidden" id="v85-date"></span>
         <div class="conf-deviation hidden" id="v85-dev"></div>
       </div>
       <div class="conf-card conf-95">
         <div class="conf-pct">95% Confidence</div>
         <div class="conf-sprints" id="v95-sprints">—</div>
         <div class="conf-unit" id="v95-unit">sprints</div>
-        <span class="conf-date hidden" id="v95-date"></span>
         <div class="conf-deviation hidden" id="v95-dev"></div>
       </div>
     </div>
@@ -1315,7 +1287,6 @@ const SAMPLE_DATA_ITEMS  = [4,7,3,6,5,8,4,6,3,7,5,4,6,8,3,5,7,4,6,5];
 const SAMPLE_DATA_POINTS = [5,8,4,7,6,9,5,7,4,8,6,5,7,9,4,6,8,5,7,6];
 
 let dataType     = 'items';
-let forecastType = 'sprints';
 let parsedData   = [];
 let periodLabel  = 'Day';
 
@@ -1667,7 +1638,6 @@ function applyPeriodLabel() {
   const p = periodLabel;
   document.getElementById('hist-data-title').textContent        = `Historical ${p} Data`;
   document.getElementById('stat-count-lbl').textContent         = `${p}s`;
-  document.getElementById('sprint-length-label').textContent    = `${p} Length (days)`;
   document.getElementById('forecast-sprints-btn').textContent   = `${p}s`;
   document.getElementById('sprint-data').placeholder =
     `Paste throughput per ${p.toLowerCase()} — comma or newline separated.\nExample:  23, 31, 18, 27, 34, 22, 29, 25, 19, 33`;
@@ -2060,21 +2030,10 @@ function displayResults(overallSorted, perCatSorted, simCount, storedResults) {
   const percs = {};
   CONF_LEVELS.forEach(p => { percs[p] = percentile(overallSorted, p); });
 
-  const showDate    = forecastType === 'date'    || forecastType === 'both';
-  const showSprints = forecastType === 'sprints' || forecastType === 'both';
-  const sprintLen   = parseInt(document.getElementById('sprint-length').value) || 14;
-  const startDate   = document.getElementById('start-date').value;
-
   CONF_LEVELS.forEach(p => {
     const s = percs[p];
     document.getElementById(`v${p}-sprints`).textContent = s;
     document.getElementById(`v${p}-unit`).textContent    = getPeriod(s);
-    document.getElementById(`v${p}-sprints`).style.display = showSprints ? '' : 'none';
-    document.getElementById(`v${p}-unit`).style.display    = showSprints ? '' : 'none';
-
-    const dateEl = document.getElementById(`v${p}-date`);
-    if (showDate && startDate) { dateEl.textContent = sprintsToDate(s, sprintLen, startDate); dateEl.classList.remove('hidden'); }
-    else { dateEl.classList.add('hidden'); }
 
     // Baseline banner
     const banner     = document.getElementById('baseline-banner');
@@ -2188,15 +2147,6 @@ document.getElementById('data-type-toggle').addEventListener('click', e => {
   applyPeriodLabel();
 });
 
-document.getElementById('forecast-type-toggle').addEventListener('click', e => {
-  const btn = e.target.closest('[data-forecast]');
-  if (!btn) return;
-  forecastType = btn.dataset.forecast;
-  document.querySelectorAll('#forecast-type-toggle .toggle').forEach(b => b.classList.toggle('active', b === btn));
-  const needDate = forecastType === 'date' || forecastType === 'both';
-  document.getElementById('sprint-length-field').classList.toggle('hidden', !needDate);
-  document.getElementById('start-date-field').classList.toggle('hidden', !needDate);
-});
 
 // Batch sizing
 document.getElementById('sizing-days').addEventListener('input', () => {
@@ -3080,7 +3030,6 @@ document.getElementById('cat-list').addEventListener('click', async e => {
 // ──────────────────────────────────────────────────────
 //  INIT
 // ──────────────────────────────────────────────────────
-document.getElementById('start-date').valueAsDate = new Date();
 addCategory('Feature Work', CAT_COLORS[0]);
 applyPeriodLabel();
 updateRunButton();
