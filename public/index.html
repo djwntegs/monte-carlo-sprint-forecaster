@@ -690,9 +690,10 @@
       font-size: 0.9rem; font-weight: 800; border-radius: 8px;
       padding: 10px 20px; flex: 1; min-width: 140px; letter-spacing: 0.02em;
     }
-    .tracking-badge.on-track { background: #D1FAE5; color: #065F46; }
-    .tracking-badge.ahead    { background: #DBEAFE; color: #1E3A8A; }
-    .tracking-badge.behind   { background: #FEE2E2; color: #991B1B; }
+    .tracking-badge.on-track  { background: #D1FAE5; color: #065F46; }
+    .tracking-badge.ahead     { background: #DBEAFE; color: #1E3A8A; }
+    .tracking-badge.behind    { background: #FEE2E2; color: #991B1B; }
+    .tracking-badge.new-batch { background: #FEF9C3; color: #854D0E; font-size: 0.78rem; }
 
     .scope-diff { margin-bottom: 14px; }
     .scope-diff-banner {
@@ -2180,6 +2181,7 @@ async function fetchScopeDiff() {
 
     cachedScopeDiff = { added, removed };
     renderScopeDiff(container, added, removed, snapshot.items, currentItems.length);
+    renderBurnup(); // re-evaluate badge now we know whether this is a fresh batch
   } catch (e) {
     container.innerHTML = `<p style="font-size:0.75rem;color:#EF4444;margin-bottom:12px">Could not check scope changes: ${e.message}</p>`;
   }
@@ -2258,28 +2260,40 @@ function renderBurnup() {
   const expectedNow = Math.round(Math.min(snapshotItems, (currentPeriod / baselinePeriods) * snapshotItems));
   const variance    = Math.round(actualNow - expectedNow);
 
+  // Fresh-batch detection: all baseline items replaced means the parsedData
+  // loaded for forecasting is from a previous batch, not actual new-batch
+  // progress. Treat the chart as day-0 until real progress is entered.
+  const isNewBatch = cachedScopeDiff &&
+    cachedScopeDiff.removed.length >= snapshotItems &&
+    cachedScopeDiff.added.length > 0;
+
   // Status stats
-  document.getElementById('trk-period').textContent   = currentPeriod;
-  document.getElementById('trk-expected').textContent = expectedNow;
-  document.getElementById('trk-actual').textContent   = Math.round(actualNow);
-  document.getElementById('trk-variance').textContent = (variance >= 0 ? '+' : '') + variance;
-  document.getElementById('trk-variance-sub').textContent = variance >= 0 ? 'items ahead' : 'items behind';
+  document.getElementById('trk-period').textContent   = isNewBatch ? 0 : currentPeriod;
+  document.getElementById('trk-expected').textContent = isNewBatch ? 0 : expectedNow;
+  document.getElementById('trk-actual').textContent   = isNewBatch ? 0 : Math.round(actualNow);
+  document.getElementById('trk-variance').textContent = isNewBatch ? '—' : (variance >= 0 ? '+' : '') + variance;
+  document.getElementById('trk-variance-sub').textContent = isNewBatch ? 'day 1' : (variance >= 0 ? 'items ahead' : 'items behind');
 
   const badge = document.getElementById('trk-badge');
-  if (variance > 0)      { badge.textContent = '▲ Ahead of plan';  badge.className = 'tracking-badge ahead'; }
-  else if (variance < 0) { badge.textContent = '▼ Behind plan';     badge.className = 'tracking-badge behind'; }
-  else                   { badge.textContent = '✓ On track';         badge.className = 'tracking-badge on-track'; }
+  if (isNewBatch) {
+    badge.textContent = '↻ Day 1 — tracking will begin as work completes';
+    badge.className   = 'tracking-badge new-batch';
+  } else if (variance > 0) { badge.textContent = '▲ Ahead of plan';  badge.className = 'tracking-badge ahead'; }
+  else if (variance < 0)   { badge.textContent = '▼ Behind plan';     badge.className = 'tracking-badge behind'; }
+  else                     { badge.textContent = '✓ On track';         badge.className = 'tracking-badge on-track'; }
 
   // Build chart datasets
-  const maxX       = Math.max(baselinePeriods + 2, currentPeriod + 2);
+  const maxX       = Math.max(baselinePeriods + 2, isNewBatch ? 2 : currentPeriod + 2);
   const labels     = Array.from({ length: maxX + 1 }, (_, i) => i);
   const actualData = labels.map(i => i === 0 ? 0 : i <= currentPeriod ? Math.round(actuals[i - 1]) : null);
   const baselineExpected = labels.map(i => Math.round(Math.min(snapshotItems, (i / baselinePeriods) * snapshotItems)));
 
+  // On a fresh batch the throughput data is historical (for simulation only) —
+  // suppress the actual line so it doesn't misrepresent progress as almost complete.
   const datasets = [
     { label: `Baseline scope (${snapshotItems})`, data: labels.map(() => snapshotItems), borderColor: '#94A3B8', borderDash: [6, 3], borderWidth: 1.5, pointRadius: 0, fill: false },
     { label: 'Baseline expected', data: baselineExpected, borderColor: '#6366F1', borderWidth: 2, pointRadius: 0, fill: false },
-    { label: 'Actual', data: actualData, borderColor: '#10B981', borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#10B981', fill: false, spanGaps: false }
+    ...(!isNewBatch ? [{ label: 'Actual', data: actualData, borderColor: '#10B981', borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#10B981', fill: false, spanGaps: false }] : [])
   ];
 
   // If scope changed, add current scope line
