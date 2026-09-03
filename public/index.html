@@ -1051,6 +1051,11 @@
   <div class="card hidden" id="batch-tracking-card">
     <div class="card-title" style="margin-bottom:16px">BATCH TRACKING <span style="font-size:0.7rem;font-weight:400;color:#94A3B8;text-transform:none;letter-spacing:0">— actual vs baseline expected</span></div>
     <div id="scope-diff-container"></div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:0.7rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Batch Daily Completions</label>
+      <textarea id="batch-actuals" rows="2" placeholder="Enter actual daily completions as the batch progresses — e.g. 3, 5, 2, 8, 4" style="width:100%;box-sizing:border-box;font-family:monospace;font-size:0.8rem;padding:8px 10px;border:1px solid #E2E8F0;border-radius:6px;resize:vertical;color:#1E293B;background:#F8FAFC;line-height:1.5"></textarea>
+      <div id="batch-actuals-stats" class="hidden" style="font-size:0.72rem;color:#94A3B8;margin-top:4px"></div>
+    </div>
     <div class="tracking-stats">
       <div class="tracking-stat">
         <div class="tracking-stat-label">Period</div>
@@ -1322,7 +1327,8 @@ let periodLabel  = 'Day';
 let chartThroughput = null;
 let chartDist       = null;
 let chartCum        = null;
-let chartBurnup     = null;
+let chartBurnup       = null;
+let batchProgressData = []; // actual daily completions in the current batch (separate from parsedData)
 
 let categories = [];
 let nextCatId  = 1;
@@ -1471,7 +1477,13 @@ async function loadHistory() {
   if (!activeProject) return;
   try {
     forecastHistory  = await api(`/api/forecasts?project_id=${activeProject.id}`);
+    const prevBaselineId = baselineForecast?.id;
     baselineForecast = forecastHistory.find(f => f.is_baseline) || null;
+    if (baselineForecast?.id !== prevBaselineId) {
+      batchProgressData = [];
+      const ta = document.getElementById('batch-actuals');
+      if (ta) { ta.value = ''; document.getElementById('batch-actuals-stats').classList.add('hidden'); }
+    }
     renderHistory();
     renderBurnup();
     fetchScopeDiff();
@@ -2199,6 +2211,20 @@ document.getElementById('forecast-type-toggle').addEventListener('click', e => {
 });
 
 // Batch sizing
+document.getElementById('batch-actuals').addEventListener('input', e => {
+  const raw = e.target.value.trim();
+  batchProgressData = raw ? raw.split(/[\s,]+/).map(Number).filter(n => !isNaN(n) && n >= 0) : [];
+  const statsEl = document.getElementById('batch-actuals-stats');
+  if (batchProgressData.length > 0) {
+    const total = batchProgressData.reduce((a, b) => a + b, 0);
+    statsEl.textContent = `${batchProgressData.length} days · ${total} items completed`;
+    statsEl.classList.remove('hidden');
+  } else {
+    statsEl.classList.add('hidden');
+  }
+  renderBurnup();
+});
+
 document.getElementById('sizing-days').addEventListener('input', () => {
   const days = parseInt(document.getElementById('sizing-days').value);
   document.getElementById('sizing-btn').disabled = !(days >= 1 && parsedData.length > 0);
@@ -2341,32 +2367,22 @@ function renderBurnup() {
   const snapshotItems   = baselineForecast.backlog_size || baselineForecast.results.batch_snapshot?.items || currentItems;
   const scopeDelta      = Math.round(currentItems - snapshotItems);
   const baselinePeriods = bl.p50;
-  const currentPeriod   = parsedData.length;
 
-  // Cumulative actual completions (capped at current scope)
-  let cum = 0;
-  const actuals = parsedData.map(v => { cum += v; return Math.min(cum, currentItems); });
-
-  const actualNow   = actuals[actuals.length - 1];
-  const expectedNow = Math.round(Math.min(snapshotItems, (currentPeriod / baselinePeriods) * snapshotItems));
-  const variance    = Math.round(actualNow - expectedNow);
-
-  // Fresh-batch detection — two cases both mean "no real batch progress yet":
-  // Case 1: all baseline items were replaced by different items (previous batch scope).
+  // Actuals come from the dedicated batch-progress input, not the simulation throughput.
+  // isNewBatch = no actuals entered yet, OR all baseline scope items were replaced (cross-batch).
   const snapshotListSize = baselineForecast.results.batch_snapshot?.item_list?.length || snapshotItems;
   const allItemsReplaced = cachedScopeDiff &&
     cachedScopeDiff.removed.length >= snapshotListSize &&
     cachedScopeDiff.added.length > 0;
+  const isNewBatch = batchProgressData.length === 0 || allItemsReplaced;
 
-  // Case 2: throughput data is unchanged from what was used to save the baseline —
-  // the user hasn't entered actual batch completions yet; the loaded data is still
-  // the historical simulation input, not real in-flight progress.
-  const baselineThroughput = baselineForecast.throughput_data || [];
-  const throughputUnchanged = parsedData.length > 0 &&
-    parsedData.length === baselineThroughput.length &&
-    parsedData.every((v, i) => v === baselineThroughput[i]);
+  const currentPeriod = batchProgressData.length;
+  let cum = 0;
+  const actuals = batchProgressData.map(v => { cum += v; return Math.min(cum, currentItems); });
 
-  const isNewBatch = allItemsReplaced || throughputUnchanged;
+  const actualNow   = actuals.length ? actuals[actuals.length - 1] : 0;
+  const expectedNow = Math.round(Math.min(snapshotItems, (currentPeriod / baselinePeriods) * snapshotItems));
+  const variance    = Math.round(actualNow - expectedNow);
 
   // Status stats
   document.getElementById('trk-period').textContent   = isNewBatch ? 0 : currentPeriod;
@@ -2389,8 +2405,6 @@ function renderBurnup() {
   const actualData = labels.map(i => i === 0 ? 0 : i <= currentPeriod ? Math.round(actuals[i - 1]) : null);
   const baselineExpected = labels.map(i => Math.round(Math.min(snapshotItems, (i / baselinePeriods) * snapshotItems)));
 
-  // On a fresh batch the throughput data is historical (for simulation only) —
-  // suppress the actual line so it doesn't misrepresent progress as almost complete.
   const datasets = [
     { label: `Baseline scope (${snapshotItems})`, data: labels.map(() => snapshotItems), borderColor: '#94A3B8', borderDash: [6, 3], borderWidth: 1.5, pointRadius: 0, fill: false },
     { label: 'Baseline expected', data: baselineExpected, borderColor: '#6366F1', borderWidth: 2, pointRadius: 0, fill: false },
