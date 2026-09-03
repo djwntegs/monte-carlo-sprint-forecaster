@@ -673,8 +673,11 @@
       display: inline-block;
     }
 
-    .conf-deviation.better { background: #D1FAE5; color: #065F46; }
-    .conf-deviation.worse  { background: #FEE2E2; color: #991B1B; }
+    .conf-50 .conf-deviation { background: #FEF3C7; color: #92400E; }
+    .conf-75 .conf-deviation { background: #D1FAE5; color: #064E3B; }
+    .conf-85 .conf-deviation { background: #DBEAFE; color: #1E3A8A; }
+    .conf-95 .conf-deviation { background: #EDE9FE; color: #4C1D95; }
+    .conf-deviation.same    { background: #F1F5F9; color: #64748B; }
 
     /* Batch tracking card */
     .tracking-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
@@ -1195,15 +1198,15 @@
     </div>
 
     <!-- Landing zone -->
-    <div id="landing-zone" class="hidden" style="margin:16px 0;padding:14px 18px;background:linear-gradient(135deg,#EEF2FF,#F0FDF4);border:1px solid #C7D2FE;border-radius:10px;">
+    <div id="landing-zone" class="hidden" style="margin:16px 0;padding:14px 18px;background:linear-gradient(135deg,#ECFDF5,#EFF6FF);border:1px solid #A7F3D0;border-radius:10px;">
       <div style="font-size:0.7rem;font-weight:700;color:#6366F1;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">📅 Forecast Landing Zone</div>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
         <div style="font-size:0.82rem;color:#475569;">Based on batch start <strong id="lz-start-date">—</strong></div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span style="background:#6366F1;color:#fff;border-radius:6px;padding:4px 10px;font-size:0.82rem;font-weight:600;" id="lz-75-date">—</span>
+          <span style="background:#10B981;color:#fff;border-radius:6px;padding:4px 10px;font-size:0.82rem;font-weight:600;" id="lz-75-date">—</span>
           <span style="font-size:0.78rem;color:#94A3B8;">75% confidence</span>
           <span style="color:#94A3B8;font-size:1rem;">→</span>
-          <span style="background:#10B981;color:#fff;border-radius:6px;padding:4px 10px;font-size:0.82rem;font-weight:600;" id="lz-85-date">—</span>
+          <span style="background:#3B82F6;color:#fff;border-radius:6px;padding:4px 10px;font-size:0.82rem;font-weight:600;" id="lz-85-date">—</span>
           <span style="font-size:0.78rem;color:#94A3B8;">85% confidence</span>
         </div>
       </div>
