@@ -1052,8 +1052,12 @@
     <div class="card-title" style="margin-bottom:16px">BATCH TRACKING <span style="font-size:0.7rem;font-weight:400;color:#94A3B8;text-transform:none;letter-spacing:0">— actual vs baseline expected</span></div>
     <div id="scope-diff-container"></div>
     <div style="margin-bottom:14px">
-      <label style="display:block;font-size:0.7rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Batch Daily Completions</label>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="font-size:0.7rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.06em">Batch Daily Completions</label>
+        <button id="batch-actuals-pull-btn" class="ado-btn" style="font-size:0.72rem;padding:4px 10px" disabled>↓ Pull from ADO</button>
+      </div>
       <textarea id="batch-actuals" rows="2" placeholder="Enter actual daily completions as the batch progresses — e.g. 3, 5, 2, 8, 4" style="width:100%;box-sizing:border-box;font-family:monospace;font-size:0.8rem;padding:8px 10px;border:1px solid #E2E8F0;border-radius:6px;resize:vertical;color:#1E293B;background:#F8FAFC;line-height:1.5"></textarea>
+      <div id="batch-actuals-status" class="hidden ado-status-msg" style="margin-top:4px"></div>
       <div id="batch-actuals-stats" class="hidden" style="font-size:0.72rem;color:#94A3B8;margin-top:4px"></div>
     </div>
     <div class="tracking-stats">
@@ -2211,6 +2215,8 @@ document.getElementById('forecast-type-toggle').addEventListener('click', e => {
 });
 
 // Batch sizing
+document.getElementById('batch-actuals-pull-btn').addEventListener('click', pullBatchActuals);
+
 document.getElementById('batch-actuals').addEventListener('input', e => {
   const raw = e.target.value.trim();
   batchProgressData = raw ? raw.split(/[\s,]+/).map(Number).filter(n => !isNaN(n) && n >= 0) : [];
@@ -2825,6 +2831,72 @@ async function autoPullThroughput(types) {
   }
 }
 
+async function pullBatchActuals() {
+  const statusEl = document.getElementById('batch-actuals-status');
+  const statsEl  = document.getElementById('batch-actuals-stats');
+  const btn      = document.getElementById('batch-actuals-pull-btn');
+
+  if (!selectedBatch?.startDate) {
+    statusEl.textContent = 'Batch has no start date — enter completions manually.';
+    statusEl.className   = 'ado-status-msg error';
+    statusEl.classList.remove('hidden');
+    return;
+  }
+
+  btn.disabled = true;
+  statusEl.textContent = 'Pulling batch completions…';
+  statusEl.className   = 'ado-status-msg loading';
+  statusEl.classList.remove('hidden');
+
+  try {
+    const doneStates = getDoneStates();
+    const types      = getSelectedTypes();
+    const startDate  = selectedBatch.startDate.slice(0, 10); // YYYY-MM-DD
+    const stateList  = doneStates.length > 0 ? doneStates : [''];
+    const typeList   = types.length > 0 ? types : [''];
+
+    const combos = [];
+    for (const t of typeList) {
+      for (const ds of stateList) {
+        combos.push({ type: t, doneState: ds });
+      }
+    }
+
+    const results = await Promise.all(combos.map(({ type, doneState }) => {
+      const params = new URLSearchParams({ startDate });
+      if (type)      params.set('type', type);
+      if (doneState) params.set('doneState', doneState);
+      return api(`/api/ado/throughput?${params}`);
+    }));
+
+    const merged = {};
+    results.forEach(d => (d.value || []).forEach(r => {
+      merged[r.CompletedDateSK] = (merged[r.CompletedDateSK] || 0) + (r.Count || 0);
+    }));
+    const daily = aggregateDaily(
+      Object.entries(merged).map(([CompletedDateSK, Count]) => ({ CompletedDateSK: Number(CompletedDateSK), Count }))
+    );
+
+    const textarea = document.getElementById('batch-actuals');
+    textarea.value = daily.join(', ');
+    textarea.dispatchEvent(new Event('input'));
+
+    if (!daily.length) {
+      statusEl.textContent = 'No completions found since batch start — enter manually if needed.';
+      statusEl.className   = 'ado-status-msg';
+    } else {
+      const total = daily.reduce((a, b) => a + b, 0);
+      statusEl.textContent = `✓ ${daily.length} days · ${total} items completed since ${startDate}`;
+      statusEl.className   = 'ado-status-msg ok';
+    }
+  } catch (e) {
+    statusEl.textContent = 'Error: ' + e.message;
+    statusEl.className   = 'ado-status-msg error';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 function skToDate(sk) {
   const s = String(sk);
   return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
@@ -2890,6 +2962,7 @@ function clearBatch() {
   document.getElementById('batch-clear-btn').classList.add('hidden');
   document.getElementById('batch-info-text').textContent = '';
   document.getElementById('batch-count-badge').textContent = '';
+  document.getElementById('batch-actuals-pull-btn').disabled = true;
   // Clear category progress
   categories.forEach(c => { c.remaining = null; c.completed = null; c.progressPct = null; });
   renderCategories();
@@ -2904,6 +2977,7 @@ document.getElementById('batch-select').addEventListener('change', async e => {
   selectedBatch = it || { name: wiqlPath, wiqlPath };
 
   document.getElementById('batch-info-text').textContent = selectedBatch.name + ':';
+  document.getElementById('batch-actuals-pull-btn').disabled = !adoReady;
   document.getElementById('batch-clear-btn').classList.remove('hidden');
 
   const types = getSelectedTypes();
