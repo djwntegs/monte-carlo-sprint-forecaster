@@ -213,7 +213,7 @@ router.get('/throughput', async (req, res) => {
       let dateFilter = '';
       if (startDate) {
         const sk = startDate.replace(/-/g, '');
-        dateFilter = ` and RevisedDateSK ge ${sk}`;
+        dateFilter = ` and ChangedDateSK ge ${sk}`;
       }
 
       if (detail === 'true') {
