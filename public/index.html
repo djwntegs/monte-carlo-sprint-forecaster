@@ -619,6 +619,10 @@
     .pct-total-val.error { color: #EF4444; }
     .pct-total-msg { font-size: 0.72rem; color: #EF4444; font-weight: 500; }
 
+    /* ── BATCH SIZING ─────────────────────────────────── */
+    .sizing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 8px; }
+    .sizing-sub  { font-size: 0.72rem; color: #64748B; margin-top: 4px; }
+
     /* ── RESULTS ──────────────────────────────────────── */
     .confidence-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
 
@@ -1135,6 +1139,43 @@
 
     <div id="mini-chart-wrap" class="mini-chart-wrap hidden">
       <canvas id="throughput-chart"></canvas>
+    </div>
+  </div>
+
+  <!-- ── BATCH SIZING ─────────────────────────────────── -->
+  <div class="card hidden" id="batch-sizing-card">
+    <div class="card-title">Batch Sizing <span style="font-size:0.65rem;color:#CBD5E1;font-weight:400;text-transform:none;letter-spacing:0">— how many items can we commit to in a given timeframe?</span></div>
+    <div class="settings-row" style="align-items:flex-end;gap:14px;flex-wrap:wrap">
+      <div class="field">
+        <label>Target Duration (days)</label>
+        <input type="number" id="sizing-days" min="1" placeholder="e.g. 30" style="width:140px">
+      </div>
+      <div class="field" style="justify-content:flex-end;align-items:flex-end">
+        <button class="run-btn" id="sizing-btn" disabled style="background:#475569">Recommend Batch Size</button>
+      </div>
+    </div>
+    <div id="sizing-results" class="hidden" style="margin-top:20px">
+      <div class="sizing-grid">
+        <div class="conf-card conf-85">
+          <div class="conf-pct">Commit — 85% confidence</div>
+          <div class="conf-sprints" id="sizing-85">—</div>
+          <div class="conf-unit">items</div>
+          <div class="sizing-sub">Safe to promise</div>
+        </div>
+        <div class="conf-card conf-75">
+          <div class="conf-pct">Target — 75% confidence</div>
+          <div class="conf-sprints" id="sizing-75">—</div>
+          <div class="conf-unit">items</div>
+          <div class="sizing-sub">Good planning goal</div>
+        </div>
+        <div class="conf-card conf-50">
+          <div class="conf-pct">Stretch — 50% confidence</div>
+          <div class="conf-sprints" id="sizing-50">—</div>
+          <div class="conf-unit">items</div>
+          <div class="sizing-sub">Best-case expectation</div>
+        </div>
+      </div>
+      <div style="font-size:0.72rem;color:#94A3B8;margin-top:6px" id="sizing-meta"></div>
     </div>
   </div>
 
@@ -1855,6 +1896,42 @@ function percentile(sorted, p) {
 }
 
 // ──────────────────────────────────────────────────────
+//  BATCH SIZING — inverse simulation: days → items
+// ──────────────────────────────────────────────────────
+function simulateBatchSize(throughput, targetDays, simCount) {
+  const n = throughput.length;
+  const results = [];
+  for (let i = 0; i < simCount; i++) {
+    let total = 0;
+    for (let d = 0; d < targetDays; d++) {
+      total += throughput[Math.floor(Math.random() * n)];
+    }
+    results.push(total);
+  }
+  return results.sort((a, b) => a - b);
+}
+
+function runBatchSizing() {
+  const days = parseInt(document.getElementById('sizing-days').value);
+  if (!days || days < 1 || !parsedData.length) return;
+
+  const simCount = 10000;
+  const sorted   = simulateBatchSize(parsedData, days, simCount);
+
+  // Conservative read: pX confidence of completing AT LEAST this many items
+  // = (100-X)th percentile of the "items completed" distribution
+  document.getElementById('sizing-85').textContent = percentile(sorted, 15);
+  document.getElementById('sizing-75').textContent = percentile(sorted, 25);
+  document.getElementById('sizing-50').textContent = percentile(sorted, 50);
+
+  const avg = (parsedData.reduce((a, b) => a + b, 0) / parsedData.length).toFixed(1);
+  document.getElementById('sizing-meta').textContent =
+    `Based on ${parsedData.length} days of throughput data (avg ${avg}/day) · ${simCount.toLocaleString()} simulations · ${days}-day window`;
+
+  document.getElementById('sizing-results').classList.remove('hidden');
+}
+
+// ──────────────────────────────────────────────────────
 //  HISTOGRAM / CUMULATIVE
 // ──────────────────────────────────────────────────────
 function buildHistogram(sorted) {
@@ -2077,6 +2154,7 @@ function updateStats(data) {
   if (!data.length) {
     document.getElementById('data-stats').classList.add('hidden');
     document.getElementById('mini-chart-wrap').classList.add('hidden');
+    document.getElementById('batch-sizing-card').classList.add('hidden');
     return;
   }
   const s = calcStats(data);
@@ -2088,6 +2166,7 @@ function updateStats(data) {
   document.getElementById('stat-std').textContent    = s.std.toFixed(1);
   document.getElementById('data-stats').classList.remove('hidden');
   document.getElementById('mini-chart-wrap').classList.remove('hidden');
+  document.getElementById('batch-sizing-card').classList.remove('hidden');
   renderThroughputChart(data);
 }
 
@@ -2118,6 +2197,14 @@ document.getElementById('forecast-type-toggle').addEventListener('click', e => {
   document.getElementById('sprint-length-field').classList.toggle('hidden', !needDate);
   document.getElementById('start-date-field').classList.toggle('hidden', !needDate);
 });
+
+// Batch sizing
+document.getElementById('sizing-days').addEventListener('input', () => {
+  const days = parseInt(document.getElementById('sizing-days').value);
+  document.getElementById('sizing-btn').disabled = !(days >= 1 && parsedData.length > 0);
+  document.getElementById('sizing-results').classList.add('hidden');
+});
+document.getElementById('sizing-btn').addEventListener('click', runBatchSizing);
 
 document.getElementById('sprint-data').addEventListener('input', () => {
   const text   = document.getElementById('sprint-data').value;
