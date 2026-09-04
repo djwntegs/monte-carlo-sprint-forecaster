@@ -199,9 +199,9 @@ router.get('/batchitems', async (req, res) => {
   }
 });
 
-// GET /api/ado/throughput?weeks=12&type=Bug&startDate=2024-01-01&doneState=Dev+Environment&detail=true
+// GET /api/ado/throughput?weeks=12&type=Bug&startDate=2024-01-01&doneState=Dev+Environment&iterationPath=Team30%5CBatch+2&detail=true
 router.get('/throughput', async (req, res) => {
-  const { weeks = 12, type, startDate, doneState, detail } = req.query;
+  const { weeks = 12, type, startDate, doneState, detail, iterationPath } = req.query;
 
   try {
     const { org, project } = getAdoConfig();
@@ -216,14 +216,22 @@ router.get('/throughput', async (req, res) => {
         dateFilter = ` and ChangedDateSK ge ${sk}`;
       }
 
+      // Scope to a specific batch when iterationPath is provided, using the
+      // Iteration navigation property. The startswith branch catches sub-iterations.
+      let iterFilter = '';
+      if (iterationPath) {
+        const p = String(iterationPath).replace(/'/g, "''");
+        iterFilter = ` and (Iteration/IterationPath eq '${p}' or startswith(Iteration/IterationPath, '${p}\\'))`;
+      }
+
       if (detail === 'true') {
         url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemRevisions?` +
-          `$apply=filter(State eq '${doneState}'${typeFilter}${dateFilter})` +
+          `$apply=filter(State eq '${doneState}'${typeFilter}${iterFilter}${dateFilter})` +
           `/groupby((WorkItemId),aggregate(ChangedDateSK with min as CompletedDateSK))` +
           `&$orderby=CompletedDateSK asc`;
       } else {
         url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemRevisions?` +
-          `$apply=filter(State eq '${doneState}'${typeFilter}${dateFilter})` +
+          `$apply=filter(State eq '${doneState}'${typeFilter}${iterFilter}${dateFilter})` +
           `/groupby((WorkItemId),aggregate(ChangedDateSK with min as CompletedDateSK))` +
           `/groupby((CompletedDateSK),aggregate($count as Count))` +
           `&$orderby=CompletedDateSK asc`;

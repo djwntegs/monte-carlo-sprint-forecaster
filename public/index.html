@@ -2563,7 +2563,7 @@ async function pullBatchActuals() {
     }
 
     const results = await Promise.all(combos.map(({ type, doneState }) => {
-      const params = new URLSearchParams({ startDate });
+      const params = new URLSearchParams({ startDate, iterationPath: selectedBatch.wiqlPath });
       if (type)      params.set('type', type);
       if (doneState) params.set('doneState', doneState);
       return api(`/api/ado/throughput?${params}`);
@@ -2594,7 +2594,7 @@ async function pullBatchActuals() {
       const detailCombos = combos.filter(c => c.doneState);
       if (detailCombos.length) {
         const detailResults = await Promise.all(detailCombos.map(({ type, doneState }) => {
-          const params = new URLSearchParams({ startDate, detail: 'true', doneState });
+          const params = new URLSearchParams({ startDate, detail: 'true', doneState, iterationPath: selectedBatch.wiqlPath });
           if (type) params.set('type', type);
           return api(`/api/ado/throughput?${params}`);
         }));
