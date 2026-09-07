@@ -1016,7 +1016,8 @@ let chartThroughput = null;
 let chartDist       = null;
 let chartCum        = null;
 let chartBurnup       = null;
-let batchProgressData = []; // actual daily completions in the current batch (separate from parsedData)
+let batchProgressData   = []; // actual daily completions in the current batch (separate from parsedData)
+let cachedBatchTotal    = 0;  // total items in batch (remaining + done) — set by fetchScopeDiff
 
 let categories = [];
 let nextCatId  = 1;
@@ -1978,6 +1979,7 @@ async function fetchScopeDiff() {
     const removed = snapshot.item_list.filter(i => !currentMap.has(i.id));
 
     cachedScopeDiff = { added, removed };
+    cachedBatchTotal = currentItems.length;
     renderScopeDiff(container, added, removed, baselineForecast.backlog_size || snapshot.items, currentItems.length);
     renderBurnup(); // re-evaluate badge now we know whether this is a fresh batch
   } catch (e) {
@@ -2035,7 +2037,9 @@ function renderScopeDiff(container, added, removed, snapshotCount, currentCount)
 
 function renderBurnup() {
   const card = document.getElementById('batch-tracking-card');
-  const currentItems = parseFloat(document.getElementById('backlog-size').value) || 0;
+  // Use total items in batch (remaining + done) so completions don't falsely appear as scope reductions.
+  // Falls back to backlog-size input if fetchScopeDiff hasn't run yet (e.g. no baseline snapshot).
+  const currentItems = cachedBatchTotal || parseFloat(document.getElementById('backlog-size').value) || 0;
   const bl = baselineForecast?.results?.overall;
 
   if (!bl || !currentItems || !parsedData.length) {
@@ -2695,6 +2699,7 @@ function renderBatchActualsDetail(detailResults) {
 
 function clearBatch() {
   selectedBatch = null;
+  cachedBatchTotal = 0;
   document.getElementById('batch-select').value = '';
   document.getElementById('batch-info').classList.add('hidden');
   document.getElementById('batch-clear-btn').classList.add('hidden');
