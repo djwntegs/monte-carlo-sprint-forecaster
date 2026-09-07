@@ -1808,12 +1808,14 @@ function displayResults(overallSorted, perCatSorted, simCount, storedResults) {
       banner.classList.add('hidden');
     }
 
-    // Baseline deviation
+    // Baseline deviation — compare (days elapsed since baseline + remaining forecast) vs baseline days
     const devEl = document.getElementById(`v${p}-dev`);
     if (baselineForecast?.results?.overall) {
       const bVal = baselineForecast.results.overall[`p${p}`];
       if (bVal != null) {
-        const diff = s - bVal;
+        const elapsed = countWorkingDaysElapsed(baselineForecast.run_date);
+        const projected = elapsed + s;
+        const diff = projected - bVal;
         if (diff === 0) { devEl.textContent = '= baseline'; devEl.className = 'conf-deviation same'; }
         else if (diff < 0) { devEl.textContent = `↓ ${Math.abs(diff)}d · ahead of baseline`; devEl.className = 'conf-deviation better'; }
         else { devEl.textContent = `↑ ${diff}d · behind baseline`; devEl.className = 'conf-deviation worse'; }
@@ -2221,6 +2223,15 @@ function addWorkingDays(startISO, days) {
     if (isWorkingDay(d)) added++;
   }
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
+function countWorkingDaysElapsed(startISO) {
+  const start = new Date(startISO.slice(0, 10) + 'T00:00:00Z');
+  const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+  let count = 0;
+  const d = new Date(start);
+  while (d < today) { d.setUTCDate(d.getUTCDate() + 1); if (isWorkingDay(d)) count++; }
+  return count;
 }
 
 function aggregateDaily(odataValue) {
