@@ -463,7 +463,9 @@
     .conf-75 .conf-deviation { background: #D1FAE5; color: #064E3B; }
     .conf-85 .conf-deviation { background: #DBEAFE; color: #1E3A8A; }
     .conf-95 .conf-deviation { background: #EDE9FE; color: #4C1D95; }
-    .conf-deviation.same { background: #F1F5F9; color: #64748B; }
+    .conf-deviation.same   { background: #F1F5F9; color: #64748B; }
+    .conf-deviation.better { background: #DCFCE7; color: #166534; }
+    .conf-deviation.worse  { background: #FEE2E2; color: #991B1B; }
 
     /* ── BATCH TRACKING ───────────────────────────────── */
     .tracking-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
@@ -1813,8 +1815,8 @@ function displayResults(overallSorted, perCatSorted, simCount, storedResults) {
       if (bVal != null) {
         const diff = s - bVal;
         if (diff === 0) { devEl.textContent = '= baseline'; devEl.className = 'conf-deviation same'; }
-        else if (diff < 0) { devEl.textContent = `↑ ${Math.abs(diff)} vs baseline`; devEl.className = 'conf-deviation better'; }
-        else { devEl.textContent = `↓ ${diff} vs baseline`; devEl.className = 'conf-deviation worse'; }
+        else if (diff < 0) { devEl.textContent = `↓ ${Math.abs(diff)}d · ahead of baseline`; devEl.className = 'conf-deviation better'; }
+        else { devEl.textContent = `↑ ${diff}d · behind baseline`; devEl.className = 'conf-deviation worse'; }
         devEl.classList.remove('hidden');
       } else { devEl.classList.add('hidden'); }
     } else { devEl.classList.add('hidden'); }
