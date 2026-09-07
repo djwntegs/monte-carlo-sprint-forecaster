@@ -455,17 +455,6 @@
       font-size: 0.78rem; font-weight: 500; color: #065F46; margin-bottom: 16px;
     }
 
-    .conf-deviation {
-      font-size: 0.68rem; font-weight: 700; margin-top: 6px;
-      padding: 2px 7px; border-radius: var(--r-sm); display: inline-block;
-    }
-    .conf-50 .conf-deviation { background: #FEF3C7; color: #92400E; }
-    .conf-75 .conf-deviation { background: #D1FAE5; color: #064E3B; }
-    .conf-85 .conf-deviation { background: #DBEAFE; color: #1E3A8A; }
-    .conf-95 .conf-deviation { background: #EDE9FE; color: #4C1D95; }
-    .conf-deviation.same   { background: #F1F5F9; color: #64748B; }
-    .conf-deviation.better { background: #DCFCE7; color: #166534; }
-    .conf-deviation.worse  { background: #FEE2E2; color: #991B1B; }
 
     /* ── BATCH TRACKING ───────────────────────────────── */
     .tracking-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
@@ -921,28 +910,24 @@
         <div class="conf-sprints" id="v50-sprints">—</div>
         <div class="conf-unit" id="v50-unit">sprints</div>
         <span class="conf-date hidden" id="v50-date"></span>
-        <div class="conf-deviation hidden" id="v50-dev"></div>
       </div>
       <div class="conf-card conf-75">
         <div class="conf-pct">75% Confidence</div>
         <div class="conf-sprints" id="v75-sprints">—</div>
         <div class="conf-unit" id="v75-unit">sprints</div>
         <span class="conf-date hidden" id="v75-date"></span>
-        <div class="conf-deviation hidden" id="v75-dev"></div>
       </div>
       <div class="conf-card conf-85">
         <div class="conf-pct">85% Confidence</div>
         <div class="conf-sprints" id="v85-sprints">—</div>
         <div class="conf-unit" id="v85-unit">sprints</div>
         <span class="conf-date hidden" id="v85-date"></span>
-        <div class="conf-deviation hidden" id="v85-dev"></div>
       </div>
       <div class="conf-card conf-95">
         <div class="conf-pct">95% Confidence</div>
         <div class="conf-sprints" id="v95-sprints">—</div>
         <div class="conf-unit" id="v95-unit">sprints</div>
         <span class="conf-date hidden" id="v95-date"></span>
-        <div class="conf-deviation hidden" id="v95-dev"></div>
       </div>
     </div>
 
@@ -1808,20 +1793,6 @@ function displayResults(overallSorted, perCatSorted, simCount, storedResults) {
       banner.classList.add('hidden');
     }
 
-    // Baseline deviation — compare (days elapsed since baseline + remaining forecast) vs baseline days
-    const devEl = document.getElementById(`v${p}-dev`);
-    if (baselineForecast?.results?.overall) {
-      const bVal = baselineForecast.results.overall[`p${p}`];
-      if (bVal != null) {
-        const elapsed = countWorkingDaysElapsed(baselineForecast.run_date);
-        const projected = elapsed + s;
-        const diff = projected - bVal;
-        if (diff === 0) { devEl.textContent = '= baseline'; devEl.className = 'conf-deviation same'; }
-        else if (diff < 0) { devEl.textContent = `↓ ${Math.abs(diff)}d · ahead of baseline`; devEl.className = 'conf-deviation better'; }
-        else { devEl.textContent = `↑ ${diff}d · behind baseline`; devEl.className = 'conf-deviation worse'; }
-        devEl.classList.remove('hidden');
-      } else { devEl.classList.add('hidden'); }
-    } else { devEl.classList.add('hidden'); }
   });
 
   // Category breakdown
