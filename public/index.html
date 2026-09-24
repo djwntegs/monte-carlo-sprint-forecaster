@@ -935,7 +935,7 @@
     <div id="landing-zone" class="hidden" style="margin:16px 0;padding:14px 18px;background:linear-gradient(135deg,#ECFDF5,#EFF6FF);border:1px solid #A7F3D0;border-radius:10px;">
       <div style="font-size:0.7rem;font-weight:700;color:#6366F1;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">📅 Forecast Landing Zone</div>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <div style="font-size:0.82rem;color:#475569;">Based on batch start <strong id="lz-start-date">—</strong></div>
+        <div style="font-size:0.82rem;color:#475569;">Started <strong id="lz-start-date">—</strong> · forecast from today</div>
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="background:#10B981;color:#fff;border-radius:6px;padding:4px 10px;font-size:0.82rem;font-weight:600;" id="lz-75-date">—</span>
           <span style="font-size:0.78rem;color:#94A3B8;">75% confidence</span>
@@ -1823,13 +1823,18 @@ function displayResults(overallSorted, perCatSorted, simCount, storedResults) {
   const elapsed = ((Date.now() - window._runStart) / 1000).toFixed(2);
   document.getElementById('sim-meta').textContent = `${simCount.toLocaleString()} simulations · ${elapsed}s`;
 
-  // Landing zone — requires batch with a startDate from ADO
+  // Landing zone — requires batch with a startDate from ADO.
+  // percs[] are days needed for the CURRENT remaining backlog, i.e. days from today —
+  // so the landing date must be anchored off today, not the original batch start date
+  // (anchoring off batch start would make the landing date drift into the past as the
+  // batch progresses and the remaining-item forecast shrinks).
   const lzEl = document.getElementById('landing-zone');
   const batchStart = selectedBatch?.startDate?.slice(0, 10);
+  const todayISO = new Date().toISOString().slice(0, 10);
   if (batchStart && percs[75] && percs[85]) {
     document.getElementById('lz-start-date').textContent = new Date(batchStart + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
-    document.getElementById('lz-75-date').textContent = addWorkingDays(batchStart, percs[75]);
-    document.getElementById('lz-85-date').textContent = addWorkingDays(batchStart, percs[85]);
+    document.getElementById('lz-75-date').textContent = addWorkingDays(todayISO, percs[75]);
+    document.getElementById('lz-85-date').textContent = addWorkingDays(todayISO, percs[85]);
     lzEl.classList.remove('hidden');
   } else {
     lzEl.classList.add('hidden');
