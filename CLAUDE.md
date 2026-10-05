@@ -31,6 +31,10 @@ APP_USER=batchcast               # optional, defaults to "batchcast"
 
 `APP_PASSWORD` gates the whole app (pages and `/api/*`) with HTTP Basic auth. It fails closed: with no password set the server refuses to serve anything. Set it in Render's environment as well as local `.env`.
 
+Basic auth sends the password with every request, so it is only safe over HTTPS. Render terminates TLS; anyone who runs this elsewhere with `HOST=0.0.0.0` must put TLS in front of it.
+
+After 10 wrong passwords from one address within 15 minutes, that address gets 429 with `Retry-After` until the window ends, even with the right password. Requests with no credentials do not count. The counter is in memory, so it resets on restart and is per instance. On Render the client address is read from `X-Forwarded-For` with one trusted proxy hop; if lockouts hit the wrong people or never trigger, set `TRUST_PROXY_HOPS` (0 to 5) in Render's environment.
+
 Supabase is optional — the app degrades gracefully with 503s when unconfigured (no project/forecast persistence, but simulation still works).
 
 ## Architecture
@@ -38,7 +42,9 @@ Supabase is optional — the app degrades gracefully with 503s when unconfigured
 Single-page app with an Express backend. No build step.
 
 ```
-server.js               Express entry point, mounts routes, serves public/
+server.js               createApp(env) builds the app (auth gate first, then routes, then public/); start() listens
+src/lib/auth.js         Password gate, failed-attempt limiter, bind-address and proxy-hop logic
+src/lib/query.js        Escaping and validation for values that reach ADO queries
 public/index.html       Entire frontend — all HTML, CSS, and JS in one file (~3200 lines)
 src/routes/
   ado.js                ADO REST + Analytics OData API proxy (org/project locked to env vars)
@@ -52,7 +58,7 @@ src/schema.sql          Supabase schema (run manually in SQL editor)
 - ADO org and project are **server-side only** (`ADO_ORG`, `ADO_PROJECT` env vars). The client never sends these.
 - ADO PAT and Supabase service key never reach the browser.
 - `/api/ado/*` routes always use `ntegrasdaas/Team30` — no client-supplied org/project accepted.
-- Every route sits behind the `APP_PASSWORD` gate in `server.js`. Do not add routes or static paths ahead of it.
+- Every route sits behind the `APP_PASSWORD` gate, mounted first in `createApp` in `server.js`. Do not add routes or static paths ahead of it. `test/auth.test.js` covers the 503, 401, lockout and bind cases.
 - Request values used in an ADO query go through `src/lib/query.js`: `quote()` for WIQL string literals, `odataLit()` for literals in an OData URL, and `optStr`/`reqStr`/`optDate`/`intInRange` to validate parameters. Never interpolate `req.query` values directly. `npm test` covers this.
 - No CORS middleware: the frontend is served from the same origin. The server binds to `127.0.0.1` unless `HOST` is set; Render is detected via `RENDER` and binds `0.0.0.0`.
 
