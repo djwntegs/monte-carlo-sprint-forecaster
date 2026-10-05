@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const net = require('net');
 
 function safeEqual(a, b) {
   const ha = crypto.createHash('sha256').update(String(a)).digest();
@@ -12,6 +13,39 @@ function resolveHost(env = process.env) {
   return env.HOST || (env.RENDER ? '0.0.0.0' : '127.0.0.1');
 }
 
+// Eight 16-bit groups from an IPv6 address, or null if it cannot be parsed.
+function expandIPv6(addr) {
+  let a = String(addr).split('%')[0].toLowerCase();
+  const v4 = a.match(/^(.*:)(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+  if (v4) {
+    const [o1, o2, o3, o4] = v4.slice(2).map(Number);
+    a = v4[1] + ((o1 << 8) | o2).toString(16) + ':' + ((o3 << 8) | o4).toString(16);
+  }
+  const parts = a.split('::');
+  if (parts.length > 2) return null;
+  const head = parts[0] ? parts[0].split(':') : [];
+  if (parts.length === 1) return head.length === 8 ? head.map(h => parseInt(h, 16)) : null;
+  const tail = parts[1] ? parts[1].split(':') : [];
+  const fill = 8 - head.length - tail.length;
+  if (fill < 1) return null;
+  const groups = [...head, ...Array(fill).fill('0'), ...tail].map(h => parseInt(h, 16));
+  return groups.every(Number.isInteger) ? groups : null;
+}
+
+// The key a client is limited under. IPv4 is used as is. An IPv6 client usually controls a whole
+// /64, so keying on the full address would let it rotate addresses and never reach the limit;
+// those are keyed on the /64 prefix instead. IPv4-mapped IPv6 addresses count as the IPv4 address.
+function clientKey(ip) {
+  if (!ip) return 'unknown';
+  if (!net.isIPv6(ip)) return ip;
+  const g = expandIPv6(ip);
+  if (!g) return ip;
+  if (g.slice(0, 5).every(x => x === 0) && g[5] === 0xffff) {
+    return [g[6] >> 8, g[6] & 255, g[7] >> 8, g[7] & 255].join('.');
+  }
+  return g.slice(0, 4).map(x => x.toString(16)).join(':') + '::/64';
+}
+
 // Counts failed logins per client address in a fixed window that starts at the first
 // failure. In memory only, so it resets on restart and is per instance.
 function createAttemptLimiter({ max = 10, windowMs = 15 * 60 * 1000, maxEntries = 5000, now = Date.now } = {}) {
@@ -19,6 +53,17 @@ function createAttemptLimiter({ max = 10, windowMs = 15 * 60 * 1000, maxEntries 
 
   function prune(t) {
     for (const [key, entry] of hits) if (entry.resetAt <= t) hits.delete(key);
+  }
+
+  // Make room for one more address. Entries that are not locked out go first (oldest first),
+  // so filling the table with one-off failures cannot push out an address that is locked out.
+  function evictOne() {
+    let oldest;
+    for (const [key, entry] of hits) {
+      if (oldest === undefined) oldest = key;
+      if (entry.count < max) { hits.delete(key); return; }
+    }
+    hits.delete(oldest);
   }
 
   return {
@@ -35,7 +80,7 @@ function createAttemptLimiter({ max = 10, windowMs = 15 * 60 * 1000, maxEntries 
       let entry = hits.get(key);
       if (!entry || entry.resetAt <= t) {
         if (hits.size >= maxEntries) prune(t);
-        if (hits.size >= maxEntries) hits.delete(hits.keys().next().value);
+        if (hits.size >= maxEntries) evictOne();
         entry = { count: 0, resetAt: t + windowMs };
         hits.set(key, entry);
       }
@@ -55,7 +100,7 @@ function createAuth({ env = process.env, limiter = createAttemptLimiter() } = {}
     const password = env.APP_PASSWORD;
     if (!password) return res.status(503).send('APP_PASSWORD is not set - refusing to serve without authentication.');
 
-    const key = req.ip || 'unknown';
+    const key = clientKey(req.ip);
     const wait = limiter.blockedFor(key);
     if (wait > 0) {
       res.set('Retry-After', String(Math.ceil(wait / 1000)));
@@ -88,4 +133,4 @@ function trustProxyHops(env = process.env) {
   return /^[0-5]$/.test(raw) ? Number(raw) : 1;
 }
 
-module.exports = { safeEqual, resolveHost, createAttemptLimiter, createAuth, trustProxyHops };
+module.exports = { safeEqual, resolveHost, clientKey, createAttemptLimiter, createAuth, trustProxyHops };

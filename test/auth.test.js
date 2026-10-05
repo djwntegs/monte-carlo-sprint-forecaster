@@ -2,7 +2,7 @@ const { test, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 
 const { createApp, start } = require('../server');
-const { createAttemptLimiter, resolveHost, trustProxyHops } = require('../src/lib/auth');
+const { createAttemptLimiter, resolveHost, trustProxyHops, clientKey } = require('../src/lib/auth');
 
 const servers = [];
 afterEach(() => { while (servers.length) servers.pop().close(); });
@@ -142,4 +142,55 @@ test('start() really binds to the resolved address', async () => {
   assert.equal(await bind({}), '127.0.0.1');
   assert.equal(await bind({ RENDER: 'true' }), '0.0.0.0');
   assert.equal(await bind({ HOST: '0.0.0.0' }), '0.0.0.0');
+});
+
+test('clientKey: IPv4 is unchanged and IPv4-mapped IPv6 counts as the IPv4 address', () => {
+  assert.equal(clientKey('203.0.113.7'), '203.0.113.7');
+  assert.equal(clientKey('::ffff:203.0.113.7'), '203.0.113.7');
+  assert.equal(clientKey('::FFFF:cb00:7107'), '203.0.113.7');
+  assert.equal(clientKey(undefined), 'unknown');
+  assert.equal(clientKey(''), 'unknown');
+  assert.equal(clientKey('not-an-address'), 'not-an-address');
+});
+
+test('clientKey: IPv6 addresses in one /64 share a key, other /64s do not', () => {
+  const a = clientKey('2001:db8:1:2::1');
+  assert.equal(a, '2001:db8:1:2::/64');
+  assert.equal(clientKey('2001:db8:1:2:aaaa:bbbb:cccc:dddd'), a);
+  assert.equal(clientKey('2001:0db8:0001:0002:0000:0000:0000:0042'), a);
+  assert.equal(clientKey('2001:DB8:1:2::ffff'), a);
+  assert.equal(clientKey('2001:db8:1:2::1%eth0'), a);
+  assert.notEqual(clientKey('2001:db8:1:3::1'), a);
+  assert.notEqual(clientKey('2001:db9:1:2::1'), a);
+  assert.equal(clientKey('::1'), '0:0:0:0::/64');
+  assert.equal(clientKey('2001:db8::1'), '2001:db8:0:0::/64');
+});
+
+test('an IPv6 client rotating addresses inside its /64 is still locked out', async () => {
+  const { base } = await boot({ ...ENV, RENDER: 'true' });
+  const from = (xff, pw = 'wrong') => status(base, '/', { 'X-Forwarded-For': xff, ...basic('batchcast', pw) });
+  for (let i = 0; i < 10; i++) await from(`2001:db8:1:2:${i.toString(16)}::${(i + 1).toString(16)}`);
+  assert.equal(await from('2001:db8:1:2:ffff:eeee:dddd:cccc', 'correct-horse'), 429, 'a new address in the same /64 is locked out');
+  assert.equal(await from('2001:db8:1:3::1', 'correct-horse'), 200, 'a different /64 is unaffected');
+  assert.equal(await from('203.0.113.7', 'correct-horse'), 200, 'an IPv4 client is unaffected');
+});
+
+test('eviction: when the table is full, addresses that are not locked out go first', () => {
+  const l = createAttemptLimiter({ maxEntries: 3, max: 2, windowMs: 60_000, now: () => 0 });
+  l.fail('locked'); l.fail('locked');
+  l.fail('b'); l.fail('c');
+  l.fail('d');
+  assert.equal(l.size(), 3);
+  assert.ok(l.blockedFor('locked') > 0, 'the locked-out address survives');
+  assert.equal(l.blockedFor('b'), 0);
+});
+
+test('eviction: if every address is locked out, the oldest is dropped', () => {
+  const l = createAttemptLimiter({ maxEntries: 3, max: 2, windowMs: 60_000, now: () => 0 });
+  for (const k of ['a', 'b', 'c']) { l.fail(k); l.fail(k); }
+  l.fail('d');
+  assert.equal(l.size(), 3);
+  assert.equal(l.blockedFor('a'), 0, 'oldest dropped');
+  assert.ok(l.blockedFor('b') > 0);
+  assert.ok(l.blockedFor('c') > 0);
 });

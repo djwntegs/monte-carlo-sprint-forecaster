@@ -33,7 +33,7 @@ APP_USER=batchcast               # optional, defaults to "batchcast"
 
 Basic auth sends the password with every request, so it is only safe over HTTPS. Render terminates TLS; anyone who runs this elsewhere with `HOST=0.0.0.0` must put TLS in front of it.
 
-After 10 wrong passwords from one address within 15 minutes, that address gets 429 with `Retry-After` until the window ends, even with the right password. Requests with no credentials do not count. The counter is in memory, so it resets on restart and is per instance. On Render the client address is read from `X-Forwarded-For` with one trusted proxy hop; if lockouts hit the wrong people or never trigger, set `TRUST_PROXY_HOPS` (0 to 5) in Render's environment.
+After 10 wrong passwords from one address within 15 minutes, that address gets 429 with `Retry-After` until the window ends, even with the right password. Requests with no credentials do not count. IPv6 clients are counted by their /64 prefix, because one client usually controls a whole /64, and IPv4-mapped IPv6 addresses count as the IPv4 address. The counter table holds 5000 addresses; when full it drops addresses that are not locked out first, oldest first. The counter is in memory, so it resets on restart and is per instance. On Render the client address is read from `X-Forwarded-For` with one trusted proxy hop; if lockouts hit the wrong people or never trigger, set `TRUST_PROXY_HOPS` (0 to 5) in Render's environment.
 
 Supabase is optional — the app degrades gracefully with 503s when unconfigured (no project/forecast persistence, but simulation still works).
 
