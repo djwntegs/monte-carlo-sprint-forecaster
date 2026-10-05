@@ -24,7 +24,11 @@ ADO_PROJECT=Team30
 ADO_PAT=<personal access token>
 SUPABASE_URL=<url>
 SUPABASE_SERVICE_KEY=<service role key>
+APP_PASSWORD=<shared password>   # required — server returns 503 if unset
+APP_USER=batchcast               # optional, defaults to "batchcast"
 ```
+
+`APP_PASSWORD` gates the whole app (pages and `/api/*`) with HTTP Basic auth. It fails closed: with no password set the server refuses to serve anything. Set it in Render's environment as well as local `.env`.
 
 Supabase is optional — the app degrades gracefully with 503s when unconfigured (no project/forecast persistence, but simulation still works).
 
