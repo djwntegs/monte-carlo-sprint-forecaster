@@ -1,6 +1,7 @@
 const express = require('express');
 const fetch   = require('node-fetch');
 const router  = express.Router();
+const { optStr, reqStr, optDate, intInRange, quote, odataLit, fail } = require('../lib/query');
 
 // Locked to the ADO org/project set in environment variables
 function getAdoConfig() {
@@ -104,13 +105,12 @@ router.get('/iterations', async (req, res) => {
 // GET /api/ado/batchprogress?iterationPath=Team30%5CBatch+1&type=Batch+Task
 // Returns remaining, completed, total and % complete for a type within a batch
 router.get('/batchprogress', async (req, res) => {
-  const { iterationPath, type } = req.query;
-  if (!iterationPath) return res.status(400).json({ error: 'iterationPath is required' });
-
   try {
+    const iterationPath = reqStr(req.query.iterationPath, 'iterationPath');
+    const type          = optStr(req.query.type, 'type');
     const { org, project } = getAdoConfig();
-    const iterFilter = ` AND [Iteration Path] UNDER '${iterationPath}'`;
-    const typeFilter  = type ? ` AND [Work Item Type] = '${type}'` : '';
+    const iterFilter = ` AND [Iteration Path] UNDER '${quote(iterationPath)}'`;
+    const typeFilter  = type ? ` AND [Work Item Type] = '${quote(type)}'` : '';
     const url     = `${adoBase(org)}/${project}/_apis/wit/wiql?api-version=7.1`;
     const headers = { Authorization: adoAuthHeader(), 'Content-Type': 'application/json' };
 
@@ -133,16 +133,15 @@ router.get('/batchprogress', async (req, res) => {
 
     res.json({ remaining, completed, total, pct });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    fail(res, err);
   }
 });
 
 // GET /api/ado/states?type=Batch+Task
 // Returns state names for a given work item type
 router.get('/states', async (req, res) => {
-  const { type } = req.query;
-  if (!type) return res.status(400).json({ error: 'type is required' });
   try {
+    const type = reqStr(req.query.type, 'type');
     const { org, project } = getAdoConfig();
     const url = `${adoBase(org)}/${project}/_apis/wit/workitemtypes/${encodeURIComponent(type)}/states?api-version=7.1`;
     const response = await fetch(url, { headers: { Authorization: adoAuthHeader() } });
@@ -150,26 +149,25 @@ router.get('/states', async (req, res) => {
     const data = await response.json();
     res.json((data.value || []).map(s => s.name));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    fail(res, err);
   }
 });
 
 // GET /api/ado/batchitems?iterationPath=Team30%5CBatch+1&type=Batch+Task
 // Returns all non-removed work items in a batch with id, title, type, state
 router.get('/batchitems', async (req, res) => {
-  const { iterationPath, type } = req.query;
-  if (!iterationPath) return res.status(400).json({ error: 'iterationPath is required' });
-
   try {
+    const iterationPath = reqStr(req.query.iterationPath, 'iterationPath');
+    const type          = optStr(req.query.type, 'type');
     const { org, project } = getAdoConfig();
-    const typeFilter = type ? ` AND [Work Item Type] = '${type}'` : '';
+    const typeFilter = type ? ` AND [Work Item Type] = '${quote(type)}'` : '';
     const headers    = { Authorization: adoAuthHeader(), 'Content-Type': 'application/json' };
     const wiqlUrl    = `${adoBase(org)}/${project}/_apis/wit/wiql?api-version=7.1`;
 
     const wiqlRes = await fetch(wiqlUrl, {
       method: 'POST', headers,
       body: JSON.stringify({
-        query: `SELECT [Id] FROM WorkItems WHERE [Iteration Path] UNDER '${iterationPath}' AND [State] <> 'Removed'${typeFilter}`
+        query: `SELECT [Id] FROM WorkItems WHERE [Iteration Path] UNDER '${quote(iterationPath)}' AND [State] <> 'Removed'${typeFilter}`
       })
     });
     if (!wiqlRes.ok) return res.status(wiqlRes.status).json({ error: await wiqlRes.text() });
@@ -195,17 +193,22 @@ router.get('/batchitems', async (req, res) => {
 
     res.json(items);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    fail(res, err);
   }
 });
 
 // GET /api/ado/throughput?weeks=12&type=Bug&startDate=2024-01-01&doneState=Dev+Environment&iterationPath=Team30%5CBatch+2&detail=true
 router.get('/throughput', async (req, res) => {
-  const { weeks = 12, type, startDate, doneState, detail, iterationPath } = req.query;
-
   try {
+    const weeks         = intInRange(req.query.weeks, 'weeks', 1, 520, 12);
+    const type          = optStr(req.query.type, 'type');
+    const startDate     = optDate(req.query.startDate, 'startDate');
+    const doneState     = optStr(req.query.doneState, 'doneState');
+    const iterationPath = optStr(req.query.iterationPath, 'iterationPath');
+    const detail        = req.query.detail;
+
     const { org, project } = getAdoConfig();
-    const typeFilter = type ? ` and WorkItemType eq '${type}'` : '';
+    const typeFilter = type ? ` and WorkItemType eq '${odataLit(type)}'` : '';
 
     let url;
 
@@ -220,18 +223,17 @@ router.get('/throughput', async (req, res) => {
       // Iteration navigation property. The startswith branch catches sub-iterations.
       let iterFilter = '';
       if (iterationPath) {
-        const p = String(iterationPath).replace(/'/g, "''");
-        iterFilter = ` and (Iteration/IterationPath eq '${p}' or startswith(Iteration/IterationPath, '${p}\\'))`;
+        iterFilter = ` and (Iteration/IterationPath eq '${odataLit(iterationPath)}' or startswith(Iteration/IterationPath, '${odataLit(iterationPath + '\\')}'))`;
       }
 
       if (detail === 'true') {
         url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemRevisions?` +
-          `$apply=filter(State eq '${doneState}'${typeFilter}${iterFilter}${dateFilter})` +
+          `$apply=filter(State eq '${odataLit(doneState)}'${typeFilter}${iterFilter}${dateFilter})` +
           `/groupby((WorkItemId),aggregate(ChangedDateSK with min as CompletedDateSK))` +
           `&$orderby=CompletedDateSK asc`;
       } else {
         url = `${analyticsBase(org)}/${project}/_odata/v3.0/WorkItemRevisions?` +
-          `$apply=filter(State eq '${doneState}'${typeFilter}${iterFilter}${dateFilter})` +
+          `$apply=filter(State eq '${odataLit(doneState)}'${typeFilter}${iterFilter}${dateFilter})` +
           `/groupby((WorkItemId),aggregate(ChangedDateSK with min as CompletedDateSK))` +
           `/groupby((CompletedDateSK),aggregate($count as Count))` +
           `&$orderby=CompletedDateSK asc`;
@@ -259,26 +261,29 @@ router.get('/throughput', async (req, res) => {
 
     res.json(await response.json());
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    fail(res, err);
   }
 });
 
 // GET /api/ado/backlog?type=Bug&iterationPath=Team30%5CBatch+2
 // Returns count of open work items, optionally scoped to an iteration (Batch)
 router.get('/backlog', async (req, res) => {
-  const { areaPath, type, iterationPath, doneStates } = req.query;
-
   try {
+    const areaPath      = optStr(req.query.areaPath, 'areaPath');
+    const type          = optStr(req.query.type, 'type');
+    const iterationPath = optStr(req.query.iterationPath, 'iterationPath');
+    const doneStates    = optStr(req.query.doneStates, 'doneStates', 500);
+
     const { org, project } = getAdoConfig();
-    const areaFilter      = areaPath      ? ` AND [Area Path] UNDER '${areaPath}'`          : '';
-    const typeFilter      = type          ? ` AND [Work Item Type] = '${type}'`              : '';
-    const iterationFilter = iterationPath ? ` AND [Iteration Path] UNDER '${iterationPath}'` : '';
+    const areaFilter      = areaPath      ? ` AND [Area Path] UNDER '${quote(areaPath)}'`          : '';
+    const typeFilter      = type          ? ` AND [Work Item Type] = '${quote(type)}'`              : '';
+    const iterationFilter = iterationPath ? ` AND [Iteration Path] UNDER '${quote(iterationPath)}'` : '';
 
     // Always exclude ADO built-in closed states plus any team-specific done states
     const builtIn   = ['Closed', 'Done', 'Removed'];
     const custom    = doneStates ? doneStates.split(',').map(s => s.trim()).filter(Boolean) : [];
     const allClosed = [...new Set([...builtIn, ...custom])];
-    const stateList = allClosed.map(s => `'${s.replace(/'/g, '')}'`).join(',');
+    const stateList = allClosed.map(s => `'${quote(s)}'`).join(',');
 
     const wiql = {
       query: `SELECT [Id] FROM WorkItems WHERE [State] NOT IN (${stateList})${iterationFilter}${areaFilter}${typeFilter}`
@@ -299,7 +304,7 @@ router.get('/backlog', async (req, res) => {
     const data = await response.json();
     res.json({ count: data.workItems.length });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    fail(res, err);
   }
 });
 

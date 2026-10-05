@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **BatchCast** — a Monte Carlo simulation forecasting tool for Azure DevOps teams. It pulls real throughput data from ADO, runs 10,000 simulations, and produces probability-based completion forecasts (p50/p75/p85/p95) in days. Features: batch tracking vs a saved baseline, a landing zone date range (p75–p85) skipping weekends and UK bank holidays, scope diff detection, and an inverse "Batch Sizing" simulation (given N days, how many items can we commit to?).
 
-Deployed on **Render** (free tier — 50s+ cold start on first request). Repos: GitHub (`djwntegs/monte-carlo-sprint-forecaster`) and ADO (`ntegrasdaas.visualstudio.com/Team30/_git/BatchCast`).
+Deployed on **Render** (free tier — 50s+ cold start on first request), built from the GitHub repo `djwntegs/monte-carlo-sprint-forecaster`, branch `main`, so a push to `origin main` redeploys. A copy of the app is kept in the Commons repo at `apps/contrib/batchcast` and is synced by hand (see Git remotes). The ADO repo `Team30/_git/BatchCast` is retired and no longer pushed to.
 
 ## Running locally
 
@@ -15,6 +15,7 @@ npm install
 # Create .env with required variables (see below)
 npm run dev       # nodemon with auto-reload
 npm start         # production
+npm test          # route tests (node:test, no network needed)
 ```
 
 Required `.env`:
@@ -51,6 +52,9 @@ src/schema.sql          Supabase schema (run manually in SQL editor)
 - ADO org and project are **server-side only** (`ADO_ORG`, `ADO_PROJECT` env vars). The client never sends these.
 - ADO PAT and Supabase service key never reach the browser.
 - `/api/ado/*` routes always use `ntegrasdaas/Team30` — no client-supplied org/project accepted.
+- Every route sits behind the `APP_PASSWORD` gate in `server.js`. Do not add routes or static paths ahead of it.
+- Request values used in an ADO query go through `src/lib/query.js`: `quote()` for WIQL string literals, `odataLit()` for literals in an OData URL, and `optStr`/`reqStr`/`optDate`/`intInRange` to validate parameters. Never interpolate `req.query` values directly. `npm test` covers this.
+- No CORS middleware: the frontend is served from the same origin. The server binds to `127.0.0.1` unless `HOST` is set; Render is detected via `RENDER` and binds `0.0.0.0`.
 
 ## Colour system
 
@@ -96,9 +100,10 @@ CSS classes: `.conf-50`, `.conf-75`, `.conf-85`, `.conf-95`. Deviation badges in
 
 ```
 origin   https://github.com/djwntegs/monte-carlo-sprint-forecaster.git
-ado      https://ntegrasdaas.visualstudio.com/Team30/_git/BatchCast
 ```
 
-Never embed a PAT in a remote URL. Credentials live in the macOS Keychain (`credential.helper=osxkeychain`): the first push prompts for a username and a PAT with Code (Read & write) scope, then Keychain remembers it.
+Never embed a PAT in a remote URL. Credentials live in the macOS Keychain (`credential.helper=osxkeychain`).
 
-Push to both after changes: `git push origin main && git push ado main`
+Push after changes with `git push origin main`; Render redeploys from it. The old `ado` remote (`Team30/_git/BatchCast`) is retired: do not push to it.
+
+Commons (`DocRepo/commons/apps/contrib/batchcast`, a separate repo) is a plain file copy, not linked to this one. After a meaningful change, copy the changed files across, bump the version in its README front matter, add a `revisions.md` row and commit there.

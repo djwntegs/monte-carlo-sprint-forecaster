@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const cors    = require('cors');
 const path    = require('path');
 const crypto  = require('crypto');
 
@@ -34,7 +33,6 @@ app.use((req, res, next) => {
   res.status(401).send('Authentication required');
 });
 
-app.use(cors());
 app.use(express.json());
 
 // Static frontend
@@ -50,6 +48,10 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Monte Carlo Forecaster running on port ${PORT}`);
+// Loopback by default so a local run is not exposed to the network. Hosts that need to
+// accept outside traffic set HOST=0.0.0.0; Render is detected via its RENDER variable.
+const HOST = process.env.HOST || (process.env.RENDER ? '0.0.0.0' : '127.0.0.1');
+
+app.listen(PORT, HOST, () => {
+  console.log(`Monte Carlo Forecaster running on ${HOST}:${PORT}`);
 });
