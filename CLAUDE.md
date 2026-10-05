@@ -96,7 +96,9 @@ CSS classes: `.conf-50`, `.conf-75`, `.conf-85`, `.conf-95`. Deviation badges in
 
 ```
 origin   https://github.com/djwntegs/monte-carlo-sprint-forecaster.git
-ado      https://...<pat>...@ntegrasdaas.visualstudio.com/Team30/_git/BatchCast
+ado      https://ntegrasdaas.visualstudio.com/Team30/_git/BatchCast
 ```
+
+Never embed a PAT in a remote URL. Credentials live in the macOS Keychain (`credential.helper=osxkeychain`): the first push prompts for a username and a PAT with Code (Read & write) scope, then Keychain remembers it.
 
 Push to both after changes: `git push origin main && git push ado main`
